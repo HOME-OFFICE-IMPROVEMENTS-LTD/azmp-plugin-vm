@@ -10,6 +10,20 @@
 import { IPlugin, PluginMetadata, TemplateDefinition, PluginContext } from './types';
 import { Command } from 'commander';
 import * as path from 'path';
+import {
+  getVmSize,
+  getVmSizesByFamily,
+  getAllVmSizeFamilies,
+  searchVmSizes,
+  VmSizeFamily,
+  VM_SIZE_FAMILIES,
+} from './vm-sizes';
+import {
+  getVmImage,
+  getAllVmImages,
+  getVmImagesByOS,
+  searchVmImages,
+} from './vm-images';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -34,8 +48,8 @@ export class VmPlugin implements IPlugin {
   metadata: PluginMetadata = {
     id: 'vm',
     name: 'Virtual Machine Plugin',
-    description: 'Generates Azure Virtual Machine marketplace offers',
-    version: '1.0.0',
+    description: 'Generates Azure Virtual Machine marketplace offers with comprehensive configuration options',
+    version: '1.1.0',
     author: 'HOME OFFICE IMPROVEMENTS LTD'
   };
 
@@ -120,72 +134,483 @@ export class VmPlugin implements IPlugin {
   getHandlebarsHelpers(): Record<string, (...args: any[]) => any> {
     return {
       /**
-       * Format VM size with description
+       * Format VM size with full details (Phase 1)
        */
       'vm-size': (size: string): string => {
-        const sizeDescriptions: Record<string, string> = {
-          'Standard_D2s_v3': 'General purpose - 2 vCPUs, 8 GB RAM',
-          'Standard_D4s_v3': 'General purpose - 4 vCPUs, 16 GB RAM',
-          'Standard_D8s_v3': 'General purpose - 8 vCPUs, 32 GB RAM',
-          'Standard_F2s_v2': 'Compute optimized - 2 vCPUs, 4 GB RAM',
-          'Standard_F4s_v2': 'Compute optimized - 4 vCPUs, 8 GB RAM',
-          'Standard_E2s_v3': 'Memory optimized - 2 vCPUs, 16 GB RAM',
-          'Standard_E4s_v3': 'Memory optimized - 4 vCPUs, 32 GB RAM'
+        const vmSize = getVmSize(size);
+        if (vmSize) {
+          return `${vmSize.name} (${vmSize.vcpus} vCPUs, ${vmSize.memory}) - ${vmSize.description}`;
+        }
+        return size;
+      },
+
+      /**
+       * Get VM size by family (Phase 1)
+       */
+      'vm-size-family': (family: string): string => {
+        const vmFamily = VM_SIZE_FAMILIES[family as VmSizeFamily];
+        return vmFamily || family;
+      },
+
+      /**
+       * List all VM sizes in a family (Phase 1)
+       */
+      'vm-sizes-by-family': (family: string): string => {
+        const sizes = getVmSizesByFamily(family as VmSizeFamily);
+        return sizes.map((s) => s.name).join(', ');
+      },
+
+      /**
+       * Get VM size series (Phase 1)
+       */
+      'vm-size-series': (size: string): string => {
+        const vmSize = getVmSize(size);
+        return vmSize?.series || 'Unknown';
+      },
+
+      /**
+       * Get VM size workloads (Phase 1)
+       */
+      'vm-size-workloads': (size: string): string => {
+        const vmSize = getVmSize(size);
+        return vmSize?.workloads.join(', ') || '';
+      },
+
+      /**
+       * Get VM image reference object (Phase 1)
+       */
+      'vm-image': (imageKey: string): string => {
+        const image = getVmImage(imageKey);
+        if (image) {
+          return JSON.stringify({
+            publisher: image.publisher,
+            offer: image.offer,
+            sku: image.sku,
+            version: image.version,
+          }, null, 2);
+        }
+        return '{}';
+      },
+
+      /**
+       * Get VM image publisher (Phase 1)
+       */
+      'vm-image-publisher': (imageKey: string): string => {
+        const image = getVmImage(imageKey);
+        return image?.publisher || '';
+      },
+
+      /**
+       * Get VM image offer (Phase 1)
+       */
+      'vm-image-offer': (imageKey: string): string => {
+        const image = getVmImage(imageKey);
+        return image?.offer || '';
+      },
+
+      /**
+       * Get VM image SKU (Phase 1)
+       */
+      'vm-image-sku': (imageKey: string): string => {
+        const image = getVmImage(imageKey);
+        return image?.sku || '';
+      },
+
+      /**
+       * Get VM image description (Phase 1)
+       */
+      'vm-image-description': (imageKey: string): string => {
+        const image = getVmImage(imageKey);
+        return image?.description || '';
+      },
+
+      /**
+       * Get VM image OS type (Phase 1)
+       */
+      'vm-image-os': (imageKey: string): string => {
+        const image = getVmImage(imageKey);
+        return image?.os || '';
+      },
+
+      /**
+       * Generate VM resource name (sanitized) (Phase 1)
+       */
+      'vm-resource-name': (baseName: string, suffix?: string): string => {
+        const sanitized = baseName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        if (suffix) {
+          const sanitizedSuffix = suffix.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+          return `${sanitized}-${sanitizedSuffix}`;
+        }
+        return sanitized;
+      },
+
+      /**
+       * Generate storage account name (must be lowercase, alphanumeric, 3-24 chars) (Phase 1)
+       */
+      'vm-storage-name': (baseName: string): string => {
+        return baseName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
+          .substring(0, 24);
+      },
+
+      /**
+       * Generate network interface name (Phase 1)
+       */
+      'vm-nic-name': (vmName: string): string => {
+        return `${vmName}-nic`;
+      },
+
+      /**
+       * Generate public IP name (Phase 1)
+       */
+      'vm-pip-name': (vmName: string): string => {
+        return `${vmName}-pip`;
+      },
+
+      /**
+       * Generate NSG name (Phase 1)
+       */
+      'vm-nsg-name': (vmName: string): string => {
+        return `${vmName}-nsg`;
+      },
+
+      /**
+       * Generate OS disk name (Phase 1)
+       */
+      'vm-osdisk-name': (vmName: string): string => {
+        return `${vmName}-osdisk`;
+      },
+
+      /**
+       * Generate data disk name (Phase 1)
+       */
+      'vm-datadisk-name': (vmName: string, index: number): string => {
+        return `${vmName}-datadisk-${index}`;
+      },
+
+      /**
+       * Format disk size in GB (Phase 1)
+       */
+      'vm-disk-size': (size: number): string => {
+        return `${size} GB`;
+      },
+
+      /**
+       * Get storage account type display name (Phase 1)
+       */
+      'vm-storage-type': (sku: string): string => {
+        const types: Record<string, string> = {
+          'Standard_LRS': 'Standard Locally Redundant Storage',
+          'Standard_GRS': 'Standard Geo-Redundant Storage',
+          'Standard_RAGRS': 'Standard Read-Access Geo-Redundant Storage',
+          'Standard_ZRS': 'Standard Zone-Redundant Storage',
+          'Premium_LRS': 'Premium Locally Redundant Storage (SSD)',
+          'Premium_ZRS': 'Premium Zone-Redundant Storage (SSD)',
+          'StandardSSD_LRS': 'Standard SSD Locally Redundant Storage',
+          'StandardSSD_ZRS': 'Standard SSD Zone-Redundant Storage',
+          'UltraSSD_LRS': 'Ultra SSD Locally Redundant Storage',
         };
-        return sizeDescriptions[size] || size;
+        return types[sku] || sku;
       },
 
       /**
-       * Get VM image reference
+       * Check if size supports Premium Storage (Phase 1)
        */
-      'vm-image': (publisher: string, offer: string, sku: string): string => {
-        return JSON.stringify({
-          publisher,
-          offer,
-          sku,
-          version: 'latest'
-        });
+      'vm-supports-premium': (size: string): boolean => {
+        // S-series VMs support premium storage
+        return size.includes('s_v') || size.includes('S_');
       },
 
       /**
-       * Generate VM resource name
+       * Generate availability set name (Phase 1)
        */
-      'vm-resource-name': (baseName: string, suffix: string): string => {
-        return `${baseName}-${suffix}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-      }
+      'vm-availset-name': (baseName: string): string => {
+        return `${baseName}-avset`;
+      },
+
+      /**
+       * Get default VM location (Phase 1)
+       */
+      'vm-default-location': (): string => {
+        return 'eastus';
+      },
     };
   }
 
   /**
-   * Register CLI commands
+   * Register CLI commands (Phase 1)
    */
   registerCommands(program: Command): void {
     const vmCommand = program
       .command('vm')
       .description('Virtual Machine commands');
 
+    // List VM sizes
     vmCommand
       .command('list-sizes')
-      .description('List available VM sizes for a location')
-      .option('-l, --location <location>', 'Azure location', 'eastus')
+      .description('List available VM sizes')
+      .option('-l, --location <location>', 'Azure location (for availability check)', 'eastus')
+      .option('-f, --family <family>', 'Filter by VM family (general-purpose, compute-optimized, memory-optimized, storage-optimized, gpu-accelerated, hpc, confidential)')
+      .option('-s, --search <query>', 'Search VM sizes by name or description')
       .action((options) => {
-        if (this.context) {
-          this.context.logger.info(`Listing VM sizes for location: ${options.location}`);
-          // TODO: Implement actual Azure API call
-          this.context.logger.info('Standard_D2s_v3, Standard_D4s_v3, Standard_D8s_v3...');
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info(`VM Sizes for location: ${options.location}\n`);
+
+        let results = Object.values(getVmSize as any).filter(Boolean);
+
+        if (options.family) {
+          results = getVmSizesByFamily(options.family as VmSizeFamily);
+          logger.info(`Family: ${VM_SIZE_FAMILIES[options.family as VmSizeFamily] || options.family}\n`);
         }
+
+        if (options.search) {
+          results = searchVmSizes(options.search);
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          results = searchVmSizes(''); // Get all
+        }
+
+        results.forEach((size: any) => {
+          logger.info(`${size.name}`);
+          logger.info(`  Family: ${VM_SIZE_FAMILIES[size.family as VmSizeFamily]}`);
+          logger.info(`  Series: ${size.series}`);
+          logger.info(`  vCPUs: ${size.vcpus}`);
+          logger.info(`  Memory: ${size.memory}`);
+          logger.info(`  Description: ${size.description}`);
+          logger.info(`  Workloads: ${size.workloads.join(', ')}`);
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} VM sizes`);
       });
 
+    // List VM images
     vmCommand
       .command('list-images')
       .description('List available VM images')
-      .option('-p, --publisher <publisher>', 'Image publisher', 'Canonical')
+      .option('-o, --os <os>', 'Filter by OS (Windows or Linux)')
+      .option('-s, --search <query>', 'Search images by name or description')
       .action((options) => {
-        if (this.context) {
-          this.context.logger.info(`Listing images for publisher: ${options.publisher}`);
-          // TODO: Implement actual Azure API call
-          this.context.logger.info('Ubuntu 22.04-LTS, Ubuntu 20.04-LTS...');
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('VM Images\n');
+
+        let results = getAllVmImages();
+
+        if (options.os) {
+          results = getVmImagesByOS(options.os as 'Windows' | 'Linux');
+          logger.info(`OS: ${options.os}\n`);
         }
+
+        if (options.search) {
+          results = searchVmImages(options.search);
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        results.forEach(({ key, image }) => {
+          logger.info(`${key}`);
+          logger.info(`  Description: ${image.description}`);
+          logger.info(`  Publisher: ${image.publisher}`);
+          logger.info(`  Offer: ${image.offer}`);
+          logger.info(`  SKU: ${image.sku}`);
+          logger.info(`  OS: ${image.os}`);
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} images`);
+      });
+
+    // List VM families
+    vmCommand
+      .command('list-families')
+      .description('List all VM size families')
+      .action(() => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('VM Size Families\n');
+
+        const families = getAllVmSizeFamilies();
+        families.forEach(({ key, name }) => {
+          const sizes = getVmSizesByFamily(key);
+          logger.info(`${name} (${key})`);
+          logger.info(`  Sizes: ${sizes.length}`);
+          logger.info(`  Examples: ${sizes.slice(0, 3).map((s) => s.name).join(', ')}`);
+          logger.info('');
+        });
+      });
+
+    // List Azure locations (static list for Phase 1)
+    vmCommand
+      .command('list-locations')
+      .description('List available Azure locations')
+      .action(() => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Azure Locations\n');
+
+        const locations = [
+          { name: 'eastus', display: 'East US' },
+          { name: 'eastus2', display: 'East US 2' },
+          { name: 'westus', display: 'West US' },
+          { name: 'westus2', display: 'West US 2' },
+          { name: 'westus3', display: 'West US 3' },
+          { name: 'centralus', display: 'Central US' },
+          { name: 'northcentralus', display: 'North Central US' },
+          { name: 'southcentralus', display: 'South Central US' },
+          { name: 'westcentralus', display: 'West Central US' },
+          { name: 'northeurope', display: 'North Europe' },
+          { name: 'westeurope', display: 'West Europe' },
+          { name: 'uksouth', display: 'UK South' },
+          { name: 'ukwest', display: 'UK West' },
+          { name: 'francecentral', display: 'France Central' },
+          { name: 'germanywestcentral', display: 'Germany West Central' },
+          { name: 'norwayeast', display: 'Norway East' },
+          { name: 'switzerlandnorth', display: 'Switzerland North' },
+          { name: 'swedencentral', display: 'Sweden Central' },
+          { name: 'southeastasia', display: 'Southeast Asia' },
+          { name: 'eastasia', display: 'East Asia' },
+          { name: 'australiaeast', display: 'Australia East' },
+          { name: 'australiasoutheast', display: 'Australia Southeast' },
+          { name: 'japaneast', display: 'Japan East' },
+          { name: 'japanwest', display: 'Japan West' },
+          { name: 'koreacentral', display: 'Korea Central' },
+          { name: 'southafricanorth', display: 'South Africa North' },
+          { name: 'brazilsouth', display: 'Brazil South' },
+          { name: 'canadacentral', display: 'Canada Central' },
+          { name: 'canadaeast', display: 'Canada East' },
+          { name: 'southindia', display: 'South India' },
+          { name: 'centralindia', display: 'Central India' },
+          { name: 'westindia', display: 'West India' },
+        ];
+
+        locations.forEach(({ name, display }) => {
+          logger.info(`${display} (${name})`);
+        });
+
+        logger.info(`\nTotal: ${locations.length} locations`);
+      });
+
+    // Validate VM configuration
+    vmCommand
+      .command('validate')
+      .description('Validate VM configuration')
+      .requiredOption('-s, --size <size>', 'VM size to validate')
+      .option('-i, --image <image>', 'Image key to validate')
+      .option('-l, --location <location>', 'Azure location')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Validating VM Configuration\n');
+
+        // Validate size
+        const vmSize = getVmSize(options.size);
+        if (vmSize) {
+          logger.info(`✓ VM Size: ${vmSize.name}`);
+          logger.info(`  Family: ${VM_SIZE_FAMILIES[vmSize.family as VmSizeFamily]}`);
+          logger.info(`  vCPUs: ${vmSize.vcpus}, Memory: ${vmSize.memory}`);
+        } else {
+          logger.error(`✗ Invalid VM size: ${options.size}`);
+          logger.info(`  Run 'azmp vm list-sizes' to see available sizes`);
+        }
+
+        // Validate image (if provided)
+        if (options.image) {
+          const image = getVmImage(options.image);
+          if (image) {
+            logger.info(`✓ VM Image: ${image.description}`);
+            logger.info(`  Publisher: ${image.publisher}`);
+            logger.info(`  OS: ${image.os}`);
+          } else {
+            logger.error(`✗ Invalid image key: ${options.image}`);
+            logger.info(`  Run 'azmp vm list-images' to see available images`);
+          }
+        }
+
+        // Validate location (if provided)
+        if (options.location) {
+          logger.info(`✓ Location: ${options.location}`);
+        }
+
+        logger.info('\nValidation complete');
+      });
+
+    // Estimate VM cost (Phase 1 - basic estimation)
+    vmCommand
+      .command('estimate-cost')
+      .description('Estimate monthly VM cost (rough estimate)')
+      .requiredOption('-s, --size <size>', 'VM size')
+      .option('-l, --location <location>', 'Azure location', 'eastus')
+      .option('-h, --hours <hours>', 'Hours per month', '730')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        const vmSize = getVmSize(options.size);
+
+        if (!vmSize) {
+          logger.error(`Invalid VM size: ${options.size}`);
+          return;
+        }
+
+        logger.info('VM Cost Estimation (Rough Estimate)\n');
+        logger.info(`VM Size: ${vmSize.name}`);
+        logger.info(`Location: ${options.location}`);
+        logger.info(`Hours/month: ${options.hours}`);
+        logger.info('');
+
+        // Rough cost estimates (Phase 1 - placeholder values)
+        const hourlyRates: Record<string, number> = {
+          'Standard_B1s': 0.0104,
+          'Standard_B2s': 0.0416,
+          'Standard_B4ms': 0.166,
+          'Standard_D2s_v3': 0.096,
+          'Standard_D4s_v3': 0.192,
+          'Standard_D8s_v3': 0.384,
+          'Standard_D2s_v5': 0.096,
+          'Standard_D4s_v5': 0.192,
+          'Standard_D8s_v5': 0.384,
+          'Standard_D16s_v5': 0.768,
+          'Standard_F2s_v2': 0.085,
+          'Standard_F4s_v2': 0.169,
+          'Standard_F8s_v2': 0.338,
+          'Standard_F16s_v2': 0.677,
+          'Standard_E2s_v3': 0.126,
+          'Standard_E4s_v3': 0.252,
+          'Standard_E8s_v3': 0.504,
+          'Standard_E16s_v3': 1.008,
+          'Standard_E32s_v3': 2.016,
+          'Standard_E2s_v5': 0.126,
+          'Standard_E4s_v5': 0.252,
+          'Standard_E8s_v5': 0.504,
+          'Standard_E16s_v5': 1.008,
+          'Standard_E32s_v5': 2.016,
+        };
+
+        const hourlyRate = hourlyRates[vmSize.name] || 0.1;
+        const hours = parseInt(options.hours, 10);
+        const monthlyCost = hourlyRate * hours;
+
+        logger.info(`Hourly Rate: $${hourlyRate.toFixed(4)}/hour`);
+        logger.info(`Monthly Cost: $${monthlyCost.toFixed(2)}/month`);
+        logger.info('');
+        logger.info('Note: This is a rough estimate. Actual costs may vary based on:');
+        logger.info('  - Region pricing differences');
+        logger.info('  - Reserved instances or spot pricing');
+        logger.info('  - Storage costs (disks)');
+        logger.info('  - Network egress costs');
+        logger.info('  - Additional services (load balancers, etc.)');
+        logger.info('');
+        logger.info('For accurate pricing, use the Azure Pricing Calculator:');
+        logger.info('https://azure.microsoft.com/en-us/pricing/calculator/');
       });
   }
 }
