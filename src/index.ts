@@ -11,6 +11,7 @@ import { IPlugin, PluginMetadata, TemplateDefinition, PluginContext } from './ty
 import { Command } from 'commander';
 import * as path from 'path';
 import { getNetworkingHelpers } from './networking';
+import { createExtensionHelpers } from './extensions';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -122,7 +123,10 @@ export class VmPlugin implements IPlugin {
     // Get networking helpers with net: namespace
     const networkingHelpers = getNetworkingHelpers();
     
-    // Combine VM helpers with networking helpers
+    // Get extension helpers with ext: namespace
+    const extensionHelpers = createExtensionHelpers();
+    
+    // Combine VM helpers with networking and extension helpers
     const vmHelpers = {
       /**
        * Format VM size with description
@@ -160,10 +164,11 @@ export class VmPlugin implements IPlugin {
       }
     };
 
-    // Return combined helpers (VM + Networking)
+    // Return combined helpers (VM + Networking + Extensions)
     return {
       ...vmHelpers,
-      ...networkingHelpers
+      ...networkingHelpers,
+      ...extensionHelpers
     };
   }
 
@@ -364,6 +369,81 @@ export class VmPlugin implements IPlugin {
           this.context.logger.info('  - point-to-point: Direct VNet-to-VNet peering');
           this.context.logger.info('  - transit-vnet: Transit VNet for routing');
         }
+      });
+
+    // ========================================
+    // Extension Commands
+    // ========================================
+    const extCommand = program
+      .command('ext')
+      .description('VM Extension commands');
+
+    extCommand
+      .command('list')
+      .description('List all available VM extensions')
+      .option('-c, --category <category>', 'Filter by category (windows, linux, crossplatform)')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const { extensionsCatalog } = require('./extensions');
+        let extensions = extensionsCatalog;
+        
+        if (options.category) {
+          extensions = extensions.filter((ext: any) => ext.category === options.category);
+        }
+        
+        this.context.logger.info(`Available VM Extensions (${extensions.length}):`);
+        extensions.forEach((ext: any) => {
+          this.context!.logger.info(`  - ${ext.displayName} (${ext.platform})`);
+          this.context!.logger.info(`    ${ext.description}`);
+          this.context!.logger.info(`    Publisher: ${ext.publisher}, Type: ${ext.type}, Version: ${ext.version}`);
+          this.context!.logger.info(`    Priority: ${ext.priority}`);
+        });
+      });
+
+    extCommand
+      .command('list-windows')
+      .description('List Windows-specific extensions')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { extensionsCatalog } = require('./extensions');
+        const extensions = extensionsCatalog.filter((ext: any) => ext.category === 'windows');
+        
+        this.context.logger.info(`Windows VM Extensions (${extensions.length}):`);
+        extensions.forEach((ext: any) => {
+          this.context!.logger.info(`  - ${ext.displayName}: ${ext.description}`);
+        });
+      });
+
+    extCommand
+      .command('list-linux')
+      .description('List Linux-specific extensions')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { extensionsCatalog } = require('./extensions');
+        const extensions = extensionsCatalog.filter((ext: any) => ext.category === 'linux');
+        
+        this.context.logger.info(`Linux VM Extensions (${extensions.length}):`);
+        extensions.forEach((ext: any) => {
+          this.context!.logger.info(`  - ${ext.displayName}: ${ext.description}`);
+        });
+      });
+
+    extCommand
+      .command('list-crossplatform')
+      .description('List cross-platform extensions')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { extensionsCatalog } = require('./extensions');
+        const extensions = extensionsCatalog.filter((ext: any) => ext.category === 'crossplatform');
+        
+        this.context.logger.info(`Cross-Platform VM Extensions (${extensions.length}):`);
+        extensions.forEach((ext: any) => {
+          this.context!.logger.info(`  - ${ext.displayName} (${ext.platform}): ${ext.description}`);
+        });
       });
   }
 }
