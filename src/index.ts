@@ -12,6 +12,8 @@ import { Command } from 'commander';
 import * as path from 'path';
 import { getNetworkingHelpers } from './networking';
 import { createExtensionHelpers } from './extensions';
+import { createSecurityHelpers } from './security';
+import { createIdentityHelpers } from './identity';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -37,7 +39,7 @@ export class VmPlugin implements IPlugin {
     id: 'vm',
     name: 'Virtual Machine Plugin',
     description: 'Generates Azure Virtual Machine marketplace offers',
-    version: '1.2.0',
+    version: '1.3.0',
     author: 'HOME OFFICE IMPROVEMENTS LTD'
   };
 
@@ -126,7 +128,13 @@ export class VmPlugin implements IPlugin {
     // Get extension helpers with ext: namespace
     const extensionHelpers = createExtensionHelpers();
     
-    // Combine VM helpers with networking and extension helpers
+    // Get security helpers with security: namespace
+    const securityHelpers = createSecurityHelpers();
+    
+    // Get identity helpers with identity: namespace
+    const identityHelpers = createIdentityHelpers();
+    
+    // Combine VM helpers with networking, extension, security, and identity helpers
     const vmHelpers = {
       /**
        * Format VM size with description
@@ -164,11 +172,13 @@ export class VmPlugin implements IPlugin {
       }
     };
 
-    // Return combined helpers (VM + Networking + Extensions)
+    // Return combined helpers (VM + Networking + Extensions + Security + Identity)
     return {
       ...vmHelpers,
       ...networkingHelpers,
-      ...extensionHelpers
+      ...extensionHelpers,
+      ...securityHelpers,
+      ...identityHelpers
     };
   }
 
@@ -444,6 +454,167 @@ export class VmPlugin implements IPlugin {
         extensions.forEach((ext: any) => {
           this.context!.logger.info(`  - ${ext.displayName} (${ext.platform}): ${ext.description}`);
         });
+      });
+
+    // ========================================
+    // Security Commands
+    // ========================================
+    const securityCommand = program
+      .command('security')
+      .description('VM Security commands');
+
+    securityCommand
+      .command('list')
+      .description('List all available security templates')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { securityTemplates } = require('./security');
+        
+        this.context.logger.info(`Available Security Templates (${securityTemplates.length}):`);
+        securityTemplates.forEach((template: any, index: number) => {
+          this.context!.logger.info(`\n${index + 1}. ${template.name}`);
+          this.context!.logger.info(`   Description: ${template.description}`);
+          this.context!.logger.info(`   Features: ${template.features.join(', ')}`);
+        });
+      });
+
+    securityCommand
+      .command('list-encryption')
+      .description('List encryption options')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Encryption Options:');
+        this.context.logger.info('\n1. Azure Disk Encryption (ADE)');
+        this.context.logger.info('   - BitLocker (Windows) / dm-crypt (Linux)');
+        this.context.logger.info('   - Key Vault integration');
+        this.context.logger.info('\n2. Server-Side Encryption (SSE)');
+        this.context.logger.info('   - Platform-managed keys (PMK)');
+        this.context.logger.info('   - Customer-managed keys (CMK)');
+        this.context.logger.info('\n3. Encryption at Host');
+        this.context.logger.info('   - VM host-level encryption');
+        this.context.logger.info('   - Temp disk and cache encryption');
+      });
+
+    securityCommand
+      .command('list-trusted-launch')
+      .description('List Trusted Launch features')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Trusted Launch Features:');
+        this.context.logger.info('\n1. Secure Boot');
+        this.context.logger.info('   - Boot integrity protection');
+        this.context.logger.info('   - Prevent malicious bootloaders');
+        this.context.logger.info('\n2. vTPM (Virtual Trusted Platform Module)');
+        this.context.logger.info('   - Hardware security module');
+        this.context.logger.info('   - Key storage and attestation');
+        this.context.logger.info('\n3. Boot Integrity Monitoring');
+        this.context.logger.info('   - Azure Security Center integration');
+        this.context.logger.info('   - Continuous monitoring');
+        this.context.logger.info('\n4. Guest Attestation');
+        this.context.logger.info('   - Runtime attestation');
+        this.context.logger.info('   - Security policy enforcement');
+        this.context.logger.info('\n5. Measured Boot');
+        this.context.logger.info('   - Boot chain measurements');
+        this.context.logger.info('   - TPM-based validation');
+      });
+
+    securityCommand
+      .command('list-compliance')
+      .description('List compliance frameworks')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Compliance Frameworks:');
+        this.context.logger.info('\n1. SOC2');
+        this.context.logger.info('2. HIPAA');
+        this.context.logger.info('3. ISO 27001');
+        this.context.logger.info('4. FedRAMP');
+        this.context.logger.info('5. PCI-DSS');
+        this.context.logger.info('6. GDPR');
+      });
+
+    // ========================================
+    // Identity Commands
+    // ========================================
+    const identityCommand = program
+      .command('identity')
+      .description('Identity and Access commands');
+
+    identityCommand
+      .command('list')
+      .description('List all available identity templates')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { identityTemplates } = require('./identity');
+        
+        this.context.logger.info(`Available Identity Templates (${identityTemplates.length}):`);
+        identityTemplates.forEach((template: any, index: number) => {
+          this.context!.logger.info(`\n${index + 1}. ${template.name}`);
+          this.context!.logger.info(`   Description: ${template.description}`);
+          this.context!.logger.info(`   Features: ${template.features.join(', ')}`);
+        });
+      });
+
+    identityCommand
+      .command('list-managed-identity')
+      .description('List managed identity options')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Managed Identity Options:');
+        this.context.logger.info('\n1. System-Assigned Identity');
+        this.context.logger.info('   - Automatic lifecycle management');
+        this.context.logger.info('   - Tied to VM lifecycle');
+        this.context.logger.info('\n2. User-Assigned Identity');
+        this.context.logger.info('   - Independent lifecycle');
+        this.context.logger.info('   - Shared across resources');
+        this.context.logger.info('\n3. Multiple Identities (Hybrid)');
+        this.context.logger.info('   - Both system and user-assigned');
+        this.context.logger.info('   - Maximum flexibility');
+      });
+
+    identityCommand
+      .command('list-aad-features')
+      .description('List Azure AD integration features')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Azure AD Integration Features:');
+        this.context.logger.info('\n1. AAD SSH Login (Linux)');
+        this.context.logger.info('   - SSH with Azure AD credentials');
+        this.context.logger.info('   - Passwordless authentication');
+        this.context.logger.info('\n2. AAD RDP Login (Windows)');
+        this.context.logger.info('   - RDP with Azure AD credentials');
+        this.context.logger.info('   - Windows Hello support');
+        this.context.logger.info('\n3. Conditional Access');
+        this.context.logger.info('   - Location-based policies');
+        this.context.logger.info('   - Device compliance checks');
+        this.context.logger.info('\n4. Multi-Factor Authentication');
+        this.context.logger.info('   - Phone, email, authenticator app');
+        this.context.logger.info('   - FIDO2 security keys');
+      });
+
+    identityCommand
+      .command('list-rbac-roles')
+      .description('List built-in RBAC roles for VMs')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Built-in RBAC Roles for Virtual Machines:');
+        this.context.logger.info('\n1. Virtual Machine Contributor');
+        this.context.logger.info('   - Full VM management');
+        this.context.logger.info('\n2. Virtual Machine Administrator Login');
+        this.context.logger.info('   - Admin SSH/RDP access');
+        this.context.logger.info('\n3. Virtual Machine User Login');
+        this.context.logger.info('   - Standard user SSH/RDP access');
+        this.context.logger.info('\n4. Reader');
+        this.context.logger.info('   - Read-only access');
+        this.context.logger.info('\n5. Contributor');
+        this.context.logger.info('   - Full management (all resources)');
       });
   }
 }
