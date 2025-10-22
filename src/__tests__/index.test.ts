@@ -30,7 +30,7 @@ describe('VmPlugin', () => {
     it('should have correct metadata', () => {
       expect(plugin.metadata.id).toBe('vm');
       expect(plugin.metadata.name).toBe('Virtual Machine Plugin');
-      expect(plugin.metadata.version).toBe('1.1.0');
+      expect(plugin.metadata.version).toBe('1.2.0'); // Phase 2
     });
   });
 
@@ -209,6 +209,130 @@ describe('VmPlugin', () => {
       plugin.registerCommands(mockProgram as any);
       
       expect(mockProgram.command).toHaveBeenCalledWith('vm');
+    });
+  });
+
+  // ========================================
+  // Phase 2: VNet & Subnet Tests
+  // ========================================
+
+  describe('Phase 2: VNet Helpers', () => {
+    it('should provide vnet-calculate-ips helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers).toHaveProperty('vnet-calculate-ips');
+
+      const result = helpers['vnet-calculate-ips']('10.0.0.0/24');
+      expect(result).toBe(251); // /24 = 256 - 5 (Azure reserves 5 IPs: network, gateway, 2 DNS, broadcast)
+    });
+
+    it('should calculate IPs for various CIDR blocks (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['vnet-calculate-ips']('10.0.0.0/16')).toBe(65531); // /16 - 5
+      expect(helpers['vnet-calculate-ips']('10.0.0.0/27')).toBe(27);    // /27 - 5
+      expect(helpers['vnet-calculate-ips']('10.0.0.0/28')).toBe(11);    // /28 - 5
+    });
+
+    it('should provide vnet-validate-cidr helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers).toHaveProperty('vnet-validate-cidr');
+
+      expect(helpers['vnet-validate-cidr']('10.0.0.0/24')).toBe(true);
+      expect(helpers['vnet-validate-cidr']('192.168.1.0/16')).toBe(true);
+      expect(helpers['vnet-validate-cidr']('invalid-cidr')).toBe(false);
+    });
+
+    it('should provide vnet-ip-in-cidr helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers).toHaveProperty('vnet-ip-in-cidr');
+
+      expect(helpers['vnet-ip-in-cidr']('10.0.0.5', '10.0.0.0/24')).toBe(true);
+      expect(helpers['vnet-ip-in-cidr']('10.0.1.5', '10.0.0.0/24')).toBe(false);
+    });
+
+    it('should provide vnet-template helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers).toHaveProperty('vnet-template');
+
+      const result = helpers['vnet-template']('small');
+      expect(result).toContain('vnet-small');
+      expect(result).toContain('10.0.0.0/24');
+    });
+
+    it('should provide vnet-template-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['vnet-template-name']('small')).toBe('vnet-small');
+      expect(helpers['vnet-template-name']('medium')).toBe('vnet-medium');
+      expect(helpers['vnet-template-name']('large')).toBe('vnet-large');
+    });
+
+    it('should provide vnet-subnet-count helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['vnet-subnet-count']('small')).toBeGreaterThan(0);
+      expect(helpers['vnet-subnet-count']('medium')).toBeGreaterThan(0);
+    });
+
+    it('should provide vnet-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['vnet-name']('MyApp')).toBe('vnet-myapp');
+      expect(helpers['vnet-name']('Test_Service')).toBe('vnet-test-service');
+    });
+  });
+
+  describe('Phase 2: Subnet Helpers', () => {
+    it('should provide subnet-pattern helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers).toHaveProperty('subnet-pattern');
+
+      const result = helpers['subnet-pattern']('web');
+      expect(result).toContain('web');
+      expect(result).toContain('10.0.1.0/24');
+    });
+
+    it('should provide subnet-pattern-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['subnet-pattern-name']('web')).toBe('web');
+      expect(helpers['subnet-pattern-name']('app')).toBe('app');
+      expect(helpers['subnet-pattern-name']('data')).toBe('data');
+    });
+
+    it('should provide subnet-validate-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['subnet-validate-name']('my-subnet')).toBe(true);
+      expect(helpers['subnet-validate-name']('subnet_123')).toBe(true);
+      expect(helpers['subnet-validate-name']('.invalid')).toBe(false);
+    });
+
+    it('should provide subnet-is-reserved helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['subnet-is-reserved']('AzureBastionSubnet')).toBe(true);
+      expect(helpers['subnet-is-reserved']('GatewaySubnet')).toBe(true);
+      expect(helpers['subnet-is-reserved']('my-subnet')).toBe(false);
+    });
+
+    it('should provide subnet-reserved-min-prefix helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['subnet-reserved-min-prefix']('AzureBastionSubnet')).toBe(27);
+      expect(helpers['subnet-reserved-min-prefix']('GatewaySubnet')).toBe(27);
+      expect(helpers['subnet-reserved-min-prefix']('AzureFirewallSubnet')).toBe(26);
+    });
+
+    it('should provide subnet-overlaps helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['subnet-overlaps']('10.0.0.0/24', '10.0.1.0/24')).toBe(false);
+      expect(helpers['subnet-overlaps']('10.0.0.0/24', '10.0.0.0/25')).toBe(true);
+    });
+
+    it('should provide subnet-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['subnet-name']('vnet-myapp', 'web')).toBe('vnet-myapp-subnet-web');
+      expect(helpers['subnet-name']('vnet-test', 'app')).toBe('vnet-test-subnet-app');
+    });
+
+    it('should provide subnet-address-prefix helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['subnet-address-prefix']('10.0.0.0/24');
+      expect(result).toContain('10.0.0.0/24');
+      expect(result).toContain('251'); // Azure reserves 5 IPs
     });
   });
 

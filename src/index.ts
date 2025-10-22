@@ -24,6 +24,27 @@ import {
   getVmImagesByOS,
   searchVmImages,
 } from './vm-images';
+import {
+  getVNetTemplate,
+  getAllVNetTemplates,
+  calculateUsableIPs,
+  validateCIDR,
+  isIPInCIDR,
+  getServiceEndpointName,
+  getDelegationName,
+  SERVICE_ENDPOINTS,
+  SUBNET_DELEGATIONS,
+  VNetTemplateKey,
+} from './networking/vnets';
+import {
+  getSubnetPattern,
+  getAllSubnetPatterns,
+  validateSubnetName,
+  validateReservedSubnet,
+  subnetsOverlap,
+  SubnetPatternKey,
+  RESERVED_SUBNET_NAMES,
+} from './networking/subnets';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -49,7 +70,7 @@ export class VmPlugin implements IPlugin {
     id: 'vm',
     name: 'Virtual Machine Plugin',
     description: 'Generates Azure Virtual Machine marketplace offers with comprehensive configuration options',
-    version: '1.1.0',
+    version: '1.2.0',
     author: 'HOME OFFICE IMPROVEMENTS LTD'
   };
 
@@ -335,6 +356,159 @@ export class VmPlugin implements IPlugin {
       'vm-default-location': (): string => {
         return 'eastus';
       },
+
+      // ========================================
+      // Phase 2: VNet & Subnet Helpers
+      // ========================================
+
+      /**
+       * Format VNet address space (Phase 2)
+       */
+      'vnet-address-space': (addressSpaces: string[]): string => {
+        return addressSpaces.join(', ');
+      },
+
+      /**
+       * Calculate usable IPs in a CIDR block (Phase 2)
+       */
+      'vnet-calculate-ips': (cidr: string): number => {
+        return calculateUsableIPs(cidr);
+      },
+
+      /**
+       * Validate CIDR notation (Phase 2)
+       */
+      'vnet-validate-cidr': (cidr: string): boolean => {
+        return validateCIDR(cidr);
+      },
+
+      /**
+       * Check if IP is in CIDR block (Phase 2)
+       */
+      'vnet-ip-in-cidr': (ip: string, cidr: string): boolean => {
+        return isIPInCIDR(ip, cidr);
+      },
+
+      /**
+       * Get VNet template (Phase 2)
+       */
+      'vnet-template': (key: string): string => {
+        const template = getVNetTemplate(key as VNetTemplateKey);
+        return template ? JSON.stringify(template, null, 2) : '{}';
+      },
+
+      /**
+       * Get VNet template name (Phase 2)
+       */
+      'vnet-template-name': (key: string): string => {
+        const template = getVNetTemplate(key as VNetTemplateKey);
+        return template?.name || key;
+      },
+
+      /**
+       * Get VNet template description (Phase 2)
+       */
+      'vnet-template-description': (key: string): string => {
+        const template = getVNetTemplate(key as VNetTemplateKey);
+        return template?.description || '';
+      },
+
+      /**
+       * Count subnets in VNet template (Phase 2)
+       */
+      'vnet-subnet-count': (key: string): number => {
+        const template = getVNetTemplate(key as VNetTemplateKey);
+        return template?.subnets.length || 0;
+      },
+
+      /**
+       * Get service endpoint display name (Phase 2)
+       */
+      'vnet-service-endpoint': (endpoint: string): string => {
+        return getServiceEndpointName(endpoint as keyof typeof SERVICE_ENDPOINTS) || endpoint;
+      },
+
+      /**
+       * Get delegation display name (Phase 2)
+       */
+      'vnet-delegation': (delegation: string): string => {
+        return getDelegationName(delegation as keyof typeof SUBNET_DELEGATIONS) || delegation;
+      },
+
+      /**
+       * Format subnet address prefix (Phase 2)
+       */
+      'subnet-address-prefix': (prefix: string): string => {
+        const usableIPs = calculateUsableIPs(prefix);
+        return `${prefix} (${usableIPs} usable IPs)`;
+      },
+
+      /**
+       * Get subnet pattern (Phase 2)
+       */
+      'subnet-pattern': (key: string): string => {
+        const pattern = getSubnetPattern(key as SubnetPatternKey);
+        return pattern ? JSON.stringify(pattern, null, 2) : '{}';
+      },
+
+      /**
+       * Get subnet pattern name (Phase 2)
+       */
+      'subnet-pattern-name': (key: string): string => {
+        const pattern = getSubnetPattern(key as SubnetPatternKey);
+        return pattern?.name || key;
+      },
+
+      /**
+       * Get subnet pattern description (Phase 2)
+       */
+      'subnet-pattern-description': (key: string): string => {
+        const pattern = getSubnetPattern(key as SubnetPatternKey);
+        return pattern?.description || '';
+      },
+
+      /**
+       * Validate subnet name (Phase 2)
+       */
+      'subnet-validate-name': (name: string): boolean => {
+        return validateSubnetName(name).valid;
+      },
+
+      /**
+       * Check if subnet is reserved (Phase 2)
+       */
+      'subnet-is-reserved': (name: string): boolean => {
+        return Object.values(RESERVED_SUBNET_NAMES).some((r) => r.name === name);
+      },
+
+      /**
+       * Get reserved subnet minimum prefix (Phase 2)
+       */
+      'subnet-reserved-min-prefix': (name: string): number => {
+        const reserved = Object.values(RESERVED_SUBNET_NAMES).find((r) => r.name === name);
+        return reserved?.minPrefix || 0;
+      },
+
+      /**
+       * Check if subnets overlap (Phase 2)
+       */
+      'subnet-overlaps': (subnet1: string, subnet2: string): boolean => {
+        return subnetsOverlap(subnet1, subnet2);
+      },
+
+      /**
+       * Generate VNet resource name (Phase 2)
+       */
+      'vnet-name': (baseName: string): string => {
+        return `vnet-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      },
+
+      /**
+       * Generate subnet resource name (Phase 2)
+       */
+      'subnet-name': (vnetName: string, subnetType: string): string => {
+        return `${vnetName}-subnet-${subnetType}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      },
     };
   }
 
@@ -611,6 +785,172 @@ export class VmPlugin implements IPlugin {
         logger.info('');
         logger.info('For accurate pricing, use the Azure Pricing Calculator:');
         logger.info('https://azure.microsoft.com/en-us/pricing/calculator/');
+      });
+
+    // ========================================
+    // Phase 2: VNet & Subnet Commands
+    // ========================================
+
+    const networkCommand = vmCommand
+      .command('network')
+      .description('Virtual Network and Subnet commands (Phase 2)');
+
+    // List VNet templates
+    networkCommand
+      .command('list-vnets')
+      .description('List available VNet templates')
+      .option('-s, --search <query>', 'Search VNet templates by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available VNet Templates\n');
+
+        const templates = getAllVNetTemplates();
+        let results = templates;
+
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = templates.filter(
+            (t) =>
+              t.template.name.toLowerCase().includes(query) ||
+              t.template.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No VNet templates found');
+          return;
+        }
+
+        results.forEach(({ key, template }) => {
+          logger.info(`${template.name} (${key})`);
+          logger.info(`  Description: ${template.description}`);
+          logger.info(`  Address Spaces: ${template.addressSpace.join(', ')}`);
+          logger.info(`  Subnets: ${template.subnets.length}`);
+          logger.info(`  Usable IPs: ${calculateUsableIPs(template.addressSpace[0])}`);
+          template.subnets.forEach((subnet) => {
+            logger.info(`    - ${subnet.name} (${subnet.addressPrefix}, ${calculateUsableIPs(subnet.addressPrefix)} IPs)`);
+          });
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} template(s)`);
+      });
+
+    // List subnet patterns
+    networkCommand
+      .command('list-subnets')
+      .description('List available subnet patterns')
+      .option('-s, --search <query>', 'Search subnet patterns by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available Subnet Patterns\n');
+
+        const patterns = getAllSubnetPatterns();
+        let results = patterns;
+
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = patterns.filter(
+            (p) =>
+              p.pattern.name.toLowerCase().includes(query) ||
+              p.pattern.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No subnet patterns found');
+          return;
+        }
+
+        results.forEach(({ key, pattern }) => {
+          logger.info(`${pattern.name} (${key})`);
+          logger.info(`  Description: ${pattern.description}`);
+          logger.info(`  Recommended CIDR: ${pattern.addressPrefix}`);
+          logger.info(`  Usable IPs: ${calculateUsableIPs(pattern.addressPrefix)}`);
+
+          if (pattern.serviceEndpoints && pattern.serviceEndpoints.length > 0) {
+            logger.info(`  Service Endpoints: ${pattern.serviceEndpoints.join(', ')}`);
+          }
+
+          if ('delegations' in pattern && pattern.delegations && pattern.delegations.length > 0) {
+            logger.info(`  Delegations: ${pattern.delegations.join(', ')}`);
+          }
+
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} pattern(s)`);
+      });
+
+    // Validate VNet configuration
+    networkCommand
+      .command('validate-vnet')
+      .description('Validate VNet and subnet configuration')
+      .requiredOption('-c, --cidr <cidr>', 'VNet CIDR block (e.g., 10.0.0.0/16)')
+      .option('-s, --subnets <subnets...>', 'Subnet CIDR blocks to validate')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('VNet Configuration Validation\n');
+
+        // Validate VNet CIDR
+        logger.info(`VNet CIDR: ${options.cidr}`);
+        const vnetValid = validateCIDR(options.cidr);
+
+        if (!vnetValid) {
+          logger.error(`✗ Invalid VNet CIDR: ${options.cidr}`);
+          return;
+        }
+
+        logger.info(`✓ Valid VNet CIDR`);
+        logger.info(`  Usable IPs: ${calculateUsableIPs(options.cidr)}`);
+        logger.info('');
+
+        // Validate subnets if provided
+        if (options.subnets && options.subnets.length > 0) {
+          logger.info('Subnet Validation:');
+
+          for (const subnet of options.subnets) {
+            const subnetValid = validateCIDR(subnet);
+
+            if (!subnetValid) {
+              logger.error(`✗ Invalid subnet CIDR: ${subnet}`);
+              continue;
+            }
+
+            // Check if subnet is within VNet
+            const [subnetIP, subnetPrefix] = subnet.split('/');
+            const inVNet = isIPInCIDR(subnetIP, options.cidr);
+
+            if (!inVNet) {
+              logger.warn(`⚠ Subnet ${subnet} is not within VNet ${options.cidr}`);
+            } else {
+              logger.info(`✓ Subnet ${subnet} (${calculateUsableIPs(subnet)} IPs)`);
+            }
+          }
+
+          // Check for overlapping subnets
+          logger.info('');
+          logger.info('Overlap Check:');
+          for (let i = 0; i < options.subnets.length; i++) {
+            for (let j = i + 1; j < options.subnets.length; j++) {
+              if (subnetsOverlap(options.subnets[i], options.subnets[j])) {
+                logger.error(`✗ Subnets overlap: ${options.subnets[i]} and ${options.subnets[j]}`);
+              }
+            }
+          }
+          logger.info('✓ No overlapping subnets detected');
+        }
+
+        logger.info('');
+        logger.info('Validation complete');
       });
   }
 }
