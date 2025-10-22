@@ -171,6 +171,9 @@ export class VmPlugin implements IPlugin {
    * Register CLI commands
    */
   registerCommands(program: Command): void {
+    // ========================================
+    // VM Commands
+    // ========================================
     const vmCommand = program
       .command('vm')
       .description('Virtual Machine commands');
@@ -196,6 +199,173 @@ export class VmPlugin implements IPlugin {
           this.context.logger.info(`Listing images for publisher: ${options.publisher}`);
           // TODO: Implement actual Azure API call
           this.context.logger.info('Ubuntu 22.04-LTS, Ubuntu 20.04-LTS...');
+        }
+      });
+
+    // ========================================
+    // Networking Commands
+    // ========================================
+    const networkCommand = program
+      .command('network')
+      .description('Networking commands for VNets, subnets, NSGs, and load balancers');
+
+    // VNet Commands
+    const vnetCommand = networkCommand
+      .command('vnet')
+      .description('Virtual Network operations');
+
+    vnetCommand
+      .command('list-templates')
+      .description('List available VNet template types')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available VNet templates:');
+          this.context.logger.info('  - single-tier: Single subnet VNet for simple deployments');
+          this.context.logger.info('  - multi-tier: Multi-tier VNet with web, app, and data subnets');
+          this.context.logger.info('  - hub-spoke: Hub VNet for hub-spoke topology');
+          this.context.logger.info('  - spoke: Spoke VNet for hub-spoke topology');
+          this.context.logger.info('  - peered: VNet with peering configuration');
+        }
+      });
+
+    vnetCommand
+      .command('create-template')
+      .description('Generate VNet ARM template configuration')
+      .option('-t, --type <type>', 'VNet template type', 'single-tier')
+      .option('-n, --name <name>', 'VNet name', 'myVNet')
+      .option('-a, --address <address>', 'Address space (CIDR)', '10.0.0.0/16')
+      .action((options) => {
+        if (this.context) {
+          this.context.logger.info(`Creating VNet template: ${options.type}`);
+          this.context.logger.info(`  Name: ${options.name}`);
+          this.context.logger.info(`  Address space: ${options.address}`);
+          // Template would be generated using net:vnet.template helper
+        }
+      });
+
+    // Subnet Commands
+    const subnetCommand = networkCommand
+      .command('subnet')
+      .description('Subnet operations');
+
+    subnetCommand
+      .command('list-templates')
+      .description('List available subnet template types')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available subnet templates:');
+          this.context.logger.info('  - web: Web tier subnet (default: /24)');
+          this.context.logger.info('  - app: Application tier subnet (default: /24)');
+          this.context.logger.info('  - data: Data tier subnet (default: /24)');
+          this.context.logger.info('  - gateway: Gateway subnet (default: /27)');
+          this.context.logger.info('  - bastion: Azure Bastion subnet (default: /26)');
+        }
+      });
+
+    // NSG Commands
+    const nsgCommand = networkCommand
+      .command('nsg')
+      .description('Network Security Group operations');
+
+    nsgCommand
+      .command('list-templates')
+      .description('List available NSG rule templates')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available NSG rule templates:');
+          this.context.logger.info('  - web: HTTP/HTTPS access (ports 80, 443)');
+          this.context.logger.info('  - ssh: SSH access (port 22)');
+          this.context.logger.info('  - rdp: RDP access (port 3389)');
+          this.context.logger.info('  - database: Database access (ports 1433, 3306, 5432)');
+          this.context.logger.info('  - deny-all: Deny all inbound traffic');
+        }
+      });
+
+    nsgCommand
+      .command('create-rule')
+      .description('Generate NSG rule configuration')
+      .option('-t, --type <type>', 'Rule template type', 'web')
+      .option('-p, --priority <priority>', 'Rule priority', '100')
+      .option('-s, --source <source>', 'Source address prefix', '*')
+      .action((options) => {
+        if (this.context) {
+          this.context.logger.info(`Creating NSG rule: ${options.type}`);
+          this.context.logger.info(`  Priority: ${options.priority}`);
+          this.context.logger.info(`  Source: ${options.source}`);
+          // Rule would be generated using net:nsg.rule helper
+        }
+      });
+
+    // Load Balancer Commands
+    const lbCommand = networkCommand
+      .command('lb')
+      .description('Load Balancer operations');
+
+    lbCommand
+      .command('list-templates')
+      .description('List available load balancer template types')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available load balancer templates:');
+          this.context.logger.info('  - public-web: Public LB for web traffic (ports 80, 443)');
+          this.context.logger.info('  - internal-app: Internal LB for app tier');
+          this.context.logger.info('  - internal-database: Internal LB for database tier');
+          this.context.logger.info('  - internal-ha-ports: Internal LB with HA ports');
+          this.context.logger.info('  - public-jumpbox: Public LB for jumpbox access');
+        }
+      });
+
+    // Application Gateway Commands
+    const appgwCommand = networkCommand
+      .command('appgw')
+      .description('Application Gateway operations');
+
+    appgwCommand
+      .command('list-templates')
+      .description('List available Application Gateway template types')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available Application Gateway templates:');
+          this.context.logger.info('  - basic-web: Basic web application gateway');
+          this.context.logger.info('  - waf-enabled: WAF-enabled for enhanced security');
+          this.context.logger.info('  - multi-site: Multi-site hosting configuration');
+          this.context.logger.info('  - high-security: High-security with SSL policies');
+        }
+      });
+
+    // Bastion Commands
+    const bastionCommand = networkCommand
+      .command('bastion')
+      .description('Azure Bastion operations');
+
+    bastionCommand
+      .command('list-skus')
+      .description('List available Bastion SKUs')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available Bastion SKUs:');
+          this.context.logger.info('  - basic: Basic SKU (2 scale units)');
+          this.context.logger.info('  - standard: Standard SKU (2-50 scale units)');
+          this.context.logger.info('  - premium: Premium SKU with advanced features');
+        }
+      });
+
+    // Peering Commands
+    const peeringCommand = networkCommand
+      .command('peering')
+      .description('VNet Peering operations');
+
+    peeringCommand
+      .command('list-topologies')
+      .description('List available peering topology templates')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available peering topologies:');
+          this.context.logger.info('  - hub-vnet: Hub VNet in hub-spoke topology');
+          this.context.logger.info('  - spoke-vnet: Spoke VNet in hub-spoke topology');
+          this.context.logger.info('  - mesh-vnet: VNet in mesh topology');
+          this.context.logger.info('  - point-to-point: Direct VNet-to-VNet peering');
+          this.context.logger.info('  - transit-vnet: Transit VNet for routing');
         }
       });
   }
