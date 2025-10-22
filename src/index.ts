@@ -14,6 +14,8 @@ import { getNetworkingHelpers } from './networking';
 import { createExtensionHelpers } from './extensions';
 import { createSecurityHelpers } from './security';
 import { createIdentityHelpers } from './identity';
+import { registerAvailabilityHelpers } from './availability';
+import { registerRecoveryHelpers } from './recovery';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -39,7 +41,7 @@ export class VmPlugin implements IPlugin {
     id: 'vm',
     name: 'Virtual Machine Plugin',
     description: 'Generates Azure Virtual Machine marketplace offers',
-    version: '1.3.0',
+    version: '1.4.0',
     author: 'HOME OFFICE IMPROVEMENTS LTD'
   };
 
@@ -62,6 +64,10 @@ export class VmPlugin implements IPlugin {
     this.context = context;
     context.logger.info(`Initializing VM Plugin v${this.metadata.version}`);
     context.logger.debug('VM Plugin options:', this.options);
+    
+    // Register availability and recovery helpers with Handlebars
+    registerAvailabilityHelpers();
+    registerRecoveryHelpers();
   }
 
   /**
