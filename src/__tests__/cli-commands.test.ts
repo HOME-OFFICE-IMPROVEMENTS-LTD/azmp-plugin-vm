@@ -45,10 +45,46 @@ describe('VmPlugin CLI Commands', () => {
       expect(vmCommand?.description()).toBe('Virtual Machine commands');
     });
 
-    it('should register network command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      expect(networkCommand).toBeDefined();
-      expect(networkCommand?.description()).toContain('Networking commands');
+    it('should register vnet command (top-level)', () => {
+      const vnetCommand = program.commands.find(cmd => cmd.name() === 'vnet');
+      expect(vnetCommand).toBeDefined();
+      expect(vnetCommand?.description()).toBe('Virtual Network operations');
+    });
+
+    it('should register subnet command (top-level)', () => {
+      const subnetCommand = program.commands.find(cmd => cmd.name() === 'subnet');
+      expect(subnetCommand).toBeDefined();
+      expect(subnetCommand?.description()).toBe('Subnet operations');
+    });
+
+    it('should register nsg command (top-level)', () => {
+      const nsgCommand = program.commands.find(cmd => cmd.name() === 'nsg');
+      expect(nsgCommand).toBeDefined();
+      expect(nsgCommand?.description()).toBe('Network Security Group operations');
+    });
+
+    it('should register lb command (top-level)', () => {
+      const lbCommand = program.commands.find(cmd => cmd.name() === 'lb');
+      expect(lbCommand).toBeDefined();
+      expect(lbCommand?.description()).toBe('Load Balancer operations');
+    });
+
+    it('should register appgw command (top-level)', () => {
+      const appgwCommand = program.commands.find(cmd => cmd.name() === 'appgw');
+      expect(appgwCommand).toBeDefined();
+      expect(appgwCommand?.description()).toBe('Application Gateway operations');
+    });
+
+    it('should register bastion command (top-level)', () => {
+      const bastionCommand = program.commands.find(cmd => cmd.name() === 'bastion');
+      expect(bastionCommand).toBeDefined();
+      expect(bastionCommand?.description()).toBe('Azure Bastion operations');
+    });
+
+    it('should register peering command (top-level)', () => {
+      const peeringCommand = program.commands.find(cmd => cmd.name() === 'peering');
+      expect(peeringCommand).toBeDefined();
+      expect(peeringCommand?.description()).toBe('VNet Peering operations');
     });
   });
 
@@ -71,17 +107,15 @@ describe('VmPlugin CLI Commands', () => {
   });
 
   describe('Networking Commands - VNet', () => {
-    it('should register network vnet subcommand', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const vnetCommand = networkCommand?.commands.find(cmd => cmd.name() === 'vnet');
+    it('should register vnet command at top level', () => {
+      const vnetCommand = program.commands.find(cmd => cmd.name() === 'vnet');
       
       expect(vnetCommand).toBeDefined();
       expect(vnetCommand?.description()).toBe('Virtual Network operations');
     });
 
     it('should register vnet list-templates command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const vnetCommand = networkCommand?.commands.find(cmd => cmd.name() === 'vnet');
+      const vnetCommand = program.commands.find(cmd => cmd.name() === 'vnet');
       const listTemplatesCommand = vnetCommand?.commands.find(cmd => cmd.name() === 'list-templates');
       
       expect(listTemplatesCommand).toBeDefined();
@@ -89,8 +123,7 @@ describe('VmPlugin CLI Commands', () => {
     });
 
     it('should register vnet create-template command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const vnetCommand = networkCommand?.commands.find(cmd => cmd.name() === 'vnet');
+      const vnetCommand = program.commands.find(cmd => cmd.name() === 'vnet');
       const createTemplateCommand = vnetCommand?.commands.find(cmd => cmd.name() === 'create-template');
       
       expect(createTemplateCommand).toBeDefined();
@@ -99,17 +132,15 @@ describe('VmPlugin CLI Commands', () => {
   });
 
   describe('Networking Commands - Subnet', () => {
-    it('should register network subnet subcommand', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const subnetCommand = networkCommand?.commands.find(cmd => cmd.name() === 'subnet');
+    it('should register subnet command at top level', () => {
+      const subnetCommand = program.commands.find(cmd => cmd.name() === 'subnet');
       
       expect(subnetCommand).toBeDefined();
       expect(subnetCommand?.description()).toBe('Subnet operations');
     });
 
     it('should register subnet list-templates command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const subnetCommand = networkCommand?.commands.find(cmd => cmd.name() === 'subnet');
+      const subnetCommand = program.commands.find(cmd => cmd.name() === 'subnet');
       const listTemplatesCommand = subnetCommand?.commands.find(cmd => cmd.name() === 'list-templates');
       
       expect(listTemplatesCommand).toBeDefined();
@@ -118,17 +149,15 @@ describe('VmPlugin CLI Commands', () => {
   });
 
   describe('Networking Commands - NSG', () => {
-    it('should register network nsg subcommand', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const nsgCommand = networkCommand?.commands.find(cmd => cmd.name() === 'nsg');
+    it('should register nsg command at top level', () => {
+      const nsgCommand = program.commands.find(cmd => cmd.name() === 'nsg');
       
       expect(nsgCommand).toBeDefined();
       expect(nsgCommand?.description()).toBe('Network Security Group operations');
     });
 
     it('should register nsg list-templates command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const nsgCommand = networkCommand?.commands.find(cmd => cmd.name() === 'nsg');
+      const nsgCommand = program.commands.find(cmd => cmd.name() === 'nsg');
       const listTemplatesCommand = nsgCommand?.commands.find(cmd => cmd.name() === 'list-templates');
       
       expect(listTemplatesCommand).toBeDefined();
@@ -136,8 +165,7 @@ describe('VmPlugin CLI Commands', () => {
     });
 
     it('should register nsg create-rule command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const nsgCommand = networkCommand?.commands.find(cmd => cmd.name() === 'nsg');
+      const nsgCommand = program.commands.find(cmd => cmd.name() === 'nsg');
       const createRuleCommand = nsgCommand?.commands.find(cmd => cmd.name() === 'create-rule');
       
       expect(createRuleCommand).toBeDefined();
@@ -146,17 +174,15 @@ describe('VmPlugin CLI Commands', () => {
   });
 
   describe('Networking Commands - Load Balancer', () => {
-    it('should register network lb subcommand', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const lbCommand = networkCommand?.commands.find(cmd => cmd.name() === 'lb');
+    it('should register lb command at top level', () => {
+      const lbCommand = program.commands.find(cmd => cmd.name() === 'lb');
       
       expect(lbCommand).toBeDefined();
       expect(lbCommand?.description()).toBe('Load Balancer operations');
     });
 
     it('should register lb list-templates command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const lbCommand = networkCommand?.commands.find(cmd => cmd.name() === 'lb');
+      const lbCommand = program.commands.find(cmd => cmd.name() === 'lb');
       const listTemplatesCommand = lbCommand?.commands.find(cmd => cmd.name() === 'list-templates');
       
       expect(listTemplatesCommand).toBeDefined();
@@ -165,17 +191,15 @@ describe('VmPlugin CLI Commands', () => {
   });
 
   describe('Networking Commands - Application Gateway', () => {
-    it('should register network appgw subcommand', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const appgwCommand = networkCommand?.commands.find(cmd => cmd.name() === 'appgw');
+    it('should register appgw command at top level', () => {
+      const appgwCommand = program.commands.find(cmd => cmd.name() === 'appgw');
       
       expect(appgwCommand).toBeDefined();
       expect(appgwCommand?.description()).toBe('Application Gateway operations');
     });
 
     it('should register appgw list-templates command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const appgwCommand = networkCommand?.commands.find(cmd => cmd.name() === 'appgw');
+      const appgwCommand = program.commands.find(cmd => cmd.name() === 'appgw');
       const listTemplatesCommand = appgwCommand?.commands.find(cmd => cmd.name() === 'list-templates');
       
       expect(listTemplatesCommand).toBeDefined();
@@ -184,17 +208,15 @@ describe('VmPlugin CLI Commands', () => {
   });
 
   describe('Networking Commands - Bastion', () => {
-    it('should register network bastion subcommand', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const bastionCommand = networkCommand?.commands.find(cmd => cmd.name() === 'bastion');
+    it('should register bastion command at top level', () => {
+      const bastionCommand = program.commands.find(cmd => cmd.name() === 'bastion');
       
       expect(bastionCommand).toBeDefined();
       expect(bastionCommand?.description()).toBe('Azure Bastion operations');
     });
 
     it('should register bastion list-skus command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const bastionCommand = networkCommand?.commands.find(cmd => cmd.name() === 'bastion');
+      const bastionCommand = program.commands.find(cmd => cmd.name() === 'bastion');
       const listSkusCommand = bastionCommand?.commands.find(cmd => cmd.name() === 'list-skus');
       
       expect(listSkusCommand).toBeDefined();
@@ -203,17 +225,15 @@ describe('VmPlugin CLI Commands', () => {
   });
 
   describe('Networking Commands - Peering', () => {
-    it('should register network peering subcommand', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const peeringCommand = networkCommand?.commands.find(cmd => cmd.name() === 'peering');
+    it('should register peering command at top level', () => {
+      const peeringCommand = program.commands.find(cmd => cmd.name() === 'peering');
       
       expect(peeringCommand).toBeDefined();
       expect(peeringCommand?.description()).toBe('VNet Peering operations');
     });
 
     it('should register peering list-topologies command', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
-      const peeringCommand = networkCommand?.commands.find(cmd => cmd.name() === 'peering');
+      const peeringCommand = program.commands.find(cmd => cmd.name() === 'peering');
       const listTopologiesCommand = peeringCommand?.commands.find(cmd => cmd.name() === 'list-topologies');
       
       expect(listTopologiesCommand).toBeDefined();
@@ -223,12 +243,10 @@ describe('VmPlugin CLI Commands', () => {
 
   describe('Command Count', () => {
     it('should have comprehensive command coverage', () => {
-      const networkCommand = program.commands.find(cmd => cmd.name() === 'network');
+      // Should have 8 top-level commands: vm + 7 networking resource types
+      const commandNames = program.commands.map(cmd => cmd.name());
       
-      // Should have all 7 networking subcommand groups
-      expect(networkCommand?.commands.length).toBeGreaterThanOrEqual(7);
-      
-      const commandNames = networkCommand?.commands.map(cmd => cmd.name()) || [];
+      expect(commandNames).toContain('vm');
       expect(commandNames).toContain('vnet');
       expect(commandNames).toContain('subnet');
       expect(commandNames).toContain('nsg');
@@ -236,6 +254,9 @@ describe('VmPlugin CLI Commands', () => {
       expect(commandNames).toContain('appgw');
       expect(commandNames).toContain('bastion');
       expect(commandNames).toContain('peering');
+      
+      // Verify total count
+      expect(program.commands.length).toBeGreaterThanOrEqual(8);
     });
   });
 });

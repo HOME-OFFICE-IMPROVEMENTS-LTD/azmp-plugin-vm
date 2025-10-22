@@ -203,14 +203,11 @@ export class VmPlugin implements IPlugin {
       });
 
     // ========================================
-    // Networking Commands
+    // Networking Commands (Top-Level)
     // ========================================
-    const networkCommand = program
-      .command('network')
-      .description('Networking commands for VNets, subnets, NSGs, and load balancers');
 
     // VNet Commands
-    const vnetCommand = networkCommand
+    const vnetCommand = program
       .command('vnet')
       .description('Virtual Network operations');
 
@@ -244,7 +241,7 @@ export class VmPlugin implements IPlugin {
       });
 
     // Subnet Commands
-    const subnetCommand = networkCommand
+    const subnetCommand = program
       .command('subnet')
       .description('Subnet operations');
 
@@ -263,7 +260,7 @@ export class VmPlugin implements IPlugin {
       });
 
     // NSG Commands
-    const nsgCommand = networkCommand
+    const nsgCommand = program
       .command('nsg')
       .description('Network Security Group operations');
 
@@ -297,7 +294,7 @@ export class VmPlugin implements IPlugin {
       });
 
     // Load Balancer Commands
-    const lbCommand = networkCommand
+    const lbCommand = program
       .command('lb')
       .description('Load Balancer operations');
 
@@ -316,7 +313,7 @@ export class VmPlugin implements IPlugin {
       });
 
     // Application Gateway Commands
-    const appgwCommand = networkCommand
+    const appgwCommand = program
       .command('appgw')
       .description('Application Gateway operations');
 
@@ -334,7 +331,7 @@ export class VmPlugin implements IPlugin {
       });
 
     // Bastion Commands
-    const bastionCommand = networkCommand
+    const bastionCommand = program
       .command('bastion')
       .description('Azure Bastion operations');
 
@@ -351,7 +348,7 @@ export class VmPlugin implements IPlugin {
       });
 
     // Peering Commands
-    const peeringCommand = networkCommand
+    const peeringCommand = program
       .command('peering')
       .description('VNet Peering operations');
 
