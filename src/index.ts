@@ -60,6 +60,28 @@ import {
   NsgTemplateKey,
   SERVICE_TAGS,
 } from './networking/nsg';
+import {
+  getHealthProbe,
+  getAllHealthProbes,
+  getHealthProbesByProtocol,
+  getBackendPool,
+  getAllBackendPools,
+  getLoadBalancingRule,
+  getAllLoadBalancingRules,
+  getInboundNatRule,
+  getAllInboundNatRules,
+  getLoadBalancerTemplate,
+  getAllLoadBalancerTemplates,
+  validateProbeInterval,
+  validateNumberOfProbes,
+  validateIdleTimeout,
+  calculateHealthCheckDuration,
+  HealthProbeKey,
+  BackendPoolKey,
+  LoadBalancingRuleKey,
+  InboundNatRuleKey,
+  LoadBalancerTemplateKey,
+} from './networking/loadbalancer';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -637,6 +659,161 @@ export class VmPlugin implements IPlugin {
         if (!rule) return key;
         return `${rule.direction} ${rule.access} ${rule.protocol}:${rule.destinationPortRange} (Priority: ${rule.priority})`;
       },
+
+      // ========================================
+      // Phase 2: Load Balancer Helpers
+      // ========================================
+
+      /**
+       * Get Load Balancer template (Phase 2)
+       */
+      'lb-template': (key: string): string => {
+        const template = getLoadBalancerTemplate(key as LoadBalancerTemplateKey);
+        return template ? JSON.stringify(template, null, 2) : '{}';
+      },
+
+      /**
+       * Get Load Balancer template name (Phase 2)
+       */
+      'lb-template-name': (key: string): string => {
+        const template = getLoadBalancerTemplate(key as LoadBalancerTemplateKey);
+        return template?.name || key;
+      },
+
+      /**
+       * Get Load Balancer SKU (Phase 2)
+       */
+      'lb-sku': (key: string): string => {
+        const template = getLoadBalancerTemplate(key as LoadBalancerTemplateKey);
+        return template?.sku || 'Standard';
+      },
+
+      /**
+       * Check if Load Balancer is public (Phase 2)
+       */
+      'lb-is-public': (key: string): boolean => {
+        const template = getLoadBalancerTemplate(key as LoadBalancerTemplateKey);
+        return template?.isPublic || false;
+      },
+
+      /**
+       * Get health probe configuration (Phase 2)
+       */
+      'lb-health-probe': (key: string): string => {
+        const probe = getHealthProbe(key as HealthProbeKey);
+        return probe ? JSON.stringify(probe, null, 2) : '{}';
+      },
+
+      /**
+       * Get health probe protocol (Phase 2)
+       */
+      'lb-probe-protocol': (key: string): string => {
+        const probe = getHealthProbe(key as HealthProbeKey);
+        return probe?.protocol || 'Tcp';
+      },
+
+      /**
+       * Get health probe port (Phase 2)
+       */
+      'lb-probe-port': (key: string): number => {
+        const probe = getHealthProbe(key as HealthProbeKey);
+        return probe?.port || 80;
+      },
+
+      /**
+       * Get health probe interval (Phase 2)
+       */
+      'lb-probe-interval': (key: string): number => {
+        const probe = getHealthProbe(key as HealthProbeKey);
+        return probe?.intervalInSeconds || 15;
+      },
+
+      /**
+       * Get health probe threshold (Phase 2)
+       */
+      'lb-probe-threshold': (key: string): number => {
+        const probe = getHealthProbe(key as HealthProbeKey);
+        return probe?.numberOfProbes || 2;
+      },
+
+      /**
+       * Calculate health check duration (Phase 2)
+       */
+      'lb-probe-duration': (key: string): number => {
+        const probe = getHealthProbe(key as HealthProbeKey);
+        if (!probe) return 30;
+        return calculateHealthCheckDuration(probe.intervalInSeconds, probe.numberOfProbes);
+      },
+
+      /**
+       * Get backend pool name (Phase 2)
+       */
+      'lb-backend-pool': (key: string): string => {
+        const pool = getBackendPool(key as BackendPoolKey);
+        return pool?.name || 'default-backend-pool';
+      },
+
+      /**
+       * Get load balancing rule (Phase 2)
+       */
+      'lb-rule': (key: string): string => {
+        const rule = getLoadBalancingRule(key as LoadBalancingRuleKey);
+        return rule ? JSON.stringify(rule, null, 2) : '{}';
+      },
+
+      /**
+       * Get load balancing rule protocol (Phase 2)
+       */
+      'lb-rule-protocol': (key: string): string => {
+        const rule = getLoadBalancingRule(key as LoadBalancingRuleKey);
+        return rule?.protocol || 'Tcp';
+      },
+
+      /**
+       * Get load balancing rule frontend port (Phase 2)
+       */
+      'lb-rule-frontend-port': (key: string): number => {
+        const rule = getLoadBalancingRule(key as LoadBalancingRuleKey);
+        return rule?.frontendPort || 80;
+      },
+
+      /**
+       * Get load balancing rule backend port (Phase 2)
+       */
+      'lb-rule-backend-port': (key: string): number => {
+        const rule = getLoadBalancingRule(key as LoadBalancingRuleKey);
+        return rule?.backendPort || 80;
+      },
+
+      /**
+       * Get inbound NAT rule (Phase 2)
+       */
+      'lb-nat-rule': (key: string): string => {
+        const rule = getInboundNatRule(key as InboundNatRuleKey);
+        return rule ? JSON.stringify(rule, null, 2) : '{}';
+      },
+
+      /**
+       * Generate Load Balancer resource name (Phase 2)
+       */
+      'lb-name': (baseName: string, isPublic: boolean = true): string => {
+        const prefix = isPublic ? 'lb-public' : 'lb-internal';
+        return `${prefix}-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      },
+
+      /**
+       * Validate probe interval (Phase 2)
+       */
+      'lb-validate-interval': (interval: number): boolean => {
+        return validateProbeInterval(interval).valid;
+      },
+
+      /**
+       * Validate idle timeout (Phase 2)
+       */
+      'lb-validate-timeout': (timeout: number): boolean => {
+        return validateIdleTimeout(timeout).valid;
+      },
     };
   }
 
@@ -1189,6 +1366,136 @@ export class VmPlugin implements IPlugin {
         });
 
         logger.info(`Total: ${results.length} template(s)`);
+      });
+
+    // ========================================
+    // Phase 2: Load Balancer Commands
+    // ========================================
+
+    // List Load Balancer templates
+    networkCommand
+      .command('list-lb-templates')
+      .description('List available Load Balancer templates')
+      .option('-t, --type <type>', 'Filter by type (public, internal)')
+      .option('-s, --search <query>', 'Search templates by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available Load Balancer Templates\n');
+
+        const templates = getAllLoadBalancerTemplates();
+        let results = templates;
+
+        // Filter by type
+        if (options.type) {
+          const isPublic = options.type.toLowerCase() === 'public';
+          results = templates.filter(({ template }) => template.isPublic === isPublic);
+          logger.info(`Type: ${options.type}\n`);
+        }
+
+        // Search filter
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = results.filter(
+            ({ key, template }) =>
+              key.toLowerCase().includes(query) ||
+              template.name.toLowerCase().includes(query) ||
+              template.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No Load Balancer templates found');
+          return;
+        }
+
+        results.forEach(({ key, template }) => {
+          logger.info(`${template.name} (${key})`);
+          logger.info(`  Description: ${template.description}`);
+          logger.info(`  SKU: ${template.sku}`);
+          logger.info(`  Tier: ${template.tier}`);
+          logger.info(`  Type: ${template.isPublic ? 'Public' : 'Internal'}`);
+          logger.info(`  Health Probes: ${template.healthProbes.length}`);
+          template.healthProbes.forEach((probeKey) => {
+            const probe = getHealthProbe(probeKey as HealthProbeKey);
+            if (probe) {
+              logger.info(`    - ${probe.name} (${probe.protocol}:${probe.port})`);
+            }
+          });
+          logger.info(`  Backend Pools: ${template.backendPools.length}`);
+          template.backendPools.forEach((poolKey) => {
+            const pool = getBackendPool(poolKey as BackendPoolKey);
+            if (pool) {
+              logger.info(`    - ${pool.name}`);
+            }
+          });
+          logger.info(`  Load Balancing Rules: ${template.loadBalancingRules.length}`);
+          template.loadBalancingRules.forEach((ruleKey) => {
+            const rule = getLoadBalancingRule(ruleKey as LoadBalancingRuleKey);
+            if (rule) {
+              logger.info(`    - ${rule.name} (${rule.protocol}:${rule.frontendPort}→${rule.backendPort})`);
+            }
+          });
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} template(s)`);
+      });
+
+    // List health probes
+    networkCommand
+      .command('list-health-probes')
+      .description('List available health probe configurations')
+      .option('-p, --protocol <protocol>', 'Filter by protocol (Http, Https, Tcp)')
+      .option('-s, --search <query>', 'Search probes by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available Health Probe Configurations\n');
+
+        let results = getAllHealthProbes();
+
+        // Filter by protocol
+        if (options.protocol) {
+          results = getHealthProbesByProtocol(options.protocol as 'Http' | 'Https' | 'Tcp');
+          logger.info(`Protocol: ${options.protocol}\n`);
+        }
+
+        // Search filter
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = results.filter(
+            ({ key, probe }) =>
+              key.toLowerCase().includes(query) ||
+              probe.name.toLowerCase().includes(query) ||
+              probe.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No health probes found');
+          return;
+        }
+
+        results.forEach(({ key, probe }) => {
+          logger.info(`${probe.name} (${key})`);
+          logger.info(`  Description: ${probe.description}`);
+          logger.info(`  Protocol: ${probe.protocol}`);
+          logger.info(`  Port: ${probe.port}`);
+          if ('requestPath' in probe && probe.requestPath) {
+            logger.info(`  Path: ${probe.requestPath}`);
+          }
+          logger.info(`  Interval: ${probe.intervalInSeconds}s`);
+          logger.info(`  Threshold: ${probe.numberOfProbes} probes`);
+          logger.info(`  Duration: ${calculateHealthCheckDuration(probe.intervalInSeconds, probe.numberOfProbes)}s`);
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} probe(s)`);
       });
   }
 }

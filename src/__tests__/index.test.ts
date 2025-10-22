@@ -437,6 +437,132 @@ describe('VmPlugin', () => {
       expect(result).toContain('80');
       expect(result).toContain('100'); // Priority
     });
+
+    // ========================================
+    // Phase 2: Load Balancer Helpers Tests
+    // ========================================
+
+    it('should provide lb-template helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-template']('public-web');
+      const parsed = JSON.parse(result);
+      expect(parsed).toHaveProperty('name');
+      expect(parsed).toHaveProperty('sku');
+      expect(parsed.isPublic).toBe(true);
+    });
+
+    it('should provide lb-template-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-template-name']('public-web');
+      expect(result).toBe('Public Web Load Balancer');
+    });
+
+    it('should provide lb-sku helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-sku']('public-web');
+      expect(result).toBe('Standard');
+    });
+
+    it('should provide lb-is-public helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-is-public']('public-web')).toBe(true);
+      expect(helpers['lb-is-public']('internal-app')).toBe(false);
+    });
+
+    it('should provide lb-health-probe helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-health-probe']('http-80');
+      const parsed = JSON.parse(result);
+      expect(parsed.protocol).toBe('Http');
+      expect(parsed.port).toBe(80);
+    });
+
+    it('should provide lb-probe-protocol helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-probe-protocol']('http-80')).toBe('Http');
+      expect(helpers['lb-probe-protocol']('tcp-443')).toBe('Tcp');
+    });
+
+    it('should provide lb-probe-port helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-probe-port']('http-80')).toBe(80);
+      expect(helpers['lb-probe-port']('https-443')).toBe(443);
+    });
+
+    it('should provide lb-probe-interval helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-probe-interval']('http-80');
+      expect(result).toBe(15);
+    });
+
+    it('should provide lb-probe-threshold helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-probe-threshold']('http-80');
+      expect(result).toBe(2);
+    });
+
+    it('should provide lb-probe-duration helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-probe-duration']('http-80');
+      expect(result).toBe(30); // 15 seconds * 2 probes
+    });
+
+    it('should provide lb-backend-pool helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-backend-pool']('web-pool');
+      expect(result).toBe('web-backend-pool');
+    });
+
+    it('should provide lb-rule helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-rule']('http-rule');
+      const parsed = JSON.parse(result);
+      expect(parsed.frontendPort).toBe(80);
+      expect(parsed.backendPort).toBe(80);
+    });
+
+    it('should provide lb-rule-protocol helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-rule-protocol']('http-rule')).toBe('Tcp');
+    });
+
+    it('should provide lb-rule-frontend-port helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-rule-frontend-port']('http-rule')).toBe(80);
+      expect(helpers['lb-rule-frontend-port']('https-rule')).toBe(443);
+    });
+
+    it('should provide lb-rule-backend-port helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-rule-backend-port']('http-rule')).toBe(80);
+      expect(helpers['lb-rule-backend-port']('https-rule')).toBe(443);
+    });
+
+    it('should provide lb-nat-rule helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['lb-nat-rule']('ssh-nat');
+      const parsed = JSON.parse(result);
+      expect(parsed.frontendPort).toBe(2222);
+      expect(parsed.backendPort).toBe(22);
+    });
+
+    it('should provide lb-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-name']('myapp', true)).toBe('lb-public-myapp');
+      expect(helpers['lb-name']('myapp', false)).toBe('lb-internal-myapp');
+    });
+
+    it('should provide lb-validate-interval helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-validate-interval'](15)).toBe(true);
+      expect(helpers['lb-validate-interval'](3)).toBe(false); // Too low
+    });
+
+    it('should provide lb-validate-timeout helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['lb-validate-timeout'](10)).toBe(true);
+      expect(helpers['lb-validate-timeout'](3)).toBe(false); // Too low
+    });
   });
 
   describe('Cleanup', () => {
