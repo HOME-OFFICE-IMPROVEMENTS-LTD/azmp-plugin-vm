@@ -30,7 +30,7 @@ describe('VmPlugin', () => {
     it('should have correct metadata', () => {
       expect(plugin.metadata.id).toBe('vm');
       expect(plugin.metadata.name).toBe('Virtual Machine Plugin');
-      expect(plugin.metadata.version).toBe('1.0.0');
+      expect(plugin.metadata.version).toBe('1.1.0');
     });
   });
 
@@ -103,21 +103,47 @@ describe('VmPlugin', () => {
       expect(typeof helpers['vm-size']).toBe('function');
     });
 
-    it('should format VM size with description', () => {
+    it('should format VM size with full details (Phase 1)', () => {
       const result = helpers['vm-size']('Standard_D2s_v3');
-      expect(result).toContain('2 vCPUs');
-      expect(result).toContain('8 GB RAM');
+      expect(result).toContain('Standard_D2s_v3');
+      expect(result).toContain('2');
+      expect(result).toContain('8 GiB');
     });
 
-    it('should provide vm-image helper', () => {
+    it('should provide vm-size-family helper (Phase 1)', () => {
+      expect(helpers['vm-size-family']).toBeDefined();
+      const result = helpers['vm-size-family']('general-purpose');
+      expect(result).toBe('General Purpose');
+    });
+
+    it('should provide vm-size-workloads helper (Phase 1)', () => {
+      expect(helpers['vm-size-workloads']).toBeDefined();
+      const result = helpers['vm-size-workloads']('Standard_D2s_v3');
+      expect(result).toContain('General-purpose computing');
+    });
+
+    it('should provide vm-image helper with image key (Phase 1)', () => {
       expect(helpers['vm-image']).toBeDefined();
-      const result = helpers['vm-image']('Canonical', 'UbuntuServer', '22.04-LTS');
+      const result = helpers['vm-image']('ubuntu-22.04');
       const parsed = JSON.parse(result);
       
       expect(parsed.publisher).toBe('Canonical');
-      expect(parsed.offer).toBe('UbuntuServer');
-      expect(parsed.sku).toBe('22.04-LTS');
+      expect(parsed.offer).toContain('ubuntu');
       expect(parsed.version).toBe('latest');
+    });
+
+    it('should provide vm-image-publisher helper (Phase 1)', () => {
+      expect(helpers['vm-image-publisher']).toBeDefined();
+      const result = helpers['vm-image-publisher']('windows-2022');
+      expect(result).toBe('MicrosoftWindowsServer');
+    });
+
+    it('should provide vm-image-os helper (Phase 1)', () => {
+      expect(helpers['vm-image-os']).toBeDefined();
+      const windowsOs = helpers['vm-image-os']('windows-2022');
+      const linuxOs = helpers['vm-image-os']('ubuntu-22.04');
+      expect(windowsOs).toBe('Windows');
+      expect(linuxOs).toBe('Linux');
     });
 
     it('should provide vm-resource-name helper', () => {
@@ -130,6 +156,44 @@ describe('VmPlugin', () => {
       const result = helpers['vm-resource-name']('My VM!', 'Public_IP');
       expect(result).toMatch(/^[a-z0-9-]+$/);
     });
+
+    it('should provide vm-storage-name helper (Phase 1)', () => {
+      expect(helpers['vm-storage-name']).toBeDefined();
+      const result = helpers['vm-storage-name']('My-Storage-Account-Name');
+      expect(result).toMatch(/^[a-z0-9]+$/);
+      expect(result.length).toBeLessThanOrEqual(24);
+    });
+
+    it('should provide vm-nic-name helper (Phase 1)', () => {
+      expect(helpers['vm-nic-name']).toBeDefined();
+      const result = helpers['vm-nic-name']('myvm');
+      expect(result).toBe('myvm-nic');
+    });
+
+    it('should provide vm-pip-name helper (Phase 1)', () => {
+      expect(helpers['vm-pip-name']).toBeDefined();
+      const result = helpers['vm-pip-name']('myvm');
+      expect(result).toBe('myvm-pip');
+    });
+
+    it('should provide vm-nsg-name helper (Phase 1)', () => {
+      expect(helpers['vm-nsg-name']).toBeDefined();
+      const result = helpers['vm-nsg-name']('myvm');
+      expect(result).toBe('myvm-nsg');
+    });
+
+    it('should provide vm-storage-type helper (Phase 1)', () => {
+      expect(helpers['vm-storage-type']).toBeDefined();
+      const result = helpers['vm-storage-type']('Premium_LRS');
+      expect(result).toContain('Premium');
+      expect(result).toContain('SSD');
+    });
+
+    it('should provide vm-supports-premium helper (Phase 1)', () => {
+      expect(helpers['vm-supports-premium']).toBeDefined();
+      expect(helpers['vm-supports-premium']('Standard_D2s_v3')).toBe(true);
+      expect(helpers['vm-supports-premium']('Standard_D2_v3')).toBe(false);
+    });
   });
 
   describe('CLI Commands', () => {
@@ -138,6 +202,7 @@ describe('VmPlugin', () => {
         command: jest.fn().mockReturnThis(),
         description: jest.fn().mockReturnThis(),
         option: jest.fn().mockReturnThis(),
+        requiredOption: jest.fn().mockReturnThis(),
         action: jest.fn().mockReturnThis()
       };
 
