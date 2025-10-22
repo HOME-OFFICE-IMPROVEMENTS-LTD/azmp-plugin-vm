@@ -1,0 +1,14 @@
+{
+  "plugins": [
+    {
+      "package": "../azmp-plugin-vm",
+      "enabled": true,
+      "options": {
+        "defaultVmSize": "Standard_D2s_v3",
+        "includeDiagnostics": true,
+        "includePublicIp": true,
+        "includeNsg": true
+      }
+    }
+  ]
+}
