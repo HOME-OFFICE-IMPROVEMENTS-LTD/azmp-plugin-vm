@@ -10,6 +10,7 @@
 import { IPlugin, PluginMetadata, TemplateDefinition, PluginContext } from './types';
 import { Command } from 'commander';
 import * as path from 'path';
+import { getNetworkingHelpers } from './networking';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -118,7 +119,11 @@ export class VmPlugin implements IPlugin {
    * Get Handlebars helpers
    */
   getHandlebarsHelpers(): Record<string, (...args: any[]) => any> {
-    return {
+    // Get networking helpers with net: namespace
+    const networkingHelpers = getNetworkingHelpers();
+    
+    // Combine VM helpers with networking helpers
+    const vmHelpers = {
       /**
        * Format VM size with description
        */
@@ -153,6 +158,12 @@ export class VmPlugin implements IPlugin {
       'vm-resource-name': (baseName: string, suffix: string): string => {
         return `${baseName}-${suffix}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
       }
+    };
+
+    // Return combined helpers (VM + Networking)
+    return {
+      ...vmHelpers,
+      ...networkingHelpers
     };
   }
 
