@@ -336,6 +336,109 @@ describe('VmPlugin', () => {
     });
   });
 
+  describe('Phase 2: NSG Helpers', () => {
+    it('should provide nsg-rule helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers).toHaveProperty('nsg-rule');
+
+      const result = helpers['nsg-rule']('allow-http');
+      expect(result).toContain('Allow-HTTP');
+      expect(result).toContain('80');
+    });
+
+    it('should provide nsg-rule-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-rule-name']('allow-http')).toBe('Allow-HTTP');
+      expect(helpers['nsg-rule-name']('allow-https')).toBe('Allow-HTTPS');
+      expect(helpers['nsg-rule-name']('allow-ssh')).toBe('Allow-SSH');
+    });
+
+    it('should provide nsg-rule-priority helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-rule-priority']('allow-http')).toBe(100);
+      expect(helpers['nsg-rule-priority']('allow-https')).toBe(110);
+      expect(helpers['nsg-rule-priority']('allow-ssh')).toBe(200);
+    });
+
+    it('should provide nsg-rule-direction helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-rule-direction']('allow-http')).toBe('Inbound');
+      expect(helpers['nsg-rule-direction']('allow-smtp')).toBe('Outbound');
+    });
+
+    it('should provide nsg-rule-port helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-rule-port']('allow-http')).toBe('80');
+      expect(helpers['nsg-rule-port']('allow-https')).toBe('443');
+      expect(helpers['nsg-rule-port']('allow-ssh')).toBe('22');
+    });
+
+    it('should provide nsg-rule-protocol helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-rule-protocol']('allow-http')).toBe('Tcp');
+      expect(helpers['nsg-rule-protocol']('allow-dns')).toBe('*');
+    });
+
+    it('should validate NSG priority (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-validate-priority'](100)).toBe(true);
+      expect(helpers['nsg-validate-priority'](4096)).toBe(true);
+      expect(helpers['nsg-validate-priority'](50)).toBe(false);
+      expect(helpers['nsg-validate-priority'](5000)).toBe(false);
+    });
+
+    it('should validate port range (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-validate-port']('*')).toBe(true);
+      expect(helpers['nsg-validate-port']('80')).toBe(true);
+      expect(helpers['nsg-validate-port']('80-443')).toBe(true);
+      expect(helpers['nsg-validate-port']('invalid')).toBe(false);
+    });
+
+    it('should provide nsg-template helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['nsg-template']('web-server');
+      expect(result).toContain('Web Server');
+      expect(result).toContain('allow-http');
+      expect(result).toContain('allow-https');
+    });
+
+    it('should provide nsg-template-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-template-name']('web-server')).toBe('Web Server');
+      expect(helpers['nsg-template-name']('database-server')).toBe('Database Server');
+    });
+
+    it('should provide nsg-template-rule-count helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-template-rule-count']('web-server')).toBe(2); // HTTP + HTTPS
+      expect(helpers['nsg-template-rule-count']('database-server')).toBe(3); // SQL + MySQL + PostgreSQL
+    });
+
+    it('should provide nsg-service-tag helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['nsg-service-tag']('Internet');
+      expect(result).toContain('Internet');
+      expect(result).toContain('public internet');
+    });
+
+    it('should provide nsg-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['nsg-name']('myapp')).toBe('nsg-myapp');
+      expect(helpers['nsg-name']('test-web')).toBe('nsg-test-web');
+    });
+
+    it('should provide nsg-rule-summary helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['nsg-rule-summary']('allow-http');
+      expect(result).toContain('Inbound');
+      expect(result).toContain('Allow');
+      expect(result).toContain('Tcp');
+      expect(result).toContain('80');
+      expect(result).toContain('100'); // Priority
+    });
+  });
+
   describe('Cleanup', () => {
     it('should cleanup resources', async () => {
       await plugin.initialize(mockContext);

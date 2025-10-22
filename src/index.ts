@@ -45,6 +45,21 @@ import {
   SubnetPatternKey,
   RESERVED_SUBNET_NAMES,
 } from './networking/subnets';
+import {
+  getNsgRule,
+  getAllNsgRules,
+  getNsgRulesByDirection,
+  getNsgRulesByProtocol,
+  getNsgTemplate,
+  getAllNsgTemplates,
+  validateNsgPriority,
+  validatePortRange,
+  getServiceTagDescription,
+  createNsgRule,
+  NsgRuleKey,
+  NsgTemplateKey,
+  SERVICE_TAGS,
+} from './networking/nsg';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -509,6 +524,119 @@ export class VmPlugin implements IPlugin {
       'subnet-name': (vnetName: string, subnetType: string): string => {
         return `${vnetName}-subnet-${subnetType}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
       },
+
+      // ========================================
+      // Phase 2: NSG Helpers
+      // ========================================
+
+      /**
+       * Get NSG rule configuration (Phase 2)
+       */
+      'nsg-rule': (key: string): string => {
+        const rule = getNsgRule(key as NsgRuleKey);
+        return rule ? JSON.stringify(rule, null, 2) : '{}';
+      },
+
+      /**
+       * Get NSG rule name (Phase 2)
+       */
+      'nsg-rule-name': (key: string): string => {
+        const rule = getNsgRule(key as NsgRuleKey);
+        return rule?.name || key;
+      },
+
+      /**
+       * Get NSG rule priority (Phase 2)
+       */
+      'nsg-rule-priority': (key: string): number => {
+        const rule = getNsgRule(key as NsgRuleKey);
+        return rule?.priority || 1000;
+      },
+
+      /**
+       * Get NSG rule direction (Phase 2)
+       */
+      'nsg-rule-direction': (key: string): string => {
+        const rule = getNsgRule(key as NsgRuleKey);
+        return rule?.direction || 'Inbound';
+      },
+
+      /**
+       * Get NSG rule port (Phase 2)
+       */
+      'nsg-rule-port': (key: string): string => {
+        const rule = getNsgRule(key as NsgRuleKey);
+        return rule?.destinationPortRange || '*';
+      },
+
+      /**
+       * Get NSG rule protocol (Phase 2)
+       */
+      'nsg-rule-protocol': (key: string): string => {
+        const rule = getNsgRule(key as NsgRuleKey);
+        return rule?.protocol || 'Tcp';
+      },
+
+      /**
+       * Validate NSG priority (Phase 2)
+       */
+      'nsg-validate-priority': (priority: number): boolean => {
+        return validateNsgPriority(priority).valid;
+      },
+
+      /**
+       * Validate port range (Phase 2)
+       */
+      'nsg-validate-port': (portRange: string): boolean => {
+        return validatePortRange(portRange).valid;
+      },
+
+      /**
+       * Get NSG template (Phase 2)
+       */
+      'nsg-template': (key: string): string => {
+        const template = getNsgTemplate(key as NsgTemplateKey);
+        return template ? JSON.stringify(template, null, 2) : '{}';
+      },
+
+      /**
+       * Get NSG template name (Phase 2)
+       */
+      'nsg-template-name': (key: string): string => {
+        const template = getNsgTemplate(key as NsgTemplateKey);
+        return template?.name || key;
+      },
+
+      /**
+       * Get NSG template rule count (Phase 2)
+       */
+      'nsg-template-rule-count': (key: string): number => {
+        const template = getNsgTemplate(key as NsgTemplateKey);
+        return template?.rules.length || 0;
+      },
+
+      /**
+       * Get service tag description (Phase 2)
+       */
+      'nsg-service-tag': (tag: string): string => {
+        return getServiceTagDescription(tag as keyof typeof SERVICE_TAGS) || tag;
+      },
+
+      /**
+       * Generate NSG resource name (Phase 2)
+       */
+      'nsg-name': (baseName: string): string => {
+        return `nsg-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      },
+
+      /**
+       * Format NSG rule summary (Phase 2)
+       */
+      'nsg-rule-summary': (key: string): string => {
+        const rule = getNsgRule(key as NsgRuleKey);
+        if (!rule) return key;
+        return `${rule.direction} ${rule.access} ${rule.protocol}:${rule.destinationPortRange} (Priority: ${rule.priority})`;
+      },
     };
   }
 
@@ -951,6 +1079,116 @@ export class VmPlugin implements IPlugin {
 
         logger.info('');
         logger.info('Validation complete');
+      });
+
+    // ========================================
+    // Phase 2: NSG Commands
+    // ========================================
+
+    // List NSG rules
+    networkCommand
+      .command('list-nsg-rules')
+      .description('List available NSG security rules')
+      .option('-d, --direction <direction>', 'Filter by direction (Inbound, Outbound)')
+      .option('-p, --protocol <protocol>', 'Filter by protocol (Tcp, Udp, Icmp, *)')
+      .option('-s, --search <query>', 'Search rules by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available NSG Security Rules\n');
+
+        let results = getAllNsgRules();
+
+        // Filter by direction
+        if (options.direction) {
+          results = getNsgRulesByDirection(options.direction as 'Inbound' | 'Outbound');
+          logger.info(`Direction: ${options.direction}\n`);
+        }
+
+        // Filter by protocol
+        if (options.protocol) {
+          results = getNsgRulesByProtocol(options.protocol as 'Tcp' | 'Udp' | 'Icmp' | '*');
+          logger.info(`Protocol: ${options.protocol}\n`);
+        }
+
+        // Search filter
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = results.filter(
+            ({ key, rule }) =>
+              key.toLowerCase().includes(query) ||
+              rule.name.toLowerCase().includes(query) ||
+              rule.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No NSG rules found');
+          return;
+        }
+
+        results.forEach(({ key, rule }) => {
+          logger.info(`${rule.name} (${key})`);
+          logger.info(`  Description: ${rule.description}`);
+          logger.info(`  Direction: ${rule.direction}`);
+          logger.info(`  Access: ${rule.access}`);
+          logger.info(`  Protocol: ${rule.protocol}`);
+          logger.info(`  Port: ${rule.destinationPortRange}`);
+          logger.info(`  Priority: ${rule.priority}`);
+          logger.info(`  Source: ${rule.sourceAddressPrefix}`);
+          logger.info(`  Destination: ${rule.destinationAddressPrefix}`);
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} rule(s)`);
+      });
+
+    // List NSG templates
+    networkCommand
+      .command('list-nsg-templates')
+      .description('List available NSG templates')
+      .option('-s, --search <query>', 'Search templates by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available NSG Templates\n');
+
+        const templates = getAllNsgTemplates();
+        let results = templates;
+
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = templates.filter(
+            ({ key, template }) =>
+              key.toLowerCase().includes(query) ||
+              template.name.toLowerCase().includes(query) ||
+              template.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No NSG templates found');
+          return;
+        }
+
+        results.forEach(({ key, template }) => {
+          logger.info(`${template.name} (${key})`);
+          logger.info(`  Description: ${template.description}`);
+          logger.info(`  Rules: ${template.rules.length}`);
+          template.rules.forEach((ruleKey) => {
+            const rule = getNsgRule(ruleKey);
+            if (rule) {
+              logger.info(`    - ${rule.name} (${rule.direction} ${rule.access} ${rule.protocol}:${rule.destinationPortRange})`);
+            }
+          });
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} template(s)`);
       });
   }
 }
