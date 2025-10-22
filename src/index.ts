@@ -224,6 +224,209 @@ export class VmPlugin implements IPlugin {
       });
 
     // ========================================
+    // Availability Commands
+    // ========================================
+    const availCommand = program
+      .command('availability')
+      .description('High Availability commands');
+
+    availCommand
+      .command('list-zones')
+      .description('List available availability zones for a region')
+      .option('-r, --region <region>', 'Azure region', 'eastus')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const zones = helpers['avail:getAvailableZones'](options.region);
+          this.context.logger.info(`Availability zones in ${options.region}: ${zones.join(', ')}`);
+        }
+      });
+
+    availCommand
+      .command('check-zone-support')
+      .description('Check if a region supports availability zones')
+      .option('-r, --region <region>', 'Azure region', 'eastus')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const supported = helpers['avail:supportsAvailabilityZones'](options.region);
+          this.context.logger.info(`Zone support for ${options.region}: ${supported ? 'Yes' : 'No'}`);
+        }
+      });
+
+    availCommand
+      .command('calculate-sla')
+      .description('Calculate SLA for availability configuration')
+      .option('-t, --type <type>', 'Configuration type (set, zone, vmss)', 'set')
+      .option('-o, --orchestration <mode>', 'VMSS orchestration mode', 'Flexible')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          let sla: number;
+          if (options.type === 'set') {
+            sla = helpers['avail:availabilitySetSLA']();
+          } else if (options.type === 'zone') {
+            sla = helpers['avail:availabilityZoneSLA']();
+          } else {
+            sla = helpers['avail:vmssSLA'](options.orchestration);
+          }
+          this.context.logger.info(`SLA for ${options.type}: ${sla}%`);
+        }
+      });
+
+    availCommand
+      .command('recommend-config')
+      .description('Recommend high availability configuration')
+      .option('-v, --vm-count <count>', 'Number of VMs', '3')
+      .option('-c, --criticality <level>', 'Workload criticality (low, medium, high)', 'medium')
+      .action((options) => {
+        const vmCount = parseInt(options.vmCount);
+        const criticality = options.criticality.toLowerCase();
+        
+        if (this.context) {
+          this.context.logger.info('Recommended HA Configuration:');
+          
+          if (vmCount === 1) {
+            this.context.logger.info('  Type: Single VM with Premium SSD (SLA: 99.9%)');
+            this.context.logger.info('  Consider: Use availability zones for critical workloads');
+          } else if (vmCount === 2) {
+            if (criticality === 'high') {
+              this.context.logger.info('  Type: 2 VMs across availability zones (SLA: 99.99%)');
+            } else {
+              this.context.logger.info('  Type: Availability Set with 2 fault domains (SLA: 99.95%)');
+            }
+          } else {
+            if (criticality === 'high') {
+              this.context.logger.info('  Type: VMSS Flexible with zone distribution (SLA: 99.99%)');
+            } else {
+              this.context.logger.info('  Type: VMSS Flexible or Availability Set (SLA: 99.95%)');
+            }
+          }
+        }
+      });
+
+    // ========================================
+    // Recovery Commands
+    // ========================================
+    const recoveryCommand = program
+      .command('recovery')
+      .description('Disaster Recovery and Backup commands');
+
+    recoveryCommand
+      .command('estimate-backup')
+      .description('Estimate backup storage requirements')
+      .option('-s, --vm-size <size>', 'VM disk size in GB', '128')
+      .option('-c, --change-rate <rate>', 'Daily change rate (0-1)', '0.05')
+      .option('-r, --retention <days>', 'Retention days', '30')
+      .action((options) => {
+        const vmSize = parseInt(options.vmSize);
+        const changeRate = parseFloat(options.changeRate);
+        const retention = parseInt(options.retention);
+        
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const estimate = helpers['recovery:estimateBackupStorage'](vmSize, changeRate, retention);
+          this.context.logger.info(`Backup storage estimate: ${Math.round(estimate)} GB`);
+          this.context.logger.info(`  VM size: ${vmSize} GB`);
+          this.context.logger.info(`  Daily change: ${(changeRate * 100).toFixed(1)}%`);
+          this.context.logger.info(`  Retention: ${retention} days`);
+        }
+      });
+
+    recoveryCommand
+      .command('list-region-pairs')
+      .description('List Azure region pairs for disaster recovery')
+      .option('-r, --region <region>', 'Source region (optional)')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          
+          if (options.region) {
+            const target = helpers['recovery:getRecommendedTargetRegion'](options.region);
+            this.context.logger.info(`Paired region for ${options.region}: ${target}`);
+          } else {
+            this.context.logger.info('Common Azure region pairs:');
+            this.context.logger.info('  East US → West US');
+            this.context.logger.info('  East US 2 → Central US');
+            this.context.logger.info('  West US 2 → West Central US');
+            this.context.logger.info('  North Europe → West Europe');
+            this.context.logger.info('  Southeast Asia → East Asia');
+            this.context.logger.info('  UK South → UK West');
+          }
+        }
+      });
+
+    recoveryCommand
+      .command('estimate-rto')
+      .description('Estimate Recovery Time Objective')
+      .option('-v, --vm-count <count>', 'Number of VMs', '5')
+      .option('-s, --avg-size <size>', 'Average VM size in GB', '128')
+      .action((options) => {
+        const vmCount = parseInt(options.vmCount);
+        const avgSize = parseInt(options.avgSize);
+        
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const rto = helpers['recovery:estimateRTO'](vmCount, avgSize);
+          this.context.logger.info(`Estimated RTO: ${rto} minutes`);
+          this.context.logger.info(`  VMs to recover: ${vmCount}`);
+          this.context.logger.info(`  Average VM size: ${avgSize} GB`);
+        }
+      });
+
+    recoveryCommand
+      .command('list-backup-presets')
+      .description('List backup policy presets')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available backup presets:');
+          this.context.logger.info('  development: Daily at 2 AM, 7 days retention');
+          this.context.logger.info('  production: Daily at 2 AM, 30 days retention');
+          this.context.logger.info('  longterm: Daily at 2 AM, 365 days retention, monthly/yearly copies');
+        }
+      });
+
+    recoveryCommand
+      .command('list-snapshot-policies')
+      .description('List snapshot retention policies')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available snapshot retention policies:');
+          this.context.logger.info('  hourly: Every hour, 24 snapshots retained');
+          this.context.logger.info('  daily: Daily, 7 snapshots retained');
+          this.context.logger.info('  weekly: Weekly, 4 snapshots retained');
+          this.context.logger.info('  monthly: Monthly, 12 snapshots retained');
+        }
+      });
+
+    recoveryCommand
+      .command('recommend-snapshot-schedule')
+      .description('Recommend snapshot schedule based on workload')
+      .option('-c, --criticality <level>', 'Workload criticality (low, medium, high)', 'medium')
+      .option('-t, --change-frequency <freq>', 'Change frequency (low, medium, high)', 'medium')
+      .action((options) => {
+        const criticality = options.criticality.toLowerCase();
+        const changeFreq = options.changeFrequency.toLowerCase();
+        
+        if (this.context) {
+          this.context.logger.info('Recommended snapshot schedule:');
+          
+          if (criticality === 'high' || changeFreq === 'high') {
+            this.context.logger.info('  Frequency: Hourly');
+            this.context.logger.info('  Retention: 24 snapshots (1 day)');
+            this.context.logger.info('  Additional: Daily snapshots for 7 days');
+          } else if (criticality === 'medium' || changeFreq === 'medium') {
+            this.context.logger.info('  Frequency: Every 4 hours');
+            this.context.logger.info('  Retention: 6 snapshots (1 day)');
+            this.context.logger.info('  Additional: Daily snapshots for 7 days');
+          } else {
+            this.context.logger.info('  Frequency: Daily');
+            this.context.logger.info('  Retention: 7 snapshots (1 week)');
+          }
+        }
+      });
+
+    // ========================================
     // Networking Commands (Top-Level)
     // ========================================
 
