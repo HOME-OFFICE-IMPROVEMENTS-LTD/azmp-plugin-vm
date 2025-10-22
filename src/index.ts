@@ -248,15 +248,12 @@ export class VmPlugin implements IPlugin {
       });
 
     // ========================================
-    // Availability Commands
+    // High Availability Commands (Flat Structure)
     // ========================================
-    const availCommand = program
-      .command('availability')
-      .description('High Availability commands');
-
-    availCommand
-      .command('list-zones')
-      .description('List available availability zones for a region')
+    
+    program
+      .command('zones')
+      .description('List availability zones for a region')
       .option('-r, --region <region>', 'Azure region', 'eastus')
       .action((options) => {
         if (this.context) {
@@ -266,8 +263,8 @@ export class VmPlugin implements IPlugin {
         }
       });
 
-    availCommand
-      .command('check-zone-support')
+    program
+      .command('zone-check')
       .description('Check if a region supports availability zones')
       .option('-r, --region <region>', 'Azure region', 'eastus')
       .action((options) => {
@@ -278,8 +275,8 @@ export class VmPlugin implements IPlugin {
         }
       });
 
-    availCommand
-      .command('calculate-sla')
+    program
+      .command('sla')
       .description('Calculate SLA for availability configuration')
       .option('-t, --type <type>', 'Configuration type (set, zone, vmss)', 'set')
       .option('-o, --orchestration <mode>', 'VMSS orchestration mode', 'Flexible')
@@ -298,8 +295,8 @@ export class VmPlugin implements IPlugin {
         }
       });
 
-    availCommand
-      .command('recommend-config')
+    program
+      .command('ha-config')
       .description('Recommend high availability configuration')
       .option('-v, --vm-count <count>', 'Number of VMs', '3')
       .option('-c, --criticality <level>', 'Workload criticality (low, medium, high)', 'medium')
@@ -330,14 +327,11 @@ export class VmPlugin implements IPlugin {
       });
 
     // ========================================
-    // Recovery Commands
+    // Disaster Recovery Commands (Flat Structure)
     // ========================================
-    const recoveryCommand = program
-      .command('recovery')
-      .description('Disaster Recovery and Backup commands');
-
-    recoveryCommand
-      .command('estimate-backup')
+    
+    program
+      .command('backup-size')
       .description('Estimate backup storage requirements')
       .option('-s, --vm-size <size>', 'VM disk size in GB', '128')
       .option('-c, --change-rate <rate>', 'Daily change rate (0-1)', '0.05')
@@ -357,8 +351,8 @@ export class VmPlugin implements IPlugin {
         }
       });
 
-    recoveryCommand
-      .command('list-region-pairs')
+    program
+      .command('region-pairs')
       .description('List Azure region pairs for disaster recovery')
       .option('-r, --region <region>', 'Source region (optional)')
       .action((options) => {
@@ -380,8 +374,8 @@ export class VmPlugin implements IPlugin {
         }
       });
 
-    recoveryCommand
-      .command('estimate-rto')
+    program
+      .command('rto')
       .description('Estimate Recovery Time Objective')
       .option('-v, --vm-count <count>', 'Number of VMs', '5')
       .option('-s, --avg-size <size>', 'Average VM size in GB', '128')
@@ -398,8 +392,8 @@ export class VmPlugin implements IPlugin {
         }
       });
 
-    recoveryCommand
-      .command('list-backup-presets')
+    program
+      .command('backup-presets')
       .description('List backup policy presets')
       .action(() => {
         if (this.context) {
@@ -410,8 +404,8 @@ export class VmPlugin implements IPlugin {
         }
       });
 
-    recoveryCommand
-      .command('list-snapshot-policies')
+    program
+      .command('snapshot-policies')
       .description('List snapshot retention policies')
       .action(() => {
         if (this.context) {
@@ -423,8 +417,8 @@ export class VmPlugin implements IPlugin {
         }
       });
 
-    recoveryCommand
-      .command('recommend-snapshot-schedule')
+    program
+      .command('snapshot-schedule')
       .description('Recommend snapshot schedule based on workload')
       .option('-c, --criticality <level>', 'Workload criticality (low, medium, high)', 'medium')
       .option('-t, --change-frequency <freq>', 'Change frequency (low, medium, high)', 'medium')
