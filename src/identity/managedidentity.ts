@@ -224,6 +224,7 @@ export function validateManagedIdentityConfig(
   // Type validation
   if (!config.type) {
     errors.push('Identity type is required');
+    return { valid: false, errors, warnings }; // Early return
   }
 
   // User-assigned validation
