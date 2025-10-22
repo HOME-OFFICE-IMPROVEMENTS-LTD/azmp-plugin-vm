@@ -563,6 +563,188 @@ describe('VmPlugin', () => {
       expect(helpers['lb-validate-timeout'](10)).toBe(true);
       expect(helpers['lb-validate-timeout'](3)).toBe(false); // Too low
     });
+
+    // ========================================
+    // Phase 2: Application Gateway Helpers Tests
+    // ========================================
+
+    it('should provide appgw-template helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['appgw-template']('basic-web');
+      const parsed = JSON.parse(result);
+      expect(parsed).toHaveProperty('name');
+      expect(parsed).toHaveProperty('sku');
+    });
+
+    it('should provide appgw-template-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['appgw-template-name']('waf-enabled')).toBe('WAF-Enabled Application Gateway');
+    });
+
+    it('should provide appgw-sku helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['appgw-sku']('basic-web')).toBe('Standard_v2');
+      expect(helpers['appgw-sku']('waf-enabled')).toBe('WAF_v2');
+    });
+
+    it('should provide appgw-waf-enabled helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['appgw-waf-enabled']('basic-web')).toBe(false);
+      expect(helpers['appgw-waf-enabled']('waf-enabled')).toBe(true);
+    });
+
+    it('should provide appgw-capacity helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['appgw-capacity']('basic-web')).toBe(2);
+    });
+
+    it('should provide appgw-http-settings helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['appgw-http-settings']('http-80');
+      const parsed = JSON.parse(result);
+      expect(parsed.port).toBe(80);
+    });
+
+    it('should provide appgw-listener helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['appgw-listener']('http-listener');
+      const parsed = JSON.parse(result);
+      expect(parsed.port).toBe(80);
+    });
+
+    it('should provide appgw-url-path-map helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['appgw-url-path-map']('api-routes');
+      const parsed = JSON.parse(result);
+      expect(parsed.paths).toContain('/api/*');
+    });
+
+    it('should provide appgw-validate-capacity helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['appgw-validate-capacity'](10)).toBe(true);
+      expect(helpers['appgw-validate-capacity'](200)).toBe(false); // Too high
+    });
+
+    it('should provide appgw-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['appgw-name']('myapp')).toBe('appgw-myapp');
+    });
+
+    // ========================================
+    // Phase 2: Bastion Helpers Tests
+    // ========================================
+
+    it('should provide bastion-template helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['bastion-template']('basic');
+      const parsed = JSON.parse(result);
+      expect(parsed).toHaveProperty('name');
+      expect(parsed).toHaveProperty('sku');
+    });
+
+    it('should provide bastion-template-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['bastion-template-name']('standard')).toBe('Standard Azure Bastion');
+    });
+
+    it('should provide bastion-sku helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['bastion-sku']('basic')).toBe('Basic');
+      expect(helpers['bastion-sku']('premium')).toBe('Premium');
+    });
+
+    it('should provide bastion-scale-units helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['bastion-scale-units']('basic')).toBe(2);
+    });
+
+    it('should provide bastion-feature-enabled helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['bastion-feature-enabled']('basic', 'tunneling')).toBe(false);
+      expect(helpers['bastion-feature-enabled']('standard', 'tunneling')).toBe(true);
+    });
+
+    it('should provide bastion-feature helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['bastion-feature']('tunneling');
+      const parsed = JSON.parse(result);
+      expect(parsed).toHaveProperty('name');
+    });
+
+    it('should provide bastion-feature-available helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['bastion-feature-available']('tunneling', 'Basic')).toBe(false);
+      expect(helpers['bastion-feature-available']('tunneling', 'Standard')).toBe(true);
+    });
+
+    it('should provide bastion-recommended-scale helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['bastion-recommended-scale'](40)).toBe(2);
+      expect(helpers['bastion-recommended-scale'](100)).toBe(5);
+    });
+
+    it('should provide bastion-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['bastion-name']('myapp')).toBe('bastion-myapp');
+    });
+
+    // ========================================
+    // Phase 2: VNet Peering Helpers Tests
+    // ========================================
+
+    it('should provide peering-template helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['peering-template']('hub-vnet');
+      const parsed = JSON.parse(result);
+      expect(parsed).toHaveProperty('name');
+      expect(parsed).toHaveProperty('topology');
+    });
+
+    it('should provide peering-template-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['peering-template-name']('hub-vnet')).toBe('Hub VNet Peering');
+    });
+
+    it('should provide peering-topology helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['peering-topology']('hub-vnet')).toBe('hub-spoke');
+      expect(helpers['peering-topology']('mesh-vnet')).toBe('mesh');
+    });
+
+    it('should provide peering-gateway-transit helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['peering-gateway-transit']('hub-vnet')).toBe(true);
+      expect(helpers['peering-gateway-transit']('spoke-vnet')).toBe(false);
+    });
+
+    it('should provide peering-hub-spoke helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['peering-hub-spoke']('single-hub');
+      const parsed = JSON.parse(result);
+      expect(parsed).toHaveProperty('hubVNet');
+    });
+
+    it('should provide peering-scenario helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      const result = helpers['peering-scenario']('multi-tier-app');
+      const parsed = JSON.parse(result);
+      expect(parsed).toHaveProperty('name');
+    });
+
+    it('should provide peering-mesh-count helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['peering-mesh-count'](4)).toBe(6); // 4 * 3 / 2
+    });
+
+    it('should provide peering-hub-spoke-count helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['peering-hub-spoke-count'](3)).toBe(3);
+    });
+
+    it('should provide peering-name helper (Phase 2)', () => {
+      const helpers = plugin.getHandlebarsHelpers();
+      expect(helpers['peering-name']('hub-vnet', 'spoke-vnet')).toBe('peer-hub-vnet-to-spoke-vnet');
+    });
   });
 
   describe('Cleanup', () => {

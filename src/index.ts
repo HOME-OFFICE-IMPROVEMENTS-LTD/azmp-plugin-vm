@@ -82,6 +82,49 @@ import {
   InboundNatRuleKey,
   LoadBalancerTemplateKey,
 } from './networking/loadbalancer';
+import {
+  getAppGatewayTemplate,
+  getAllAppGatewayTemplates,
+  getBackendPool as getAppGwBackendPool,
+  getHttpSettings,
+  getAllHttpSettings,
+  getListener,
+  getAllListeners,
+  getUrlPathMap,
+  getAllUrlPathMaps,
+  validateCapacity,
+  validateRequestTimeout,
+  AppGatewayTemplateKey,
+  BackendPoolKey as AppGwBackendPoolKey,
+  HttpSettingsKey,
+  ListenerKey,
+  UrlPathMapKey,
+} from './networking/appgateway';
+import {
+  getBastionTemplate,
+  getAllBastionTemplates,
+  getBastionFeature,
+  getAllBastionFeatures,
+  validateScaleUnits,
+  isFeatureAvailable,
+  getRecommendedScaleUnits,
+  BastionTemplateKey,
+  BastionFeatureKey,
+} from './networking/bastion';
+import {
+  getVNetPeeringTemplate,
+  getAllVNetPeeringTemplates,
+  getHubSpokeTopology,
+  getAllHubSpokeTopologies,
+  getPeeringScenario,
+  getAllPeeringScenarios,
+  validatePeeringConfig,
+  calculateMeshPeeringCount,
+  calculateHubSpokePeeringCount,
+  VNetPeeringTemplateKey,
+  HubSpokeTopologyKey,
+  PeeringScenarioKey,
+} from './networking/peering';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -814,6 +857,247 @@ export class VmPlugin implements IPlugin {
       'lb-validate-timeout': (timeout: number): boolean => {
         return validateIdleTimeout(timeout).valid;
       },
+
+      // ========================================
+      // Phase 2: Application Gateway Helpers
+      // ========================================
+
+      /**
+       * Get Application Gateway template (Phase 2)
+       */
+      'appgw-template': (key: string): string => {
+        const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
+        return template ? JSON.stringify(template, null, 2) : '{}';
+      },
+
+      /**
+       * Get Application Gateway template name (Phase 2)
+       */
+      'appgw-template-name': (key: string): string => {
+        const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
+        return template?.name || key;
+      },
+
+      /**
+       * Get Application Gateway SKU (Phase 2)
+       */
+      'appgw-sku': (key: string): string => {
+        const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
+        return template?.sku || 'Standard_v2';
+      },
+
+      /**
+       * Check if WAF is enabled (Phase 2)
+       */
+      'appgw-waf-enabled': (key: string): boolean => {
+        const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
+        return template?.enableWaf || false;
+      },
+
+      /**
+       * Get Application Gateway capacity (Phase 2)
+       */
+      'appgw-capacity': (key: string): number => {
+        const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
+        return template?.capacity || 2;
+      },
+
+      /**
+       * Get HTTP settings (Phase 2)
+       */
+      'appgw-http-settings': (key: string): string => {
+        const settings = getHttpSettings(key as HttpSettingsKey);
+        return settings ? JSON.stringify(settings, null, 2) : '{}';
+      },
+
+      /**
+       * Get listener configuration (Phase 2)
+       */
+      'appgw-listener': (key: string): string => {
+        const listener = getListener(key as ListenerKey);
+        return listener ? JSON.stringify(listener, null, 2) : '{}';
+      },
+
+      /**
+       * Get URL path map (Phase 2)
+       */
+      'appgw-url-path-map': (key: string): string => {
+        const pathMap = getUrlPathMap(key as UrlPathMapKey);
+        return pathMap ? JSON.stringify(pathMap, null, 2) : '{}';
+      },
+
+      /**
+       * Validate Application Gateway capacity (Phase 2)
+       */
+      'appgw-validate-capacity': (capacity: number): boolean => {
+        return validateCapacity(capacity).valid;
+      },
+
+      /**
+       * Generate Application Gateway resource name (Phase 2)
+       */
+      'appgw-name': (baseName: string): string => {
+        return `appgw-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      },
+
+      // ========================================
+      // Phase 2: Bastion Helpers
+      // ========================================
+
+      /**
+       * Get Bastion template (Phase 2)
+       */
+      'bastion-template': (key: string): string => {
+        const template = getBastionTemplate(key as BastionTemplateKey);
+        return template ? JSON.stringify(template, null, 2) : '{}';
+      },
+
+      /**
+       * Get Bastion template name (Phase 2)
+       */
+      'bastion-template-name': (key: string): string => {
+        const template = getBastionTemplate(key as BastionTemplateKey);
+        return template?.name || key;
+      },
+
+      /**
+       * Get Bastion SKU (Phase 2)
+       */
+      'bastion-sku': (key: string): string => {
+        const template = getBastionTemplate(key as BastionTemplateKey);
+        return template?.sku || 'Basic';
+      },
+
+      /**
+       * Get Bastion scale units (Phase 2)
+       */
+      'bastion-scale-units': (key: string): number => {
+        const template = getBastionTemplate(key as BastionTemplateKey);
+        return template?.scaleUnits || 2;
+      },
+
+      /**
+       * Check if Bastion feature is enabled (Phase 2)
+       */
+      'bastion-feature-enabled': (templateKey: string, feature: string): boolean => {
+        const template = getBastionTemplate(templateKey as BastionTemplateKey);
+        if (!template) return false;
+        
+        switch (feature) {
+          case 'tunneling':
+            return template.enableTunneling;
+          case 'ipConnect':
+            return template.enableIpConnect;
+          case 'shareableLink':
+            return template.enableShareableLink;
+          case 'fileCopy':
+            return template.enableFileCopy;
+          default:
+            return false;
+        }
+      },
+
+      /**
+       * Get Bastion feature description (Phase 2)
+       */
+      'bastion-feature': (key: string): string => {
+        const feature = getBastionFeature(key as BastionFeatureKey);
+        return feature ? JSON.stringify(feature, null, 2) : '{}';
+      },
+
+      /**
+       * Check if feature is available for SKU (Phase 2)
+       */
+      'bastion-feature-available': (feature: string, sku: string): boolean => {
+        return isFeatureAvailable(feature as BastionFeatureKey, sku as 'Basic' | 'Standard' | 'Premium');
+      },
+
+      /**
+       * Get recommended scale units (Phase 2)
+       */
+      'bastion-recommended-scale': (sessions: number): number => {
+        return getRecommendedScaleUnits(sessions);
+      },
+
+      /**
+       * Generate Bastion resource name (Phase 2)
+       */
+      'bastion-name': (baseName: string): string => {
+        return `bastion-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      },
+
+      // ========================================
+      // Phase 2: VNet Peering Helpers
+      // ========================================
+
+      /**
+       * Get VNet peering template (Phase 2)
+       */
+      'peering-template': (key: string): string => {
+        const template = getVNetPeeringTemplate(key as VNetPeeringTemplateKey);
+        return template ? JSON.stringify(template, null, 2) : '{}';
+      },
+
+      /**
+       * Get VNet peering template name (Phase 2)
+       */
+      'peering-template-name': (key: string): string => {
+        const template = getVNetPeeringTemplate(key as VNetPeeringTemplateKey);
+        return template?.name || key;
+      },
+
+      /**
+       * Get peering topology type (Phase 2)
+       */
+      'peering-topology': (key: string): string => {
+        const template = getVNetPeeringTemplate(key as VNetPeeringTemplateKey);
+        return template?.topology || 'point-to-point';
+      },
+
+      /**
+       * Check if gateway transit is enabled (Phase 2)
+       */
+      'peering-gateway-transit': (key: string): boolean => {
+        const template = getVNetPeeringTemplate(key as VNetPeeringTemplateKey);
+        return template?.allowGatewayTransit || false;
+      },
+
+      /**
+       * Get hub-and-spoke topology (Phase 2)
+       */
+      'peering-hub-spoke': (key: string): string => {
+        const topology = getHubSpokeTopology(key as HubSpokeTopologyKey);
+        return topology ? JSON.stringify(topology, null, 2) : '{}';
+      },
+
+      /**
+       * Get peering scenario (Phase 2)
+       */
+      'peering-scenario': (key: string): string => {
+        const scenario = getPeeringScenario(key as PeeringScenarioKey);
+        return scenario ? JSON.stringify(scenario, null, 2) : '{}';
+      },
+
+      /**
+       * Calculate mesh peering count (Phase 2)
+       */
+      'peering-mesh-count': (vnetCount: number): number => {
+        return calculateMeshPeeringCount(vnetCount);
+      },
+
+      /**
+       * Calculate hub-spoke peering count (Phase 2)
+       */
+      'peering-hub-spoke-count': (spokeCount: number): number => {
+        return calculateHubSpokePeeringCount(spokeCount);
+      },
+
+      /**
+       * Generate peering resource name (Phase 2)
+       */
+      'peering-name': (sourceVNet: string, targetVNet: string): string => {
+        return `peer-${sourceVNet}-to-${targetVNet}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      },
     };
   }
 
@@ -1496,6 +1780,181 @@ export class VmPlugin implements IPlugin {
         });
 
         logger.info(`Total: ${results.length} probe(s)`);
+      });
+
+    // ========================================
+    // Phase 2: Application Gateway Commands
+    // ========================================
+
+    // List Application Gateway templates
+    networkCommand
+      .command('list-appgw-templates')
+      .description('List available Application Gateway templates')
+      .option('-w, --waf', 'Filter by WAF-enabled templates only')
+      .option('-s, --search <query>', 'Search templates by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available Application Gateway Templates\n');
+
+        const templates = getAllAppGatewayTemplates();
+        let results = templates;
+
+        // Filter by WAF
+        if (options.waf) {
+          results = templates.filter(({ template }) => template.enableWaf);
+          logger.info('Filtering: WAF-enabled only\n');
+        }
+
+        // Search filter
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = results.filter(
+            ({ key, template }) =>
+              key.toLowerCase().includes(query) ||
+              template.name.toLowerCase().includes(query) ||
+              template.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No Application Gateway templates found');
+          return;
+        }
+
+        results.forEach(({ key, template }) => {
+          logger.info(`${template.name} (${key})`);
+          logger.info(`  Description: ${template.description}`);
+          logger.info(`  SKU: ${template.sku}`);
+          logger.info(`  Tier: ${template.tier}`);
+          logger.info(`  Capacity: ${template.capacity} instances`);
+          logger.info(`  WAF Enabled: ${template.enableWaf ? 'Yes' : 'No'}`);
+          if (template.enableWaf && template.wafMode) {
+            logger.info(`  WAF Mode: ${template.wafMode}`);
+          }
+          logger.info(`  HTTP/2: ${template.enableHttp2 ? 'Enabled' : 'Disabled'}`);
+          logger.info(`  SSL Policy: ${template.sslPolicy}`);
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} template(s)`);
+      });
+
+    // ========================================
+    // Phase 2: Bastion Commands
+    // ========================================
+
+    // List Bastion templates
+    networkCommand
+      .command('list-bastion-templates')
+      .description('List available Azure Bastion templates')
+      .option('-k, --sku <sku>', 'Filter by SKU (Basic, Standard, Premium)')
+      .option('-s, --search <query>', 'Search templates by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available Azure Bastion Templates\n');
+
+        const templates = getAllBastionTemplates();
+        let results = templates;
+
+        // Filter by SKU
+        if (options.sku) {
+          results = templates.filter(({ template }) => template.sku === options.sku);
+          logger.info(`SKU: ${options.sku}\n`);
+        }
+
+        // Search filter
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = results.filter(
+            ({ key, template }) =>
+              key.toLowerCase().includes(query) ||
+              template.name.toLowerCase().includes(query) ||
+              template.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No Bastion templates found');
+          return;
+        }
+
+        results.forEach(({ key, template }) => {
+          logger.info(`${template.name} (${key})`);
+          logger.info(`  Description: ${template.description}`);
+          logger.info(`  SKU: ${template.sku}`);
+          logger.info(`  Scale Units: ${template.scaleUnits}`);
+          logger.info(`  Features:`);
+          logger.info(`    - Tunneling: ${template.enableTunneling ? 'Yes' : 'No'}`);
+          logger.info(`    - IP Connect: ${template.enableIpConnect ? 'Yes' : 'No'}`);
+          logger.info(`    - Shareable Link: ${template.enableShareableLink ? 'Yes' : 'No'}`);
+          logger.info(`    - File Copy: ${template.enableFileCopy ? 'Yes' : 'No'}`);
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} template(s)`);
+      });
+
+    // ========================================
+    // Phase 2: VNet Peering Commands
+    // ========================================
+
+    // List VNet peering templates
+    networkCommand
+      .command('list-peering-templates')
+      .description('List available VNet peering templates')
+      .option('-t, --topology <topology>', 'Filter by topology (hub-spoke, mesh, point-to-point)')
+      .option('-s, --search <query>', 'Search templates by name or description')
+      .action((options) => {
+        if (!this.context) return;
+
+        const logger = this.context.logger;
+        logger.info('Available VNet Peering Templates\n');
+
+        const templates = getAllVNetPeeringTemplates();
+        let results = templates;
+
+        // Filter by topology
+        if (options.topology) {
+          results = templates.filter(({ template }) => template.topology === options.topology);
+          logger.info(`Topology: ${options.topology}\n`);
+        }
+
+        // Search filter
+        if (options.search) {
+          const query = options.search.toLowerCase();
+          results = results.filter(
+            ({ key, template }) =>
+              key.toLowerCase().includes(query) ||
+              template.name.toLowerCase().includes(query) ||
+              template.description.toLowerCase().includes(query)
+          );
+          logger.info(`Search results for: "${options.search}"\n`);
+        }
+
+        if (results.length === 0) {
+          logger.warn('No VNet peering templates found');
+          return;
+        }
+
+        results.forEach(({ key, template }) => {
+          logger.info(`${template.name} (${key})`);
+          logger.info(`  Description: ${template.description}`);
+          logger.info(`  Topology: ${template.topology}`);
+          logger.info(`  Settings:`);
+          logger.info(`    - Virtual Network Access: ${template.allowVirtualNetworkAccess ? 'Enabled' : 'Disabled'}`);
+          logger.info(`    - Forwarded Traffic: ${template.allowForwardedTraffic ? 'Allowed' : 'Blocked'}`);
+          logger.info(`    - Gateway Transit: ${template.allowGatewayTransit ? 'Allowed' : 'Blocked'}`);
+          logger.info(`    - Use Remote Gateways: ${template.useRemoteGateways ? 'Yes' : 'No'}`);
+          logger.info('');
+        });
+
+        logger.info(`Total: ${results.length} template(s)`);
       });
   }
 }
