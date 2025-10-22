@@ -16,6 +16,12 @@ import { createSecurityHelpers } from './security';
 import { createIdentityHelpers } from './identity';
 import { registerAvailabilityHelpers } from './availability';
 import { registerRecoveryHelpers } from './recovery';
+import * as availabilityHelpers from './availability/availabilitysets';
+import * as zoneHelpers from './availability/availabilityzones';
+import * as vmssHelpers from './availability/vmss';
+import * as backupHelpers from './recovery/backup';
+import * as siteRecoveryHelpers from './recovery/siterecovery';
+import * as snapshotHelpers from './recovery/snapshots';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -140,6 +146,22 @@ export class VmPlugin implements IPlugin {
     // Get identity helpers with identity: namespace
     const identityHelpers = createIdentityHelpers();
     
+    // Create availability helpers object for CLI access
+    const availHelpers = {
+      'availability:zones': zoneHelpers.getAvailableZones,
+      'availability:supportsZones': zoneHelpers.supportsAvailabilityZones,
+      'availability:setSLA': availabilityHelpers.availabilitySetSLA,
+      'availability:zoneSLA': zoneHelpers.availabilityZoneSLA,
+      'availability:vmssSLA': vmssHelpers.vmssSLA,
+    };
+    
+    // Create recovery helpers object for CLI access
+    const recovHelpers = {
+      'recovery:estimateBackupStorage': backupHelpers.estimateBackupStorage,
+      'recovery:getRecommendedTargetRegion': siteRecoveryHelpers.getRecommendedTargetRegion,
+      'recovery:estimateRTO': siteRecoveryHelpers.estimateRTO,
+    };
+    
     // Combine VM helpers with networking, extension, security, and identity helpers
     const vmHelpers = {
       /**
@@ -178,13 +200,15 @@ export class VmPlugin implements IPlugin {
       }
     };
 
-    // Return combined helpers (VM + Networking + Extensions + Security + Identity)
+    // Return combined helpers (VM + Networking + Extensions + Security + Identity + Availability + Recovery)
     return {
       ...vmHelpers,
       ...networkingHelpers,
       ...extensionHelpers,
       ...securityHelpers,
-      ...identityHelpers
+      ...identityHelpers,
+      ...availHelpers,
+      ...recovHelpers
     };
   }
 
@@ -237,7 +261,7 @@ export class VmPlugin implements IPlugin {
       .action((options) => {
         if (this.context) {
           const helpers = this.getHandlebarsHelpers();
-          const zones = helpers['avail:getAvailableZones'](options.region);
+          const zones = helpers['availability:zones'](options.region);
           this.context.logger.info(`Availability zones in ${options.region}: ${zones.join(', ')}`);
         }
       });
@@ -249,7 +273,7 @@ export class VmPlugin implements IPlugin {
       .action((options) => {
         if (this.context) {
           const helpers = this.getHandlebarsHelpers();
-          const supported = helpers['avail:supportsAvailabilityZones'](options.region);
+          const supported = helpers['availability:supportsZones'](options.region);
           this.context.logger.info(`Zone support for ${options.region}: ${supported ? 'Yes' : 'No'}`);
         }
       });
@@ -264,11 +288,11 @@ export class VmPlugin implements IPlugin {
           const helpers = this.getHandlebarsHelpers();
           let sla: number;
           if (options.type === 'set') {
-            sla = helpers['avail:availabilitySetSLA']();
+            sla = helpers['availability:setSLA'](2); // Default 2 VMs for SLA calculation
           } else if (options.type === 'zone') {
-            sla = helpers['avail:availabilityZoneSLA']();
+            sla = helpers['availability:zoneSLA'](1, 1); // 1 VM in 1 zone
           } else {
-            sla = helpers['avail:vmssSLA'](options.orchestration);
+            sla = helpers['availability:vmssSLA'](options.orchestration === 'Flexible' ? 1 : 0, 2);
           }
           this.context.logger.info(`SLA for ${options.type}: ${sla}%`);
         }
