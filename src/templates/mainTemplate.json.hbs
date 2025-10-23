@@ -1,0 +1,316 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "azmp-plugin-vm",
+      "version": "1.5.0"
+    },
+    "description": "{{description}}",
+    "author": "{{author}}"
+  },
+  "parameters": {
+    {{#if vmName}}
+    "vmName": {
+      "type": "string",
+      "defaultValue": "{{vmName}}",
+      "metadata": {
+        "description": "Name of the virtual machine"
+      }
+    },
+    {{/if}}
+    {{#if adminUsername}}
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "{{adminUsername}}",
+      "metadata": {
+        "description": "Administrator username for the VM"
+      }
+    },
+    {{/if}}
+    {{#if authenticationType}}
+    "authenticationType": {
+      "type": "string",
+      "defaultValue": "{{authenticationType}}",
+      "allowedValues": [
+        "sshPublicKey",
+        "password"
+      ],
+      "metadata": {
+        "description": "Type of authentication to use on the Virtual Machine"
+      }
+    },
+    {{/if}}
+    {{#if adminPasswordOrKey}}
+    "adminPasswordOrKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SSH Key or password for the Virtual Machine"
+      }
+    },
+    {{/if}}
+    {{#if location}}
+    "location": {
+      "type": "string",
+      "defaultValue": "{{location}}",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    {{/if}}
+    {{#if vmSize}}
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "{{vmSize}}",
+      "metadata": {
+        "description": "Size of the virtual machine"
+      }
+    },
+    {{/if}}
+    {{#if osImageReference}}
+    "osImageReference": {
+      "type": "object",
+      "defaultValue": {{{osImageReference}}},
+      "metadata": {
+        "description": "OS Image reference for the virtual machine"
+      }
+    },
+    {{/if}}
+    {{#if storageAccountType}}
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "{{storageAccountType}}",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS",
+        "Premium_LRS",
+        "Premium_ZRS",
+        "StandardSSD_LRS",
+        "StandardSSD_ZRS",
+        "UltraSSD_LRS"
+      ],
+      "metadata": {
+        "description": "Storage account type for OS disk"
+      }
+    }{{else}}"_placeholder": {
+      "type": "string",
+      "defaultValue": "placeholder"
+    }{{/if}}
+  },
+  "variables": {
+    {{#if vmName}}
+    "vmName": "[parameters('vmName')]",
+    {{/if}}
+    {{#if networkInterfaceName}}
+    "networkInterfaceName": "{{networkInterfaceName}}",
+    {{/if}}
+    {{#if networkSecurityGroupName}}
+    "networkSecurityGroupName": "{{networkSecurityGroupName}}",
+    {{/if}}
+    {{#if virtualNetworkName}}
+    "virtualNetworkName": "{{virtualNetworkName}}",
+    {{/if}}
+    {{#if subnetName}}
+    "subnetName": "{{subnetName}}",
+    {{/if}}
+    {{#if publicIPAddressName}}
+    "publicIPAddressName": "{{publicIPAddressName}}",
+    {{/if}}
+    {{#if osDiskName}}
+    "osDiskName": "{{osDiskName}}",
+    {{/if}}
+    {{#if linuxConfiguration}}
+    "linuxConfiguration": {{{linuxConfiguration}}},
+    {{/if}}
+    {{#if windowsConfiguration}}
+    "windowsConfiguration": {{{windowsConfiguration}}},
+    {{/if}}
+    {{#if subnetRef}}
+    "subnetRef": "{{subnetRef}}"{{else}}"_placeholder": "placeholder"{{/if}}
+  },
+  "resources": [
+    {{#if createNetworkSecurityGroup}}
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('networkSecurityGroupName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {{#each securityRules}}
+          {
+            "name": "{{name}}",
+            "properties": {
+              "priority": {{priority}},
+              "protocol": "{{protocol}}",
+              "access": "{{access}}",
+              "direction": "{{direction}}",
+              "sourceAddressPrefix": "{{sourceAddressPrefix}}",
+              "sourcePortRange": "{{sourcePortRange}}",
+              "destinationAddressPrefix": "{{destinationAddressPrefix}}",
+              "destinationPortRange": "{{destinationPortRange}}"
+            }
+          }{{#unless @last}},{{/unless}}
+          {{/each}}
+        ]
+      }
+    },
+    {{/if}}
+    {{#if createVirtualNetwork}}
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('virtualNetworkName')]",
+      "location": "[parameters('location')]",
+      {{#if createNetworkSecurityGroup}}
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+      ],
+      {{/if}}
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "{{virtualNetworkAddressPrefix}}"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "{{subnetAddressPrefix}}"{{#if createNetworkSecurityGroup}},
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+              }{{/if}}
+            }
+          }
+        ]
+      }
+    },
+    {{/if}}
+    {{#if createPublicIP}}
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('publicIPAddressName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "{{publicIPAllocationMethod}}"{{#if publicIPSku}},
+        "sku": {
+          "name": "{{publicIPSku}}"
+        }{{/if}}{{#if dnsLabelPrefix}},
+        "dnsSettings": {
+          "domainNameLabel": "{{dnsLabelPrefix}}"
+        }{{/if}}
+      }
+    },
+    {{/if}}
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('networkInterfaceName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        {{#if createVirtualNetwork}}
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"{{#if createPublicIP}},{{/if}}
+        {{/if}}
+        {{#if createPublicIP}}
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+        {{/if}}
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }{{#if createPublicIP}},
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+              }{{/if}}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2021-03-01",
+      "name": "[variables('vmName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          {{#if isLinux}}
+          "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
+          {{else}}
+          "adminPassword": "[parameters('adminPasswordOrKey')]"{{#if windowsConfiguration}},
+          "windowsConfiguration": "[variables('windowsConfiguration')]"
+          {{/if}}
+          {{/if}}
+          {{#unless isLinux}}
+          {{#if authenticationType}}
+          {{#unless (eq authenticationType "password")}}
+          ,"adminPassword": "[parameters('adminPasswordOrKey')]"
+          {{/unless}}
+          {{/if}}
+          {{/unless}}
+        },
+        "storageProfile": {
+          "imageReference": "[parameters('osImageReference')]",
+          "osDisk": {
+            "name": "[variables('osDiskName')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[parameters('storageAccountType')]"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+            }
+          ]
+        }{{#if enableBootDiagnostics}},
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true
+          }
+        }{{/if}}
+      }
+    }
+  ],
+  "outputs": {
+    {{#if vmName}}
+    "vmName": {
+      "type": "string",
+      "value": "[variables('vmName')]"
+    },
+    {{/if}}
+    {{#if createPublicIP}}
+    "publicIPAddress": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).ipAddress]"
+    },
+    {{/if}}
+    "adminUsername": {
+      "type": "string", 
+      "value": "[parameters('adminUsername')]"
+    }{{#if sshCommand}},
+    "sshCommand": {
+      "type": "string",
+      "value": "{{sshCommand}}"
+    }{{/if}}
+  }
+}
