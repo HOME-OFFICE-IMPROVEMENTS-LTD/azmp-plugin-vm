@@ -14,6 +14,14 @@ import { getNetworkingHelpers } from './networking';
 import { createExtensionHelpers } from './extensions';
 import { createSecurityHelpers } from './security';
 import { createIdentityHelpers } from './identity';
+import { registerAvailabilityHelpers } from './availability';
+import { registerRecoveryHelpers } from './recovery';
+import * as availabilityHelpers from './availability/availabilitysets';
+import * as zoneHelpers from './availability/availabilityzones';
+import * as vmssHelpers from './availability/vmss';
+import * as backupHelpers from './recovery/backup';
+import * as siteRecoveryHelpers from './recovery/siterecovery';
+import * as snapshotHelpers from './recovery/snapshots';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -39,7 +47,7 @@ export class VmPlugin implements IPlugin {
     id: 'vm',
     name: 'Virtual Machine Plugin',
     description: 'Generates Azure Virtual Machine marketplace offers',
-    version: '1.3.0',
+    version: '1.4.0',
     author: 'HOME OFFICE IMPROVEMENTS LTD'
   };
 
@@ -62,6 +70,10 @@ export class VmPlugin implements IPlugin {
     this.context = context;
     context.logger.info(`Initializing VM Plugin v${this.metadata.version}`);
     context.logger.debug('VM Plugin options:', this.options);
+    
+    // Register availability and recovery helpers with Handlebars
+    registerAvailabilityHelpers();
+    registerRecoveryHelpers();
   }
 
   /**
@@ -134,6 +146,22 @@ export class VmPlugin implements IPlugin {
     // Get identity helpers with identity: namespace
     const identityHelpers = createIdentityHelpers();
     
+    // Create availability helpers object for CLI access
+    const availHelpers = {
+      'availability:zones': zoneHelpers.getAvailableZones,
+      'availability:supportsZones': zoneHelpers.supportsAvailabilityZones,
+      'availability:setSLA': availabilityHelpers.availabilitySetSLA,
+      'availability:zoneSLA': zoneHelpers.availabilityZoneSLA,
+      'availability:vmssSLA': vmssHelpers.vmssSLA,
+    };
+    
+    // Create recovery helpers object for CLI access
+    const recovHelpers = {
+      'recovery:estimateBackupStorage': backupHelpers.estimateBackupStorage,
+      'recovery:getRecommendedTargetRegion': siteRecoveryHelpers.getRecommendedTargetRegion,
+      'recovery:estimateRTO': siteRecoveryHelpers.estimateRTO,
+    };
+    
     // Combine VM helpers with networking, extension, security, and identity helpers
     const vmHelpers = {
       /**
@@ -172,13 +200,15 @@ export class VmPlugin implements IPlugin {
       }
     };
 
-    // Return combined helpers (VM + Networking + Extensions + Security + Identity)
+    // Return combined helpers (VM + Networking + Extensions + Security + Identity + Availability + Recovery)
     return {
       ...vmHelpers,
       ...networkingHelpers,
       ...extensionHelpers,
       ...securityHelpers,
-      ...identityHelpers
+      ...identityHelpers,
+      ...availHelpers,
+      ...recovHelpers
     };
   }
 
@@ -214,6 +244,203 @@ export class VmPlugin implements IPlugin {
           this.context.logger.info(`Listing images for publisher: ${options.publisher}`);
           // TODO: Implement actual Azure API call
           this.context.logger.info('Ubuntu 22.04-LTS, Ubuntu 20.04-LTS...');
+        }
+      });
+
+    // ========================================
+    // High Availability Commands (Flat Structure)
+    // ========================================
+    
+    program
+      .command('zones')
+      .description('List availability zones for a region')
+      .option('-r, --region <region>', 'Azure region', 'eastus')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const zones = helpers['availability:zones'](options.region);
+          this.context.logger.info(`Availability zones in ${options.region}: ${zones.join(', ')}`);
+        }
+      });
+
+    program
+      .command('zone-check')
+      .description('Check if a region supports availability zones')
+      .option('-r, --region <region>', 'Azure region', 'eastus')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const supported = helpers['availability:supportsZones'](options.region);
+          this.context.logger.info(`Zone support for ${options.region}: ${supported ? 'Yes' : 'No'}`);
+        }
+      });
+
+    program
+      .command('sla')
+      .description('Calculate SLA for availability configuration')
+      .option('-t, --type <type>', 'Configuration type (set, zone, vmss)', 'set')
+      .option('-o, --orchestration <mode>', 'VMSS orchestration mode', 'Flexible')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          let sla: number;
+          if (options.type === 'set') {
+            sla = helpers['availability:setSLA'](2); // Default 2 VMs for SLA calculation
+          } else if (options.type === 'zone') {
+            sla = helpers['availability:zoneSLA'](1, 1); // 1 VM in 1 zone
+          } else {
+            sla = helpers['availability:vmssSLA'](options.orchestration === 'Flexible' ? 1 : 0, 2);
+          }
+          this.context.logger.info(`SLA for ${options.type}: ${sla}%`);
+        }
+      });
+
+    program
+      .command('ha-config')
+      .description('Recommend high availability configuration')
+      .option('-v, --vm-count <count>', 'Number of VMs', '3')
+      .option('-c, --criticality <level>', 'Workload criticality (low, medium, high)', 'medium')
+      .action((options) => {
+        const vmCount = parseInt(options.vmCount);
+        const criticality = options.criticality.toLowerCase();
+        
+        if (this.context) {
+          this.context.logger.info('Recommended HA Configuration:');
+          
+          if (vmCount === 1) {
+            this.context.logger.info('  Type: Single VM with Premium SSD (SLA: 99.9%)');
+            this.context.logger.info('  Consider: Use availability zones for critical workloads');
+          } else if (vmCount === 2) {
+            if (criticality === 'high') {
+              this.context.logger.info('  Type: 2 VMs across availability zones (SLA: 99.99%)');
+            } else {
+              this.context.logger.info('  Type: Availability Set with 2 fault domains (SLA: 99.95%)');
+            }
+          } else {
+            if (criticality === 'high') {
+              this.context.logger.info('  Type: VMSS Flexible with zone distribution (SLA: 99.99%)');
+            } else {
+              this.context.logger.info('  Type: VMSS Flexible or Availability Set (SLA: 99.95%)');
+            }
+          }
+        }
+      });
+
+    // ========================================
+    // Disaster Recovery Commands (Flat Structure)
+    // ========================================
+    
+    program
+      .command('backup-size')
+      .description('Estimate backup storage requirements')
+      .option('-s, --vm-size <size>', 'VM disk size in GB', '128')
+      .option('-c, --change-rate <rate>', 'Daily change rate (0-1)', '0.05')
+      .option('-r, --retention <days>', 'Retention days', '30')
+      .action((options) => {
+        const vmSize = parseInt(options.vmSize);
+        const changeRate = parseFloat(options.changeRate);
+        const retention = parseInt(options.retention);
+        
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const estimate = helpers['recovery:estimateBackupStorage'](vmSize, changeRate, retention);
+          this.context.logger.info(`Backup storage estimate: ${Math.round(estimate)} GB`);
+          this.context.logger.info(`  VM size: ${vmSize} GB`);
+          this.context.logger.info(`  Daily change: ${(changeRate * 100).toFixed(1)}%`);
+          this.context.logger.info(`  Retention: ${retention} days`);
+        }
+      });
+
+    program
+      .command('region-pairs')
+      .description('List Azure region pairs for disaster recovery')
+      .option('-r, --region <region>', 'Source region (optional)')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          
+          if (options.region) {
+            const target = helpers['recovery:getRecommendedTargetRegion'](options.region);
+            this.context.logger.info(`Paired region for ${options.region}: ${target}`);
+          } else {
+            this.context.logger.info('Common Azure region pairs:');
+            this.context.logger.info('  East US → West US');
+            this.context.logger.info('  East US 2 → Central US');
+            this.context.logger.info('  West US 2 → West Central US');
+            this.context.logger.info('  North Europe → West Europe');
+            this.context.logger.info('  Southeast Asia → East Asia');
+            this.context.logger.info('  UK South → UK West');
+          }
+        }
+      });
+
+    program
+      .command('rto')
+      .description('Estimate Recovery Time Objective')
+      .option('-v, --vm-count <count>', 'Number of VMs', '5')
+      .option('-s, --avg-size <size>', 'Average VM size in GB', '128')
+      .action((options) => {
+        const vmCount = parseInt(options.vmCount);
+        const avgSize = parseInt(options.avgSize);
+        
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const rto = helpers['recovery:estimateRTO'](vmCount, avgSize);
+          this.context.logger.info(`Estimated RTO: ${rto} minutes`);
+          this.context.logger.info(`  VMs to recover: ${vmCount}`);
+          this.context.logger.info(`  Average VM size: ${avgSize} GB`);
+        }
+      });
+
+    program
+      .command('backup-presets')
+      .description('List backup policy presets')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available backup presets:');
+          this.context.logger.info('  development: Daily at 2 AM, 7 days retention');
+          this.context.logger.info('  production: Daily at 2 AM, 30 days retention');
+          this.context.logger.info('  longterm: Daily at 2 AM, 365 days retention, monthly/yearly copies');
+        }
+      });
+
+    program
+      .command('snapshot-policies')
+      .description('List snapshot retention policies')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available snapshot retention policies:');
+          this.context.logger.info('  hourly: Every hour, 24 snapshots retained');
+          this.context.logger.info('  daily: Daily, 7 snapshots retained');
+          this.context.logger.info('  weekly: Weekly, 4 snapshots retained');
+          this.context.logger.info('  monthly: Monthly, 12 snapshots retained');
+        }
+      });
+
+    program
+      .command('snapshot-schedule')
+      .description('Recommend snapshot schedule based on workload')
+      .option('-c, --criticality <level>', 'Workload criticality (low, medium, high)', 'medium')
+      .option('-t, --change-frequency <freq>', 'Change frequency (low, medium, high)', 'medium')
+      .action((options) => {
+        const criticality = options.criticality.toLowerCase();
+        const changeFreq = options.changeFrequency.toLowerCase();
+        
+        if (this.context) {
+          this.context.logger.info('Recommended snapshot schedule:');
+          
+          if (criticality === 'high' || changeFreq === 'high') {
+            this.context.logger.info('  Frequency: Hourly');
+            this.context.logger.info('  Retention: 24 snapshots (1 day)');
+            this.context.logger.info('  Additional: Daily snapshots for 7 days');
+          } else if (criticality === 'medium' || changeFreq === 'medium') {
+            this.context.logger.info('  Frequency: Every 4 hours');
+            this.context.logger.info('  Retention: 6 snapshots (1 day)');
+            this.context.logger.info('  Additional: Daily snapshots for 7 days');
+          } else {
+            this.context.logger.info('  Frequency: Daily');
+            this.context.logger.info('  Retention: 7 snapshots (1 week)');
+          }
         }
       });
 

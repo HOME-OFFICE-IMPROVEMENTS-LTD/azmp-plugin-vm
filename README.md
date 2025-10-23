@@ -12,9 +12,11 @@ Comprehensive Virtual Machine plugin for Azure Marketplace Generator with advanc
 - 🔌 **VM Extensions** - 20 extensions (Windows, Linux, cross-platform)
 - 🔒 **Security** - Disk encryption (ADE, SSE, Encryption at Host), Trusted Launch
 - 🔐 **Identity & Access** - Managed Identity, Azure AD integration, RBAC
-- 📜 **Compliance** - SOC 2, PCI-DSS, HIPAA, ISO 27001, NIST 800-53, FedRAMP
-- 🎨 **120+ Handlebars Helpers** - Comprehensive template generation
-- 💻 **32 CLI Commands** - Rich command-line interface
+- ⚡ **High Availability** - Availability Sets, Availability Zones, VMSS with SLA calculations
+- � **Disaster Recovery** - Azure Backup, Site Recovery, Snapshots with retention policies
+- �📜 **Compliance** - SOC 2, PCI-DSS, HIPAA, ISO 27001, NIST 800-53, FedRAMP
+- 🎨 **164+ Handlebars Helpers** - Comprehensive template generation (44 new HA/DR helpers)
+- 💻 **44 CLI Commands** - Rich command-line interface (12 new HA/DR commands)
 
 ## Installation
 
@@ -156,6 +158,47 @@ azmp vm identity list-aad-features
 
 # List RBAC roles
 azmp vm identity list-rbac-roles
+```
+
+### Availability Commands (5 commands)
+
+```bash
+# List availability zones for a region
+azmp availability list-zones --region eastus
+
+# Check if region supports availability zones
+azmp availability check-zone-support --region westus
+
+# Calculate SLA for availability configuration
+azmp availability calculate-sla --type zone
+azmp availability calculate-sla --type set
+azmp availability calculate-sla --type vmss --orchestration Flexible
+
+# Recommend high availability configuration
+azmp availability recommend-config --vm-count 3 --criticality high
+```
+
+### Recovery Commands (7 commands)
+
+```bash
+# Estimate backup storage requirements
+azmp recovery estimate-backup --vm-size 128 --change-rate 0.05 --retention 30
+
+# List Azure region pairs for disaster recovery
+azmp recovery list-region-pairs
+azmp recovery list-region-pairs --region eastus
+
+# Estimate Recovery Time Objective
+azmp recovery estimate-rto --vm-count 5 --avg-size 128
+
+# List backup policy presets
+azmp recovery list-backup-presets
+
+# List snapshot retention policies
+azmp recovery list-snapshot-policies
+
+# Recommend snapshot schedule based on workload
+azmp recovery recommend-snapshot-schedule --criticality high --change-frequency medium
 ```
 
 ## Configuration Options
