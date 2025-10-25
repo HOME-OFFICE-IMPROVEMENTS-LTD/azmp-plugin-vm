@@ -214,6 +214,126 @@
       "metadata": {
         "description": "Performance profile for VM configuration: LowCost (cost-optimized), Balanced (mixed), HighPerformance (performance-optimized)"
       }
+    },
+    "enableHighAvailability": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable high availability features including availability zones or availability sets"
+      }
+    },
+    "availabilityOption": {
+      "type": "string",
+      "defaultValue": "None",
+      "allowedValues": [
+        "None",
+        "AvailabilityZones",
+        "AvailabilitySet",
+        "VMSS"
+      ],
+      "metadata": {
+        "description": "High availability option: None (single VM), AvailabilityZones (zone-redundant), AvailabilitySet (fault domain redundancy), VMSS (scale set for autoscale)"
+      }
+    },
+    "availabilityZones": {
+      "type": "array",
+      "defaultValue": ["1", "2", "3"],
+      "metadata": {
+        "description": "Availability zones for zone-redundant deployment (e.g., ['1','2','3'])"
+      }
+    },
+    "availabilitySetFaultDomains": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 1,
+      "maxValue": 3,
+      "metadata": {
+        "description": "Number of fault domains for availability set (1-3)"
+      }
+    },
+    "availabilitySetUpdateDomains": {
+      "type": "int",
+      "defaultValue": 5,
+      "minValue": 1,
+      "maxValue": 20,
+      "metadata": {
+        "description": "Number of update domains for availability set (1-20)"
+      }
+    },
+    "vmssInstanceCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 1,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Number of VM instances in VMSS (1-1000)"
+      }
+    },
+    "enableDisasterRecovery": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable disaster recovery features including Azure Backup and Site Recovery"
+      }
+    },
+    "enableBackup": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Azure Backup for VM protection"
+      }
+    },
+    "backupPolicyType": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Standard",
+        "Enhanced"
+      ],
+      "metadata": {
+        "description": "Backup policy type: Standard (daily backup), Enhanced (multiple backups per day)"
+      }
+    },
+    "backupRetentionDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 7,
+      "maxValue": 9999,
+      "metadata": {
+        "description": "Number of days to retain backups (7-9999)"
+      }
+    },
+    "backupFrequency": {
+      "type": "string",
+      "defaultValue": "Daily",
+      "allowedValues": [
+        "Daily",
+        "Weekly"
+      ],
+      "metadata": {
+        "description": "Backup frequency: Daily or Weekly"
+      }
+    },
+    "backupTime": {
+      "type": "string",
+      "defaultValue": "02:00",
+      "metadata": {
+        "description": "Backup time in HH:MM format (24-hour clock)"
+      }
+    },
+    "enableSiteRecovery": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable Azure Site Recovery for cross-region disaster recovery"
+      }
+    },
+    "recoveryRegion": {
+      "type": "string",
+      "defaultValue": "eastus2",
+      "metadata": {
+        "description": "Target region for disaster recovery replication"
+      }
     }
   },
   "variables": {
@@ -313,6 +433,22 @@
           "priority": "Regular"
         }
       }
+    },
+    "highAvailabilityConfig": {
+      "availabilitySetName": "[concat(parameters('vmName'), '-avset')]",
+      "vmssName": "[concat(parameters('vmName'), '-vmss')]",
+      "useZones": "[equals(parameters('availabilityOption'), 'AvailabilityZones')]",
+      "useAvailabilitySet": "[equals(parameters('availabilityOption'), 'AvailabilitySet')]",
+      "useVMSS": "[equals(parameters('availabilityOption'), 'VMSS')]"
+    },
+    "disasterRecoveryConfig": {
+      "recoveryVaultName": "[concat(parameters('vmName'), '-rsv')]",
+      "backupPolicyName": "[concat(parameters('vmName'), '-backup-policy')]",
+      "backupFabricName": "Azure",
+      "backupContainerName": "[concat('iaasvmcontainer;iaasvmcontainerv2;', resourceGroup().name, ';', parameters('vmName'))]",
+      "backupItemName": "[concat('vm;iaasvmcontainerv2;', resourceGroup().name, ';', parameters('vmName'))]",
+      "replicationPolicyName": "[concat(parameters('vmName'), '-replication-policy')]",
+      "recoveryPointRetention": "[parameters('backupRetentionDays')]"
     }
   },
   "resources": [
@@ -435,6 +571,90 @@
             }
           ]
         }
+      }
+    },
+    {
+      "condition": "[and(parameters('enableHighAvailability'), variables('highAvailabilityConfig').useAvailabilitySet)]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2021-03-01",
+      "name": "[variables('highAvailabilityConfig').availabilitySetName]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Aligned"
+      },
+      "properties": {
+        "platformFaultDomainCount": "[parameters('availabilitySetFaultDomains')]",
+        "platformUpdateDomainCount": "[parameters('availabilitySetUpdateDomains')]"
+      },
+      "tags": {
+        "Purpose": "High Availability",
+        "CreatedBy": "Azure Marketplace VM Plugin"
+      }
+    },
+    {
+      "condition": "[and(parameters('enableDisasterRecovery'), parameters('enableBackup'))]",
+      "type": "Microsoft.RecoveryServices/vaults",
+      "apiVersion": "2022-10-01",
+      "name": "[variables('disasterRecoveryConfig').recoveryVaultName]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "RS0",
+        "tier": "Standard"
+      },
+      "properties": {},
+      "tags": {
+        "Purpose": "Backup and Disaster Recovery",
+        "CreatedBy": "Azure Marketplace VM Plugin"
+      }
+    },
+    {
+      "condition": "[and(parameters('enableDisasterRecovery'), parameters('enableBackup'))]",
+      "type": "Microsoft.RecoveryServices/vaults/backupPolicies",
+      "apiVersion": "2022-10-01",
+      "name": "[concat(variables('disasterRecoveryConfig').recoveryVaultName, '/', variables('disasterRecoveryConfig').backupPolicyName)]",
+      "dependsOn": [
+        "[resourceId('Microsoft.RecoveryServices/vaults', variables('disasterRecoveryConfig').recoveryVaultName)]"
+      ],
+      "properties": {
+        "backupManagementType": "AzureIaasVM",
+        "schedulePolicy": {
+          "schedulePolicyType": "SimpleSchedulePolicy",
+          "scheduleRunFrequency": "[parameters('backupFrequency')]",
+          "scheduleRunTimes": [
+            "[concat(utcNow('yyyy-MM-dd'), 'T', parameters('backupTime'), ':00Z')]"
+          ],
+          "scheduleRunDays": "[if(equals(parameters('backupFrequency'), 'Weekly'), json('[\"Sunday\"]'), json('null'))]"
+        },
+        "retentionPolicy": {
+          "retentionPolicyType": "LongTermRetentionPolicy",
+          "dailySchedule": {
+            "retentionTimes": [
+              "[concat(utcNow('yyyy-MM-dd'), 'T', parameters('backupTime'), ':00Z')]"
+            ],
+            "retentionDuration": {
+              "count": "[parameters('backupRetentionDays')]",
+              "durationType": "Days"
+            }
+          }
+        },
+        "instantRpRetentionRangeInDays": 2,
+        "timeZone": "UTC",
+        "protectedItemsCount": 0
+      }
+    },
+    {
+      "condition": "[and(parameters('enableDisasterRecovery'), parameters('enableBackup'))]",
+      "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
+      "apiVersion": "2022-10-01",
+      "name": "[concat(variables('disasterRecoveryConfig').recoveryVaultName, '/', variables('disasterRecoveryConfig').backupFabricName, '/', variables('disasterRecoveryConfig').backupContainerName, '/', variables('disasterRecoveryConfig').backupItemName)]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]",
+        "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', variables('disasterRecoveryConfig').recoveryVaultName, variables('disasterRecoveryConfig').backupPolicyName)]"
+      ],
+      "properties": {
+        "protectedItemType": "Microsoft.Compute/virtualMachines",
+        "policyId": "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', variables('disasterRecoveryConfig').recoveryVaultName, variables('disasterRecoveryConfig').backupPolicyName)]",
+        "sourceResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
       }
     },
     {
@@ -797,6 +1017,54 @@
       },
       "metadata": {
         "description": "Summary of cost and performance optimization status"
+      }
+    },
+    "highAvailabilityStatus": {
+      "condition": "[parameters('enableHighAvailability')]",
+      "type": "object",
+      "value": {
+        "highAvailabilityEnabled": "[parameters('enableHighAvailability')]",
+        "availabilityOption": "[parameters('availabilityOption')]",
+        "availabilityZones": "[if(variables('highAvailabilityConfig').useZones, parameters('availabilityZones'), json('[]'))]",
+        "availabilitySetConfigured": "[variables('highAvailabilityConfig').useAvailabilitySet]",
+        "vmssConfigured": "[variables('highAvailabilityConfig').useVMSS]",
+        "faultDomains": "[if(variables('highAvailabilityConfig').useAvailabilitySet, parameters('availabilitySetFaultDomains'), 0)]",
+        "updateDomains": "[if(variables('highAvailabilityConfig').useAvailabilitySet, parameters('availabilitySetUpdateDomains'), 0)]"
+      },
+      "metadata": {
+        "description": "High availability configuration and status"
+      }
+    },
+    "disasterRecoveryStatus": {
+      "condition": "[parameters('enableDisasterRecovery')]",
+      "type": "object",
+      "value": {
+        "disasterRecoveryEnabled": "[parameters('enableDisasterRecovery')]",
+        "backupEnabled": "[parameters('enableBackup')]",
+        "backupPolicyType": "[parameters('backupPolicyType')]",
+        "backupFrequency": "[parameters('backupFrequency')]",
+        "backupRetentionDays": "[parameters('backupRetentionDays')]",
+        "backupTime": "[parameters('backupTime')]",
+        "siteRecoveryEnabled": "[parameters('enableSiteRecovery')]",
+        "recoveryRegion": "[if(parameters('enableSiteRecovery'), parameters('recoveryRegion'), '')]",
+        "recoveryVaultId": "[if(parameters('enableBackup'), resourceId('Microsoft.RecoveryServices/vaults', variables('disasterRecoveryConfig').recoveryVaultName), '')]"
+      },
+      "metadata": {
+        "description": "Disaster recovery configuration and backup status"
+      }
+    },
+    "resilienceScore": {
+      "type": "object",
+      "value": {
+        "highAvailabilityConfigured": "[parameters('enableHighAvailability')]",
+        "backupConfigured": "[and(parameters('enableDisasterRecovery'), parameters('enableBackup'))]",
+        "monitoringConfigured": "[parameters('enableMonitoring')]",
+        "multiZoneDeployment": "[and(parameters('enableHighAvailability'), variables('highAvailabilityConfig').useZones)]",
+        "crossRegionRecovery": "[and(parameters('enableDisasterRecovery'), parameters('enableSiteRecovery'))]",
+        "resilienceTier": "[if(and(parameters('enableHighAvailability'), parameters('enableDisasterRecovery'), parameters('enableMonitoring')), 'Enterprise', if(or(parameters('enableHighAvailability'), parameters('enableDisasterRecovery')), 'Standard', 'Basic'))]"
+      },
+      "metadata": {
+        "description": "Overall resilience configuration score and tier"
       }
     }
   }
