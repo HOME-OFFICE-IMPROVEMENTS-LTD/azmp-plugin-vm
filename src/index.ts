@@ -47,8 +47,8 @@ export class VmPlugin implements IPlugin {
   metadata: PluginMetadata = {
     id: 'vm',
     name: 'Virtual Machine Plugin',
-    description: 'Generates Azure Virtual Machine marketplace offers with comprehensive HA/DR and UI integration',
-    version: '1.5.0',
+    description: 'Generates Azure Virtual Machine marketplace offers with comprehensive HA/DR and Enterprise Scaling',
+    version: '1.6.0',
     author: 'HOME OFFICE IMPROVEMENTS LTD'
   };
 
@@ -97,8 +97,8 @@ export class VmPlugin implements IPlugin {
       {
         type: 'vm',
         name: 'Virtual Machine',
-        description: 'Azure Virtual Machine with comprehensive networking, extensions, and HA/DR capabilities',
-        version: '1.5.0',
+        description: 'Azure Virtual Machine with comprehensive networking, extensions, HA/DR, and Enterprise Scaling',
+        version: '1.6.0',
         templatePath: templatesDir,
         files: {
           mainTemplate: 'mainTemplate.json.hbs',
