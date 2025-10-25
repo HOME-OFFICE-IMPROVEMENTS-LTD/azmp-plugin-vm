@@ -94,7 +94,7 @@ describe('VmPlugin CLI Commands', () => {
       const listSizesCommand = vmCommand?.commands.find(cmd => cmd.name() === 'list-sizes');
       
       expect(listSizesCommand).toBeDefined();
-      expect(listSizesCommand?.description()).toBe('List available VM sizes for a location');
+      expect(listSizesCommand?.description()).toBe('List available VM sizes for a location (requires Azure credentials)');
     });
 
     it('should register vm list-images subcommand', () => {
@@ -102,7 +102,15 @@ describe('VmPlugin CLI Commands', () => {
       const listImagesCommand = vmCommand?.commands.find(cmd => cmd.name() === 'list-images');
       
       expect(listImagesCommand).toBeDefined();
-      expect(listImagesCommand?.description()).toBe('List available VM images');
+      expect(listImagesCommand?.description()).toBe('List popular VM images for a location (requires Azure credentials)');
+    });
+
+    it('should register vm validate-credentials subcommand', () => {
+      const vmCommand = program.commands.find(cmd => cmd.name() === 'vm');
+      const validateCommand = vmCommand?.commands.find(cmd => cmd.name() === 'validate-credentials');
+      
+      expect(validateCommand).toBeDefined();
+      expect(validateCommand?.description()).toBe('Validate Azure credentials and subscription access');
     });
   });
 
