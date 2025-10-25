@@ -1,0 +1,18 @@
+{
+  "publisher": "My Company Inc.",
+  "defaultOutputDir": "./output",
+  "templates": {
+    "storage": {
+      "name": "My Storage Solution",
+      "location": "eastus"
+    }
+  },
+  "validation": {
+    "saveReport": false,
+    "reportPath": "./validation-report.txt"
+  },
+  "packaging": {
+    "defaultFileName": "my-app-package.zip"
+  },
+  "plugins": []
+}
