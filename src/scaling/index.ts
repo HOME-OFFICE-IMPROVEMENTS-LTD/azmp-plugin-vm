@@ -11,6 +11,7 @@ import Handlebars from 'handlebars';
 import { vmssHelpers } from './vmss';
 import { autoscaleHelpers } from './autoscale';
 import { multiregionHelpers } from './multiregion';
+import { loadBalancingHelpers } from './loadbalancing';
 
 type HelperFunction = (...args: any[]) => unknown;
 
@@ -20,7 +21,8 @@ type HelperFunction = (...args: any[]) => unknown;
 export const scalingHelpers = {
   ...vmssHelpers,
   ...autoscaleHelpers,
-  ...multiregionHelpers
+  ...multiregionHelpers,
+  ...loadBalancingHelpers
 };
 
 /**
@@ -79,3 +81,41 @@ export {
   type FailoverPlanOptions,
   type FailoverStep
 } from './multiregion';
+
+export {
+  loadBalancingHelpers,
+  createLoadBalancer,
+  createFrontendIPConfig,
+  createBackendPoolConfig,
+  createProbeConfig,
+  createLoadBalancingRule,
+  recommendHealthProbe,
+  createApplicationGateway,
+  createAppGatewayIpConfig,
+  createAppGatewayFrontendConfig,
+  createAppGatewayFrontendPort,
+  createAppGatewayBackendPool,
+  createAppGatewayHttpSetting,
+  createAppGatewayProbe,
+  createAppGatewayListener,
+  createAppGatewayRoutingRule,
+  recommendAppGatewaySku,
+  type LoadBalancerOptions,
+  type FrontendIPConfig,
+  type BackendPoolConfig,
+  type ProbeConfig,
+  type LoadBalancingRuleConfig,
+  type HealthProbeRecommendation,
+  type LoadBalancerSku,
+  type ApplicationGatewayOptions,
+  type AppGatewayIpConfig,
+  type AppGatewayFrontendConfig,
+  type AppGatewayFrontendPortConfig,
+  type AppGatewayBackendPoolConfig,
+  type AppGatewayHttpSettingConfig,
+  type AppGatewayProbeConfig,
+  type AppGatewayListenerConfig,
+  type AppGatewayRoutingRuleConfig,
+  type ApplicationGatewaySkuName,
+  type ApplicationGatewayTier
+} from './loadbalancing';

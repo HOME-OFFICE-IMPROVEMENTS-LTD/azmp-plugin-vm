@@ -16,12 +16,18 @@ import {
   createTrafficManagerEndpointConfig,
   createMultiRegionDeploymentPlan,
   createFailoverPlan,
+  createLoadBalancer,
+  createApplicationGateway,
+  recommendHealthProbe,
+  recommendAppGatewaySku,
   type VmssDefinitionOptions,
   type AutoScalePolicyOptions,
   type MetricScaleRule,
   type TrafficManagerProfileOptions,
   type TrafficManagerEndpointOptions,
-  type MultiRegionDeploymentPlan
+  type MultiRegionDeploymentPlan,
+  type LoadBalancerOptions,
+  type ApplicationGatewayOptions
 } from '../scaling';
 import { VmPlugin } from '../index';
 
@@ -322,6 +328,163 @@ describe('Scaling Module', () => {
     });
   });
 
+  describe('Load Balancer and Application Gateway', () => {
+    it('creates load balancer definition with VMSS backend', () => {
+      const lbOptions: LoadBalancerOptions = {
+        name: 'web-lb',
+        frontendIPConfigurations: [
+          {
+            name: 'publicFrontend',
+            publicIpAddressId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/web-pip'
+          }
+        ],
+        backendAddressPools: [
+          {
+            name: 'vmssPool',
+            vmssResourceId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachineScaleSets/web-vmss'
+          }
+        ],
+        probes: [
+          {
+            name: 'httpProbe',
+            protocol: 'Http',
+            port: 80,
+            requestPath: '/health'
+          }
+        ],
+        loadBalancingRules: [
+          {
+            name: 'httpRule',
+            protocol: 'Tcp',
+            frontendPort: 80,
+            backendPort: 80,
+            frontendIPConfigName: 'publicFrontend',
+            backendPoolName: 'vmssPool',
+            probeName: 'httpProbe'
+          }
+        ]
+      };
+
+      const lb = createLoadBalancer(lbOptions) as any;
+      expect(lb.type).toBe('Microsoft.Network/loadBalancers');
+      expect(lb.properties.frontendIPConfigurations).toHaveLength(1);
+      expect(lb.properties.loadBalancingRules[0].properties.backendPort).toBe(80);
+
+      const probeRecommendation = recommendHealthProbe('Web');
+      expect(probeRecommendation.protocol).toBe('Http');
+      expect(probeRecommendation.requestPath).toBe('/health');
+    });
+
+    it('creates application gateway definition with WAF configuration', () => {
+      const appGwOptions: ApplicationGatewayOptions = {
+        name: 'web-appgw',
+        gatewayIPConfigurations: [
+          { name: 'appGatewayIpConfig', subnetId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Network/virtualNetworks/vnet/subnets/appgw-subnet' }
+        ],
+        frontendIPConfigurations: [
+          {
+            name: 'publicFrontend',
+            publicIpAddressId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/appgw-pip'
+          }
+        ],
+        frontendPorts: [
+          {
+            name: 'port-80',
+            port: 80
+          }
+        ],
+        backendAddressPools: [
+          {
+            name: 'backendPool',
+            addresses: [{ ipAddress: '10.0.1.4' }]
+          }
+        ],
+        httpSettings: [
+          {
+            name: 'httpSetting',
+            port: 80,
+            protocol: 'Http',
+            probeName: 'healthProbe'
+          }
+        ],
+        probes: [
+          {
+            name: 'healthProbe',
+            protocol: 'Http',
+            path: '/health'
+          }
+        ],
+        listeners: [
+          {
+            name: 'httpListener',
+            frontendIPConfigName: 'publicFrontend',
+            frontendPortName: 'port-80',
+            protocol: 'Http'
+          }
+        ],
+        requestRoutingRules: [
+          {
+            name: 'defaultRule',
+            listenerName: 'httpListener',
+            backendPoolName: 'backendPool',
+            backendHttpSettingsName: 'httpSetting'
+          }
+        ],
+        wafConfiguration: {
+          enabled: true,
+          mode: 'Prevention',
+          ruleSetType: 'OWASP',
+          ruleSetVersion: '3.2'
+        }
+      };
+
+      const appGw = createApplicationGateway(appGwOptions) as any;
+      expect(appGw.type).toBe('Microsoft.Network/applicationGateways');
+      expect(appGw.properties.webApplicationFirewallConfiguration.firewallMode).toBe('Prevention');
+      expect(appGw.properties.backendAddressPools[0].properties.backendAddresses).toHaveLength(1);
+
+      const skuRecommendation = recommendAppGatewaySku('missionCritical');
+      expect(skuRecommendation.sku).toBe('WAF_v2');
+      expect(skuRecommendation.rationale).toContain('WAF_v2');
+    });
+
+    it('renders load balancer helper through Handlebars helper map', () => {
+      const helperResult = helpers['scale:lb.definition']({
+        name: 'helper-lb',
+        frontendIPConfigurations: [{ name: 'public', publicIpAddressId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip' }],
+        backendAddressPools: [{ name: 'vmssPool', vmssResourceId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachineScaleSets/vmss' }],
+        loadBalancingRules: [{
+          name: 'httpRule',
+          protocol: 'Tcp',
+          frontendPort: 80,
+          backendPort: 80,
+          frontendIPConfigName: 'public',
+          backendPoolName: 'vmssPool'
+        }]
+      });
+
+      expect((helperResult as any).name).toBe('helper-lb');
+    });
+
+    it('renders application gateway helper through Handlebars', () => {
+      const template = Handlebars.compile(`{{{[scale:appgw.definition] this}}}`);
+      const output = template({
+        name: 'template-appgw',
+        gatewayIPConfigurations: [{ name: 'gwIp', subnetId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Network/virtualNetworks/vnet/subnets/gw' }],
+        frontendIPConfigurations: [{ name: 'public', publicIpAddressId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip' }],
+        frontendPorts: [{ name: 'port-80', port: 80 }],
+        backendAddressPools: [{ name: 'pool' }],
+        httpSettings: [{ name: 'setting', port: 80, protocol: 'Http' }],
+        listeners: [{ name: 'listener', frontendIPConfigName: 'public', frontendPortName: 'port-80', protocol: 'Http' }],
+        requestRoutingRules: [{ name: 'rule', listenerName: 'listener', backendPoolName: 'pool', backendHttpSettingsName: 'setting' }]
+      });
+
+      const parsed = JSON.parse(output);
+      expect(parsed.name).toBe('template-appgw');
+      expect(parsed.properties.requestRoutingRules).toHaveLength(1);
+    });
+  });
+
   describe('Traffic Manager and Multi-region', () => {
     it('creates a Traffic Manager profile with endpoints', () => {
       const profile = createTrafficManagerProfile({
@@ -456,7 +619,7 @@ describe('Scaling Module', () => {
       expect(parsedProfile.name).toBe('template-profile');
       expect(parsedProfile.properties.trafficRoutingMethod).toBe('Priority');
 
-      const helperPlan = helpers['scale:multiregion.plan']({
+      const helperPlan = helpers['scale:multiregion.deployment']({
         applicationName: 'helperApp',
         trafficManagerProfile: 'helper-profile',
         regions: [

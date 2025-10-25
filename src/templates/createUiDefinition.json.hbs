@@ -391,6 +391,302 @@
         ]
       },
       {
+        "name": "scalingConfig",
+        "label": "Scaling & Load Balancing",
+        "subLabel": {
+          "preValidation": "Configure scaling options",
+          "postValidation": "Scaling configured"
+        },
+        "bladeTitle": "Scaling & Load Balancing Configuration",
+        "elements": [
+          {
+            "name": "scalingInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "⚡ Configure Virtual Machine Scale Sets (VMSS), auto-scaling policies, and load balancing for high-performance, elastic workloads."
+            }
+          },
+          {
+            "name": "vmssSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Virtual Machine Scale Set (VMSS)",
+            "elements": [
+              {
+                "name": "createVmss",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Create Virtual Machine Scale Set",
+                "defaultValue": false,
+                "toolTip": "Deploy a VMSS for elastic scaling instead of a single VM"
+              },
+              {
+                "name": "vmssConfig",
+                "type": "Microsoft.Common.Section",
+                "label": "VMSS Configuration",
+                "visible": "[steps('scalingConfig').vmssSection.createVmss]",
+                "elements": [
+                  {
+                    "name": "vmssName",
+                    "type": "Microsoft.Common.TextBox",
+                    "label": "VMSS Name (Optional)",
+                    "placeholder": "Leave empty for auto-generated name",
+                    "toolTip": "Name for the Virtual Machine Scale Set",
+                    "constraints": {
+                      "required": false,
+                      "regex": "^$|^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,62}[a-zA-Z0-9]$",
+                      "validationMessage": "Must be 1-64 characters, start and end with alphanumeric, can contain hyphens"
+                    }
+                  },
+                  {
+                    "name": "vmssInstanceCount",
+                    "type": "Microsoft.Common.Slider",
+                    "label": "Initial Instance Count",
+                    "subLabel": "instances",
+                    "defaultValue": 2,
+                    "min": 1,
+                    "max": 100,
+                    "showStepMarkers": false,
+                    "toolTip": "Number of VM instances to create initially",
+                    "constraints": {
+                      "required": true
+                    }
+                  },
+                  {
+                    "name": "vmssOrchestrationMode",
+                    "type": "Microsoft.Common.DropDown",
+                    "label": "Orchestration Mode",
+                    "defaultValue": "Uniform",
+                    "toolTip": "Uniform provides high scale with identical VMs. Flexible allows mixed VM sizes and better fault domain control.",
+                    "constraints": {
+                      "required": true,
+                      "allowedValues": [
+                        {
+                          "label": "Uniform (Recommended for high scale)",
+                          "value": "Uniform"
+                        },
+                        {
+                          "label": "Flexible (Mixed VM sizes)",
+                          "value": "Flexible"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "vmssUpgradeMode",
+                    "type": "Microsoft.Common.DropDown",
+                    "label": "Upgrade Policy",
+                    "defaultValue": "Manual",
+                    "toolTip": "How VMSS instances are updated when the model changes",
+                    "constraints": {
+                      "required": true,
+                      "allowedValues": [
+                        {
+                          "label": "Manual (Administrator controlled)",
+                          "value": "Manual"
+                        },
+                        {
+                          "label": "Automatic (Immediate updates)",
+                          "value": "Automatic"
+                        },
+                        {
+                          "label": "Rolling (Gradual updates)",
+                          "value": "Rolling"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "autoScalingSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Auto-scaling Configuration",
+            "visible": "[steps('scalingConfig').vmssSection.createVmss]",
+            "elements": [
+              {
+                "name": "enableAutoScaling",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Auto-scaling",
+                "defaultValue": false,
+                "toolTip": "Automatically scale VMSS instances based on CPU usage"
+              },
+              {
+                "name": "autoScaleConfig",
+                "type": "Microsoft.Common.Section",
+                "label": "Auto-scaling Settings",
+                "visible": "[steps('scalingConfig').autoScalingSection.enableAutoScaling]",
+                "elements": [
+                  {
+                    "name": "autoScaleMin",
+                    "type": "Microsoft.Common.Slider",
+                    "label": "Minimum Instances",
+                    "subLabel": "instances",
+                    "defaultValue": 2,
+                    "min": 1,
+                    "max": 50,
+                    "showStepMarkers": false,
+                    "toolTip": "Minimum number of VM instances",
+                    "constraints": {
+                      "required": true
+                    }
+                  },
+                  {
+                    "name": "autoScaleMax",
+                    "type": "Microsoft.Common.Slider",
+                    "label": "Maximum Instances",
+                    "subLabel": "instances",
+                    "defaultValue": 10,
+                    "min": 2,
+                    "max": 100,
+                    "showStepMarkers": false,
+                    "toolTip": "Maximum number of VM instances",
+                    "constraints": {
+                      "required": true
+                    }
+                  },
+                  {
+                    "name": "autoScaleDefault",
+                    "type": "Microsoft.Common.Slider",
+                    "label": "Default Instances",
+                    "subLabel": "instances",
+                    "defaultValue": 3,
+                    "min": 1,
+                    "max": 50,
+                    "showStepMarkers": false,
+                    "toolTip": "Default number of VM instances",
+                    "constraints": {
+                      "required": true
+                    }
+                  },
+                  {
+                    "name": "cpuThresholds",
+                    "type": "Microsoft.Common.Section",
+                    "label": "CPU Scaling Thresholds",
+                    "elements": [
+                      {
+                        "name": "cpuScaleOutThreshold",
+                        "type": "Microsoft.Common.Slider",
+                        "label": "Scale Out CPU Threshold",
+                        "subLabel": "%",
+                        "defaultValue": 75,
+                        "min": 1,
+                        "max": 100,
+                        "showStepMarkers": false,
+                        "toolTip": "CPU percentage that triggers scaling out (adding instances)",
+                        "constraints": {
+                          "required": true
+                        }
+                      },
+                      {
+                        "name": "cpuScaleInThreshold",
+                        "type": "Microsoft.Common.Slider",
+                        "label": "Scale In CPU Threshold",
+                        "subLabel": "%",
+                        "defaultValue": 25,
+                        "min": 1,
+                        "max": 100,
+                        "showStepMarkers": false,
+                        "toolTip": "CPU percentage that triggers scaling in (removing instances)",
+                        "constraints": {
+                          "required": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "loadBalancingSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Load Balancing",
+            "elements": [
+              {
+                "name": "createLoadBalancer",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Create Load Balancer",
+                "defaultValue": false,
+                "toolTip": "Create Azure Load Balancer for distributing traffic"
+              },
+              {
+                "name": "createApplicationGateway",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Create Application Gateway",
+                "defaultValue": false,
+                "toolTip": "Create Application Gateway for advanced HTTP/HTTPS load balancing"
+              }
+            ]
+          },
+          {
+            "name": "multiRegionSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Multi-region Deployment",
+            "visible": "[steps('scalingConfig').vmssSection.createVmss]",
+            "elements": [
+              {
+                "name": "enableMultiRegion",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Multi-region with Traffic Manager",
+                "defaultValue": false,
+                "toolTip": "Deploy across multiple regions with Traffic Manager for global load balancing"
+              },
+              {
+                "name": "multiRegionConfig",
+                "type": "Microsoft.Common.Section",
+                "label": "Traffic Manager Configuration",
+                "visible": "[steps('scalingConfig').multiRegionSection.enableMultiRegion]",
+                "elements": [
+                  {
+                    "name": "trafficManagerDnsName",
+                    "type": "Microsoft.Common.TextBox",
+                    "label": "Traffic Manager DNS Name (Optional)",
+                    "placeholder": "Leave empty for auto-generated name",
+                    "toolTip": "DNS name for the Traffic Manager profile",
+                    "constraints": {
+                      "required": false,
+                      "regex": "^$|^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]$",
+                      "validationMessage": "Must be 1-63 characters, start and end with alphanumeric, can contain hyphens"
+                    }
+                  },
+                  {
+                    "name": "trafficRoutingMethod",
+                    "type": "Microsoft.Common.DropDown",
+                    "label": "Routing Method",
+                    "defaultValue": "Priority",
+                    "toolTip": "How Traffic Manager routes traffic between regions",
+                    "constraints": {
+                      "required": true,
+                      "allowedValues": [
+                        {
+                          "label": "Priority (Primary/Secondary)",
+                          "value": "Priority"
+                        },
+                        {
+                          "label": "Performance (Lowest latency)",
+                          "value": "Performance"
+                        },
+                        {
+                          "label": "Geographic (Location-based)",
+                          "value": "Geographic"
+                        },
+                        {
+                          "label": "Weighted (Distribute load)",
+                          "value": "Weighted"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
         "name": "hadrConfig",
         "label": "High Availability & Disaster Recovery",
         "subLabel": {
@@ -711,7 +1007,24 @@
       "backupScheduleTime": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupConfig.backupScheduleTime, '02:00')]",
       "dailyRetentionDays": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupConfig.dailyRetentionDays, 30)]",
       "enableSnapshot": "[steps('hadrConfig').snapshotSection.enableSnapshot]",
-      "snapshotRetentionDays": "[if(steps('hadrConfig').snapshotSection.enableSnapshot, steps('hadrConfig').snapshotSection.snapshotConfig.snapshotRetentionDays, 7)]"
+      "snapshotRetentionDays": "[if(steps('hadrConfig').snapshotSection.enableSnapshot, steps('hadrConfig').snapshotSection.snapshotConfig.snapshotRetentionDays, 7)]",
+      "createVmss": "[steps('scalingConfig').vmssSection.createVmss]",
+      "vmssName": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssConfig.vmssName, '')]",
+      "vmssInstanceCount": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssConfig.vmssInstanceCount, 2)]",
+      "vmssOrchestrationMode": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssConfig.vmssOrchestrationMode, 'Uniform')]",
+      "vmssUpgradeMode": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssConfig.vmssUpgradeMode, 'Manual')]",
+      "enableAutoScaling": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling, false)]",
+      "autoScaleMin": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.autoScaleMin, 2)]",
+      "autoScaleMax": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.autoScaleMax, 10)]",
+      "autoScaleDefault": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.autoScaleDefault, 3)]",
+      "cpuScaleOutThreshold": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.cpuThresholds.cpuScaleOutThreshold, 75)]",
+      "cpuScaleInThreshold": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.cpuThresholds.cpuScaleInThreshold, 25)]",
+      "createLoadBalancer": "[steps('scalingConfig').loadBalancingSection.createLoadBalancer]",
+      "createApplicationGateway": "[steps('scalingConfig').loadBalancingSection.createApplicationGateway]",
+      "enableMultiRegion": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').multiRegionSection.enableMultiRegion, false)]",
+      "trafficManagerProfileName": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').multiRegionSection.enableMultiRegion), steps('scalingConfig').multiRegionSection.multiRegionConfig.trafficManagerProfileName, '')]",
+      "trafficManagerDnsName": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').multiRegionSection.enableMultiRegion), steps('scalingConfig').multiRegionSection.multiRegionConfig.trafficManagerDnsName, '')]",
+      "trafficRoutingMethod": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').multiRegionSection.enableMultiRegion), steps('scalingConfig').multiRegionSection.multiRegionConfig.trafficRoutingMethod, 'Priority')]"
     }
   }
 }

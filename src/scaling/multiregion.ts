@@ -270,6 +270,6 @@ export function createFailoverPlan(options: FailoverPlanOptions): Record<string,
 export const multiregionHelpers = {
   'scale:multiregion.profile': createTrafficManagerProfile,
   'scale:multiregion.endpoint': createTrafficManagerEndpointConfig,
-  'scale:multiregion.plan': createMultiRegionDeploymentPlan,
+  'scale:multiregion.deployment': createMultiRegionDeploymentPlan,
   'scale:multiregion.failover': createFailoverPlan
 };
