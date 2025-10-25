@@ -1,7 +1,7 @@
 {
   "name": "@hoiltd/azmp-plugin-vm",
-  "version": "1.2.0",
-  "description": "Virtual Machine plugin for Azure Marketplace Generator",
+  "version": "1.7.0",
+  "description": "Virtual Machine plugin for Azure Marketplace Generator with High Availability, Disaster Recovery, Extensions, Security, Identity, Enterprise Scaling, and Azure Monitor Observability features (Monitoring, Alerts, Dashboards)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

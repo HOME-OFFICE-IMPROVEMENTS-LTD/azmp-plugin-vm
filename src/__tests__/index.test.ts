@@ -27,10 +27,10 @@ describe('VmPlugin', () => {
   });
 
   describe('Metadata', () => {
-    it('should have correct metadata', () => {
+    test('should have correct metadata', () => {
       expect(plugin.metadata.id).toBe('vm');
       expect(plugin.metadata.name).toBe('Virtual Machine Plugin');
-      expect(plugin.metadata.version).toBe('1.2.0');
+      expect(plugin.metadata.version).toBe('1.6.0');
     });
   });
 
@@ -67,7 +67,7 @@ describe('VmPlugin', () => {
       expect(templates[0]).toMatchObject({
         type: 'vm',
         name: 'Virtual Machine',
-        version: '1.0.0'
+        version: '1.6.0'
       });
     });
 
@@ -134,10 +134,19 @@ describe('VmPlugin', () => {
 
   describe('CLI Commands', () => {
     it('should register vm command group', () => {
-      const mockProgram = {
+      const mockSubCommand = {
         command: jest.fn().mockReturnThis(),
         description: jest.fn().mockReturnThis(),
         option: jest.fn().mockReturnThis(),
+        requiredOption: jest.fn().mockReturnThis(),
+        action: jest.fn().mockReturnThis()
+      };
+
+      const mockProgram = {
+        command: jest.fn().mockReturnValue(mockSubCommand),
+        description: jest.fn().mockReturnThis(),
+        option: jest.fn().mockReturnThis(),
+        requiredOption: jest.fn().mockReturnThis(),
         action: jest.fn().mockReturnThis()
       };
 

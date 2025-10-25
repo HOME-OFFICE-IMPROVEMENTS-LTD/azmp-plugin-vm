@@ -11,6 +11,21 @@ import { IPlugin, PluginMetadata, TemplateDefinition, PluginContext } from './ty
 import { Command } from 'commander';
 import * as path from 'path';
 import { getNetworkingHelpers } from './networking';
+import { createExtensionHelpers } from './extensions';
+import { createSecurityHelpers } from './security';
+import { createIdentityHelpers } from './identity';
+import { registerAvailabilityHelpers } from './availability';
+import { registerRecoveryHelpers } from './recovery';
+import { registerScalingHelpers, scalingHelpers } from './scaling';
+import { registerMonitoringHelpers } from './modules/monitoring';
+import { registerAlertHelpers } from './modules/alert';
+import { registerDashboardHelpers } from './modules/dashboard';
+import * as availabilityHelpers from './availability/availabilitysets';
+import * as zoneHelpers from './availability/availabilityzones';
+import * as vmssHelpers from './availability/vmss';
+import * as backupHelpers from './recovery/backup';
+import * as siteRecoveryHelpers from './recovery/siterecovery';
+import * as snapshotHelpers from './recovery/snapshots';
 
 /**
  * Virtual Machine Plugin Configuration
@@ -35,8 +50,8 @@ export class VmPlugin implements IPlugin {
   metadata: PluginMetadata = {
     id: 'vm',
     name: 'Virtual Machine Plugin',
-    description: 'Generates Azure Virtual Machine marketplace offers',
-    version: '1.2.0',
+    description: 'Generates Azure Virtual Machine marketplace offers with comprehensive HA/DR and Enterprise Scaling',
+    version: '1.6.0',
     author: 'HOME OFFICE IMPROVEMENTS LTD'
   };
 
@@ -59,6 +74,14 @@ export class VmPlugin implements IPlugin {
     this.context = context;
     context.logger.info(`Initializing VM Plugin v${this.metadata.version}`);
     context.logger.debug('VM Plugin options:', this.options);
+    
+    // Register availability and recovery helpers with Handlebars
+    registerAvailabilityHelpers();
+    registerRecoveryHelpers();
+    registerScalingHelpers();
+    registerMonitoringHelpers();
+    registerAlertHelpers();
+    registerDashboardHelpers();
   }
 
   /**
@@ -74,14 +97,14 @@ export class VmPlugin implements IPlugin {
    * Get template definitions
    */
   getTemplates(): TemplateDefinition[] {
-    const templatesDir = path.join(__dirname, '../templates');
+    const templatesDir = path.join(__dirname, 'templates');
     
     return [
       {
         type: 'vm',
         name: 'Virtual Machine',
-        description: 'Azure Virtual Machine with networking and storage',
-        version: '1.0.0',
+        description: 'Azure Virtual Machine with comprehensive networking, extensions, HA/DR, and Enterprise Scaling',
+        version: '1.6.0',
         templatePath: templatesDir,
         files: {
           mainTemplate: 'mainTemplate.json.hbs',
@@ -109,6 +132,92 @@ export class VmPlugin implements IPlugin {
             metadata: {
               description: 'Type of authentication to use'
             }
+          },
+          adminPasswordOrKey: {
+            type: 'securestring',
+            metadata: {
+              description: 'SSH public key or password for the admin user'
+            }
+          },
+          // Networking parameters
+          virtualNetworkName: {
+            type: 'string',
+            defaultValue: '',
+            metadata: {
+              description: 'Virtual network name'
+            }
+          },
+          subnetName: {
+            type: 'string',
+            defaultValue: 'default',
+            metadata: {
+              description: 'Subnet name'
+            }
+          },
+          publicIPName: {
+            type: 'string',
+            defaultValue: '',
+            metadata: {
+              description: 'Public IP address name'
+            }
+          },
+          // Extension parameters
+          installExtensions: {
+            type: 'bool',
+            defaultValue: true,
+            metadata: {
+              description: 'Whether to install VM extensions'
+            }
+          },
+          installMonitoringExtension: {
+            type: 'bool',
+            defaultValue: true,
+            metadata: {
+              description: 'Whether to install Azure Monitor Agent'
+            }
+          },
+          installSecurityExtension: {
+            type: 'bool',
+            defaultValue: true,
+            metadata: {
+              description: 'Whether to install Azure Security Agent'
+            }
+          },
+          enableManagedIdentity: {
+            type: 'bool',
+            defaultValue: true,
+            metadata: {
+              description: 'Whether to enable system-assigned managed identity'
+            }
+          },
+          // HA/DR parameters
+          createAvailabilitySet: {
+            type: 'bool',
+            defaultValue: false,
+            metadata: {
+              description: 'Whether to create an Availability Set'
+            }
+          },
+          useAvailabilityZones: {
+            type: 'bool',
+            defaultValue: false,
+            metadata: {
+              description: 'Whether to deploy VM in Availability Zones'
+            }
+          },
+          enableBackup: {
+            type: 'bool',
+            defaultValue: false,
+            metadata: {
+              description: 'Whether to enable Azure Backup'
+            }
+          },
+          enableSnapshot: {
+            type: 'bool',
+            defaultValue: false,
+            metadata: {
+              description: 'Whether to enable disk snapshots'
+            }
           }
         }
       }
@@ -122,7 +231,37 @@ export class VmPlugin implements IPlugin {
     // Get networking helpers with net: namespace
     const networkingHelpers = getNetworkingHelpers();
     
-    // Combine VM helpers with networking helpers
+    // Get extension helpers with ext: namespace
+    const extensionHelpers = createExtensionHelpers();
+    
+    // Get security helpers with security: namespace
+    const securityHelpers = createSecurityHelpers();
+    
+    // Get identity helpers with identity: namespace
+    const identityHelpers = createIdentityHelpers();
+    
+    // Create availability helpers object for CLI access
+    const availHelpers = {
+      'availability:zones': zoneHelpers.getAvailableZones,
+      'availability:supportsZones': zoneHelpers.supportsAvailabilityZones,
+      'availability:setSLA': availabilityHelpers.availabilitySetSLA,
+      'availability:zoneSLA': zoneHelpers.availabilityZoneSLA,
+      'availability:vmssSLA': vmssHelpers.vmssSLA,
+    };
+    
+    // Create recovery helpers object for CLI access
+    const recovHelpers = {
+      'recovery:estimateBackupStorage': backupHelpers.estimateBackupStorage,
+      'recovery:getRecommendedTargetRegion': siteRecoveryHelpers.getRecommendedTargetRegion,
+      'recovery:estimateRTO': siteRecoveryHelpers.estimateRTO,
+    };
+    
+    // Create scaling helpers object for CLI access
+    const scaleHelpers = {
+      ...scalingHelpers
+    };
+    
+    // Combine VM helpers with networking, extension, security, and identity helpers
     const vmHelpers = {
       /**
        * Format VM size with description
@@ -160,10 +299,16 @@ export class VmPlugin implements IPlugin {
       }
     };
 
-    // Return combined helpers (VM + Networking)
+    // Return combined helpers (VM + Networking + Extensions + Security + Identity + Availability + Recovery + Scaling)
     return {
       ...vmHelpers,
-      ...networkingHelpers
+      ...networkingHelpers,
+      ...extensionHelpers,
+      ...securityHelpers,
+      ...identityHelpers,
+      ...availHelpers,
+      ...recovHelpers,
+      ...scaleHelpers
     };
   }
 
@@ -199,6 +344,203 @@ export class VmPlugin implements IPlugin {
           this.context.logger.info(`Listing images for publisher: ${options.publisher}`);
           // TODO: Implement actual Azure API call
           this.context.logger.info('Ubuntu 22.04-LTS, Ubuntu 20.04-LTS...');
+        }
+      });
+
+    // ========================================
+    // High Availability Commands (Flat Structure)
+    // ========================================
+    
+    program
+      .command('zones')
+      .description('List availability zones for a region')
+      .option('-r, --region <region>', 'Azure region', 'eastus')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const zones = helpers['availability:zones'](options.region);
+          this.context.logger.info(`Availability zones in ${options.region}: ${zones.join(', ')}`);
+        }
+      });
+
+    program
+      .command('zone-check')
+      .description('Check if a region supports availability zones')
+      .option('-r, --region <region>', 'Azure region', 'eastus')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const supported = helpers['availability:supportsZones'](options.region);
+          this.context.logger.info(`Zone support for ${options.region}: ${supported ? 'Yes' : 'No'}`);
+        }
+      });
+
+    program
+      .command('sla')
+      .description('Calculate SLA for availability configuration')
+      .option('-t, --type <type>', 'Configuration type (set, zone, vmss)', 'set')
+      .option('-o, --orchestration <mode>', 'VMSS orchestration mode', 'Flexible')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          let sla: number;
+          if (options.type === 'set') {
+            sla = helpers['availability:setSLA'](2); // Default 2 VMs for SLA calculation
+          } else if (options.type === 'zone') {
+            sla = helpers['availability:zoneSLA'](1, 1); // 1 VM in 1 zone
+          } else {
+            sla = helpers['availability:vmssSLA'](options.orchestration === 'Flexible' ? 1 : 0, 2);
+          }
+          this.context.logger.info(`SLA for ${options.type}: ${sla}%`);
+        }
+      });
+
+    program
+      .command('ha-config')
+      .description('Recommend high availability configuration')
+      .option('-v, --vm-count <count>', 'Number of VMs', '3')
+      .option('-c, --criticality <level>', 'Workload criticality (low, medium, high)', 'medium')
+      .action((options) => {
+        const vmCount = parseInt(options.vmCount);
+        const criticality = options.criticality.toLowerCase();
+        
+        if (this.context) {
+          this.context.logger.info('Recommended HA Configuration:');
+          
+          if (vmCount === 1) {
+            this.context.logger.info('  Type: Single VM with Premium SSD (SLA: 99.9%)');
+            this.context.logger.info('  Consider: Use availability zones for critical workloads');
+          } else if (vmCount === 2) {
+            if (criticality === 'high') {
+              this.context.logger.info('  Type: 2 VMs across availability zones (SLA: 99.99%)');
+            } else {
+              this.context.logger.info('  Type: Availability Set with 2 fault domains (SLA: 99.95%)');
+            }
+          } else {
+            if (criticality === 'high') {
+              this.context.logger.info('  Type: VMSS Flexible with zone distribution (SLA: 99.99%)');
+            } else {
+              this.context.logger.info('  Type: VMSS Flexible or Availability Set (SLA: 99.95%)');
+            }
+          }
+        }
+      });
+
+    // ========================================
+    // Disaster Recovery Commands (Flat Structure)
+    // ========================================
+    
+    program
+      .command('backup-size')
+      .description('Estimate backup storage requirements')
+      .option('-s, --vm-size <size>', 'VM disk size in GB', '128')
+      .option('-c, --change-rate <rate>', 'Daily change rate (0-1)', '0.05')
+      .option('-r, --retention <days>', 'Retention days', '30')
+      .action((options) => {
+        const vmSize = parseInt(options.vmSize);
+        const changeRate = parseFloat(options.changeRate);
+        const retention = parseInt(options.retention);
+        
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const estimate = helpers['recovery:estimateBackupStorage'](vmSize, changeRate, retention);
+          this.context.logger.info(`Backup storage estimate: ${Math.round(estimate)} GB`);
+          this.context.logger.info(`  VM size: ${vmSize} GB`);
+          this.context.logger.info(`  Daily change: ${(changeRate * 100).toFixed(1)}%`);
+          this.context.logger.info(`  Retention: ${retention} days`);
+        }
+      });
+
+    program
+      .command('region-pairs')
+      .description('List Azure region pairs for disaster recovery')
+      .option('-r, --region <region>', 'Source region (optional)')
+      .action((options) => {
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          
+          if (options.region) {
+            const target = helpers['recovery:getRecommendedTargetRegion'](options.region);
+            this.context.logger.info(`Paired region for ${options.region}: ${target}`);
+          } else {
+            this.context.logger.info('Common Azure region pairs:');
+            this.context.logger.info('  East US → West US');
+            this.context.logger.info('  East US 2 → Central US');
+            this.context.logger.info('  West US 2 → West Central US');
+            this.context.logger.info('  North Europe → West Europe');
+            this.context.logger.info('  Southeast Asia → East Asia');
+            this.context.logger.info('  UK South → UK West');
+          }
+        }
+      });
+
+    program
+      .command('rto')
+      .description('Estimate Recovery Time Objective')
+      .option('-v, --vm-count <count>', 'Number of VMs', '5')
+      .option('-s, --avg-size <size>', 'Average VM size in GB', '128')
+      .action((options) => {
+        const vmCount = parseInt(options.vmCount);
+        const avgSize = parseInt(options.avgSize);
+        
+        if (this.context) {
+          const helpers = this.getHandlebarsHelpers();
+          const rto = helpers['recovery:estimateRTO'](vmCount, avgSize);
+          this.context.logger.info(`Estimated RTO: ${rto} minutes`);
+          this.context.logger.info(`  VMs to recover: ${vmCount}`);
+          this.context.logger.info(`  Average VM size: ${avgSize} GB`);
+        }
+      });
+
+    program
+      .command('backup-presets')
+      .description('List backup policy presets')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available backup presets:');
+          this.context.logger.info('  development: Daily at 2 AM, 7 days retention');
+          this.context.logger.info('  production: Daily at 2 AM, 30 days retention');
+          this.context.logger.info('  longterm: Daily at 2 AM, 365 days retention, monthly/yearly copies');
+        }
+      });
+
+    program
+      .command('snapshot-policies')
+      .description('List snapshot retention policies')
+      .action(() => {
+        if (this.context) {
+          this.context.logger.info('Available snapshot retention policies:');
+          this.context.logger.info('  hourly: Every hour, 24 snapshots retained');
+          this.context.logger.info('  daily: Daily, 7 snapshots retained');
+          this.context.logger.info('  weekly: Weekly, 4 snapshots retained');
+          this.context.logger.info('  monthly: Monthly, 12 snapshots retained');
+        }
+      });
+
+    program
+      .command('snapshot-schedule')
+      .description('Recommend snapshot schedule based on workload')
+      .option('-c, --criticality <level>', 'Workload criticality (low, medium, high)', 'medium')
+      .option('-t, --change-frequency <freq>', 'Change frequency (low, medium, high)', 'medium')
+      .action((options) => {
+        const criticality = options.criticality.toLowerCase();
+        const changeFreq = options.changeFrequency.toLowerCase();
+        
+        if (this.context) {
+          this.context.logger.info('Recommended snapshot schedule:');
+          
+          if (criticality === 'high' || changeFreq === 'high') {
+            this.context.logger.info('  Frequency: Hourly');
+            this.context.logger.info('  Retention: 24 snapshots (1 day)');
+            this.context.logger.info('  Additional: Daily snapshots for 7 days');
+          } else if (criticality === 'medium' || changeFreq === 'medium') {
+            this.context.logger.info('  Frequency: Every 4 hours');
+            this.context.logger.info('  Retention: 6 snapshots (1 day)');
+            this.context.logger.info('  Additional: Daily snapshots for 7 days');
+          } else {
+            this.context.logger.info('  Frequency: Daily');
+            this.context.logger.info('  Retention: 7 snapshots (1 week)');
+          }
         }
       });
 
@@ -364,6 +706,499 @@ export class VmPlugin implements IPlugin {
           this.context.logger.info('  - point-to-point: Direct VNet-to-VNet peering');
           this.context.logger.info('  - transit-vnet: Transit VNet for routing');
         }
+      });
+
+    // ========================================
+    // Extension Commands
+    // ========================================
+    const extCommand = program
+      .command('ext')
+      .description('VM Extension commands');
+
+    extCommand
+      .command('list')
+      .description('List all available VM extensions')
+      .option('-c, --category <category>', 'Filter by category (windows, linux, crossplatform)')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const { extensionsCatalog } = require('./extensions');
+        let extensions = extensionsCatalog;
+        
+        if (options.category) {
+          extensions = extensions.filter((ext: any) => ext.category === options.category);
+        }
+        
+        this.context.logger.info(`Available VM Extensions (${extensions.length}):`);
+        extensions.forEach((ext: any) => {
+          this.context!.logger.info(`  - ${ext.displayName} (${ext.platform})`);
+          this.context!.logger.info(`    ${ext.description}`);
+          this.context!.logger.info(`    Publisher: ${ext.publisher}, Type: ${ext.type}, Version: ${ext.version}`);
+          this.context!.logger.info(`    Priority: ${ext.priority}`);
+        });
+      });
+
+    extCommand
+      .command('list-windows')
+      .description('List Windows-specific extensions')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { extensionsCatalog } = require('./extensions');
+        const extensions = extensionsCatalog.filter((ext: any) => ext.category === 'windows');
+        
+        this.context.logger.info(`Windows VM Extensions (${extensions.length}):`);
+        extensions.forEach((ext: any) => {
+          this.context!.logger.info(`  - ${ext.displayName}: ${ext.description}`);
+        });
+      });
+
+    extCommand
+      .command('list-linux')
+      .description('List Linux-specific extensions')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { extensionsCatalog } = require('./extensions');
+        const extensions = extensionsCatalog.filter((ext: any) => ext.category === 'linux');
+        
+        this.context.logger.info(`Linux VM Extensions (${extensions.length}):`);
+        extensions.forEach((ext: any) => {
+          this.context!.logger.info(`  - ${ext.displayName}: ${ext.description}`);
+        });
+      });
+
+    extCommand
+      .command('list-crossplatform')
+      .description('List cross-platform extensions')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { extensionsCatalog } = require('./extensions');
+        const extensions = extensionsCatalog.filter((ext: any) => ext.category === 'crossplatform');
+        
+        this.context.logger.info(`Cross-Platform VM Extensions (${extensions.length}):`);
+        extensions.forEach((ext: any) => {
+          this.context!.logger.info(`  - ${ext.displayName} (${ext.platform}): ${ext.description}`);
+        });
+      });
+
+    // ========================================
+    // Security Commands
+    // ========================================
+    const securityCommand = program
+      .command('security')
+      .description('VM Security commands');
+
+    securityCommand
+      .command('list')
+      .description('List all available security templates')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { securityTemplates } = require('./security');
+        
+        this.context.logger.info(`Available Security Templates (${securityTemplates.length}):`);
+        securityTemplates.forEach((template: any, index: number) => {
+          this.context!.logger.info(`\n${index + 1}. ${template.name}`);
+          this.context!.logger.info(`   Description: ${template.description}`);
+          this.context!.logger.info(`   Features: ${template.features.join(', ')}`);
+        });
+      });
+
+    securityCommand
+      .command('list-encryption')
+      .description('List encryption options')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Encryption Options:');
+        this.context.logger.info('\n1. Azure Disk Encryption (ADE)');
+        this.context.logger.info('   - BitLocker (Windows) / dm-crypt (Linux)');
+        this.context.logger.info('   - Key Vault integration');
+        this.context.logger.info('\n2. Server-Side Encryption (SSE)');
+        this.context.logger.info('   - Platform-managed keys (PMK)');
+        this.context.logger.info('   - Customer-managed keys (CMK)');
+        this.context.logger.info('\n3. Encryption at Host');
+        this.context.logger.info('   - VM host-level encryption');
+        this.context.logger.info('   - Temp disk and cache encryption');
+      });
+
+    securityCommand
+      .command('list-trusted-launch')
+      .description('List Trusted Launch features')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Trusted Launch Features:');
+        this.context.logger.info('\n1. Secure Boot');
+        this.context.logger.info('   - Boot integrity protection');
+        this.context.logger.info('   - Prevent malicious bootloaders');
+        this.context.logger.info('\n2. vTPM (Virtual Trusted Platform Module)');
+        this.context.logger.info('   - Hardware security module');
+        this.context.logger.info('   - Key storage and attestation');
+        this.context.logger.info('\n3. Boot Integrity Monitoring');
+        this.context.logger.info('   - Azure Security Center integration');
+        this.context.logger.info('   - Continuous monitoring');
+        this.context.logger.info('\n4. Guest Attestation');
+        this.context.logger.info('   - Runtime attestation');
+        this.context.logger.info('   - Security policy enforcement');
+        this.context.logger.info('\n5. Measured Boot');
+        this.context.logger.info('   - Boot chain measurements');
+        this.context.logger.info('   - TPM-based validation');
+      });
+
+    securityCommand
+      .command('list-compliance')
+      .description('List compliance frameworks')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Compliance Frameworks:');
+        this.context.logger.info('\n1. SOC2');
+        this.context.logger.info('2. HIPAA');
+        this.context.logger.info('3. ISO 27001');
+        this.context.logger.info('4. FedRAMP');
+        this.context.logger.info('5. PCI-DSS');
+        this.context.logger.info('6. GDPR');
+      });
+
+    // ========================================
+    // Identity Commands
+    // ========================================
+    const identityCommand = program
+      .command('identity')
+      .description('Identity and Access commands');
+
+    identityCommand
+      .command('list')
+      .description('List all available identity templates')
+      .action(() => {
+        if (!this.context) return;
+        
+        const { identityTemplates } = require('./identity');
+        
+        this.context.logger.info(`Available Identity Templates (${identityTemplates.length}):`);
+        identityTemplates.forEach((template: any, index: number) => {
+          this.context!.logger.info(`\n${index + 1}. ${template.name}`);
+          this.context!.logger.info(`   Description: ${template.description}`);
+          this.context!.logger.info(`   Features: ${template.features.join(', ')}`);
+        });
+      });
+
+    identityCommand
+      .command('list-managed-identity')
+      .description('List managed identity options')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Managed Identity Options:');
+        this.context.logger.info('\n1. System-Assigned Identity');
+        this.context.logger.info('   - Automatic lifecycle management');
+        this.context.logger.info('   - Tied to VM lifecycle');
+        this.context.logger.info('\n2. User-Assigned Identity');
+        this.context.logger.info('   - Independent lifecycle');
+        this.context.logger.info('   - Shared across resources');
+        this.context.logger.info('\n3. Multiple Identities (Hybrid)');
+        this.context.logger.info('   - Both system and user-assigned');
+        this.context.logger.info('   - Maximum flexibility');
+      });
+
+    identityCommand
+      .command('list-aad-features')
+      .description('List Azure AD integration features')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Azure AD Integration Features:');
+        this.context.logger.info('\n1. AAD SSH Login (Linux)');
+        this.context.logger.info('   - SSH with Azure AD credentials');
+        this.context.logger.info('   - Passwordless authentication');
+        this.context.logger.info('\n2. AAD RDP Login (Windows)');
+        this.context.logger.info('   - RDP with Azure AD credentials');
+        this.context.logger.info('   - Windows Hello support');
+        this.context.logger.info('\n3. Conditional Access');
+        this.context.logger.info('   - Location-based policies');
+        this.context.logger.info('   - Device compliance checks');
+        this.context.logger.info('\n4. Multi-Factor Authentication');
+        this.context.logger.info('   - Phone, email, authenticator app');
+        this.context.logger.info('   - FIDO2 security keys');
+      });
+
+    identityCommand
+      .command('list-rbac-roles')
+      .description('List built-in RBAC roles for VMs')
+      .action(() => {
+        if (!this.context) return;
+        
+        this.context.logger.info('Built-in RBAC Roles for Virtual Machines:');
+        this.context.logger.info('\n1. Virtual Machine Contributor');
+        this.context.logger.info('   - Full VM management');
+        this.context.logger.info('\n2. Virtual Machine Administrator Login');
+        this.context.logger.info('   - Admin SSH/RDP access');
+        this.context.logger.info('\n3. Virtual Machine User Login');
+        this.context.logger.info('   - Standard user SSH/RDP access');
+        this.context.logger.info('\n4. Reader');
+        this.context.logger.info('   - Read-only access');
+        this.context.logger.info('\n5. Contributor');
+        this.context.logger.info('   - Full management (all resources)');
+      });
+
+    // ========================================
+    // Monitoring Commands
+    // ========================================
+    const monitorCommand = program
+      .command('mon')
+      .description('Azure Monitor and observability commands');
+
+    monitorCommand
+      .command('workspace')
+      .description('Generate Log Analytics workspace configuration')
+      .requiredOption('-n, --name <name>', 'Workspace name')
+      .requiredOption('-l, --location <location>', 'Azure region')
+      .option('-s, --sku <sku>', 'Workspace SKU', 'PerGB2018')
+      .option('-r, --retention <days>', 'Data retention in days', '30')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerMonitoringHelpers();
+        
+        const helper = Handlebars.helpers['monitor:logAnalyticsWorkspace'];
+        const result = helper.call(null, {
+          hash: {
+            name: options.name,
+            location: options.location,
+            sku: options.sku,
+            retentionInDays: parseInt(options.retention)
+          }
+        });
+        
+        this.context.logger.info('Log Analytics Workspace configuration:');
+        this.context.logger.info(result);
+      });
+
+    monitorCommand
+      .command('diagnostics')
+      .description('Generate diagnostic settings configuration')
+      .requiredOption('-n, --name <name>', 'Diagnostic setting name')
+      .requiredOption('-r, --resource-id <id>', 'Target resource ID')
+      .requiredOption('-w, --workspace-id <id>', 'Log Analytics workspace ID')
+      .option('-l, --logs <categories>', 'Log categories (JSON array)', '[]')
+      .option('-m, --metrics <categories>', 'Metric categories (JSON array)', '[]')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerMonitoringHelpers();
+        
+        const helper = Handlebars.helpers['monitor:diagnosticSettings'];
+        const result = helper.call(null, {
+          hash: {
+            name: options.name,
+            targetResourceId: options.resourceId,
+            workspaceId: options.workspaceId,
+            logs: options.logs,
+            metrics: options.metrics
+          }
+        });
+        
+        this.context.logger.info('Diagnostic Settings configuration:');
+        this.context.logger.info(result);
+      });
+
+    monitorCommand
+      .command('metrics')
+      .description('Generate metrics collection configuration')
+      .requiredOption('-r, --resource-id <id>', 'Target resource ID')
+      .requiredOption('-m, --metrics <names>', 'Metric names (JSON array)')
+      .option('-a, --aggregation <type>', 'Aggregation type', 'Average')
+      .option('-f, --frequency <freq>', 'Collection frequency', 'PT1M')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerMonitoringHelpers();
+        
+        const helper = Handlebars.helpers['monitor:metrics'];
+        const result = helper.call(null, {
+          hash: {
+            targetResourceId: options.resourceId,
+            metrics: options.metrics,
+            aggregation: options.aggregation,
+            frequency: options.frequency
+          }
+        });
+        
+        this.context.logger.info('Metrics configuration:');
+        this.context.logger.info(result);
+      });
+
+    // ========================================
+    // Alert Commands
+    // ========================================
+    const alertCommand = program
+      .command('alert')
+      .description('Azure Monitor alert commands');
+
+    alertCommand
+      .command('metric')
+      .description('Generate metric alert configuration')
+      .requiredOption('-n, --name <name>', 'Alert name')
+      .requiredOption('-s, --scopes <ids>', 'Resource scopes (JSON array)')
+      .requiredOption('-c, --criteria <json>', 'Alert criteria (JSON array)')
+      .option('-d, --description <desc>', 'Alert description')
+      .option('--severity <level>', 'Alert severity (0-4)', '2')
+      .option('--frequency <freq>', 'Evaluation frequency', 'PT5M')
+      .option('--window <size>', 'Time window', 'PT15M')
+      .option('-a, --action-groups <ids>', 'Action group IDs (JSON array)')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerAlertHelpers();
+        
+        const helper = Handlebars.helpers['alert:metricAlert'];
+        const result = helper.call(null, {
+          name: options.name,
+          description: options.description || `Metric alert for ${options.name}`,
+          severity: parseInt(options.severity),
+          scopes: options.scopes,
+          evaluationFrequency: options.frequency,
+          windowSize: options.window,
+          criteria: options.criteria,
+          actionGroupIds: options.actionGroups
+        });
+        
+        this.context.logger.info('Metric Alert configuration:');
+        this.context.logger.info(result);
+      });
+
+    alertCommand
+      .command('log')
+      .description('Generate log query alert configuration')
+      .requiredOption('-n, --name <name>', 'Alert name')
+      .requiredOption('-s, --scopes <ids>', 'Resource scopes (JSON array)')
+      .requiredOption('-q, --query <kql>', 'KQL query')
+      .option('-d, --description <desc>', 'Alert description')
+      .option('--severity <level>', 'Alert severity (0-4)', '2')
+      .option('--frequency <freq>', 'Evaluation frequency', 'PT5M')
+      .option('--window <size>', 'Time window', 'PT15M')
+      .option('--threshold <value>', 'Result count threshold', '0')
+      .option('-a, --action-groups <ids>', 'Action group IDs (JSON array)')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerAlertHelpers();
+        
+        const helper = Handlebars.helpers['alert:logAlert'];
+        const result = helper.call(null, {
+          name: options.name,
+          description: options.description || `Log alert for ${options.name}`,
+          severity: parseInt(options.severity),
+          scopes: options.scopes,
+          evaluationFrequency: options.frequency,
+          windowSize: options.window,
+          query: options.query,
+          threshold: parseInt(options.threshold),
+          actionGroupIds: options.actionGroups
+        });
+        
+        this.context.logger.info('Log Alert configuration:');
+        this.context.logger.info(result);
+      });
+
+    alertCommand
+      .command('action-group')
+      .description('Generate action group configuration')
+      .requiredOption('-n, --name <name>', 'Action group name')
+      .requiredOption('-s, --short-name <short>', 'Short name (max 12 chars)')
+      .option('-e, --email-receivers <json>', 'Email receivers (JSON array)')
+      .option('--sms-receivers <json>', 'SMS receivers (JSON array)')
+      .option('--webhook-receivers <json>', 'Webhook receivers (JSON array)')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerAlertHelpers();
+        
+        const helper = Handlebars.helpers['alert:actionGroup'];
+        const result = helper.call(null, {
+          name: options.name,
+          shortName: options.shortName,
+          emailReceivers: options.emailReceivers,
+          smsReceivers: options.smsReceivers,
+          webhookReceivers: options.webhookReceivers
+        });
+        
+        this.context.logger.info('Action Group configuration:');
+        this.context.logger.info(result);
+      });
+
+    // ========================================
+    // Dashboard Commands
+    // ========================================
+    const dashboardCommand = program
+      .command('dash')
+      .description('Azure Portal dashboard commands');
+
+    dashboardCommand
+      .command('vm-health')
+      .description('Generate VM health monitoring dashboard')
+      .requiredOption('-n, --name <name>', 'Dashboard name')
+      .requiredOption('-l, --location <location>', 'Azure region')
+      .requiredOption('-v, --vm-ids <ids>', 'VM resource IDs (JSON array)')
+      .option('--show-cpu', 'Include CPU metrics', true)
+      .option('--show-memory', 'Include memory metrics', true)
+      .option('--show-disk', 'Include disk metrics', true)
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerDashboardHelpers();
+        
+        const helper = Handlebars.helpers['dashboard:vmHealth'];
+        const result = helper.call(null, {
+          name: options.name,
+          location: options.location,
+          vmResourceIds: options.vmIds,
+          showCpu: options.showCpu,
+          showMemory: options.showMemory,
+          showDisk: options.showDisk
+        });
+        
+        this.context.logger.info('VM Health Dashboard configuration:');
+        this.context.logger.info(result);
+      });
+
+    dashboardCommand
+      .command('vmss-scaling')
+      .description('Generate VMSS autoscaling dashboard')
+      .requiredOption('-n, --name <name>', 'Dashboard name')
+      .requiredOption('-l, --location <location>', 'Azure region')
+      .requiredOption('-v, --vmss-id <id>', 'VMSS resource ID')
+      .option('--show-instances', 'Include instance count', true)
+      .option('--show-cpu', 'Include CPU metrics', true)
+      .option('--show-network', 'Include network metrics', true)
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerDashboardHelpers();
+        
+        const helper = Handlebars.helpers['dashboard:vmssScaling'];
+        const result = helper.call(null, {
+          name: options.name,
+          location: options.location,
+          vmssResourceId: options.vmssId,
+          showInstanceCount: options.showInstances,
+          showCpu: options.showCpu,
+          showNetwork: options.showNetwork
+        });
+        
+        this.context.logger.info('VMSS Scaling Dashboard configuration:');
+        this.context.logger.info(result);
       });
   }
 }
