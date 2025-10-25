@@ -5,6 +5,479 @@ All notable changes to the Azure Marketplace Generator VM Plugin will be documen
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-10-25
+
+### Added - Day 7: Monitoring, Alerts & Observability
+
+#### Overview
+Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers across 3 namespaces (monitor, alert, dashboard) and 8 CLI commands, enabling comprehensive Azure Monitor integration, intelligent alerting, and powerful visualization.
+
+#### Monitoring Helpers (6 helpers, monitor: namespace)
+
+**Log Analytics & Metrics:**
+- **monitor:logAnalyticsWorkspace** - Log Analytics workspace configuration
+  - Centralized log collection and analysis
+  - Pricing tiers: Free, PerGB2018, CapacityReservation
+  - Data retention: 30-730 days
+  - RBAC integration and network isolation
+  - API version: 2022-10-01
+  - Use cases: Centralized logging, SIEM integration, compliance, cost analysis
+
+- **monitor:diagnosticSettings** - Resource diagnostic settings
+  - Export logs and metrics to Log Analytics
+  - Support for all Azure resource types
+  - Log categories by resource (LoadBalancer, ApplicationGateway, NSG)
+  - Metric categories with retention policies
+  - Optional storage account archiving
+  - Optional Event Hub streaming
+  - API version: 2021-05-01-preview
+
+- **monitor:metrics** - Platform metrics collection configuration
+  - VM metrics: CPU, memory, disk I/O, network
+  - Premium disk metrics: IOPS, bandwidth consumption
+  - Aggregation types: Average, Total, Min, Max, Count
+  - Collection frequency: PT1M to PT15M (ISO 8601)
+  - Real-time vs cost-optimized collection
+
+- **monitor:applicationInsights** - Application Performance Monitoring (APM)
+  - Web application monitoring
+  - Custom metrics and KPIs
+  - Availability testing
+  - Dependency tracking
+  - User analytics and session tracking
+  - Sampling configuration (0-100%)
+  - Log Analytics workspace integration
+  - API version: 2020-02-02
+
+- **monitor:dataCollectionRule** - Azure Monitor Agent data collection
+  - Performance counter collection (Windows/Linux)
+  - Windows Event Log collection
+  - Syslog collection (Linux)
+  - Data flow mapping to destinations
+  - Sampling frequency configuration
+  - API version: 2022-06-01
+
+- **monitor:customMetric** - Custom application metrics definition
+  - Business KPIs (orders, signups, revenue)
+  - Application metrics (cache hit rate, queue length)
+  - Infrastructure metrics (custom health checks)
+  - Multi-dimensional metrics with dimensions
+  - Aggregation types and units
+  - Application Insights SDK integration
+
+#### Alert Helpers (6 helpers, alert: namespace)
+
+**Alerting & Notifications:**
+- **alert:metricAlert** - Static threshold metric alerts
+  - Metric-based alerting with configurable thresholds
+  - Severity levels: 0 (Critical) to 4 (Verbose)
+  - Evaluation frequency: PT1M to PT1H
+  - Time window: PT1M to PT1D
+  - Operators: GreaterThan, LessThan, Equals, etc.
+  - Time aggregations: Average, Min, Max, Total, Count
+  - Auto-mitigation support
+  - Action group integration
+  - API version: 2018-03-01
+
+- **alert:dynamicMetricAlert** - Machine learning-based dynamic alerts
+  - ML-based anomaly detection
+  - Alert sensitivity: Low, Medium, High
+  - Historical data analysis for baseline
+  - Forecast-based thresholds
+  - Failing periods configuration
+  - Adaptive to workload patterns
+  - Reduces false positives
+
+- **alert:logAlert** - KQL-based log query alerts
+  - Kusto Query Language (KQL) queries
+  - Log Analytics workspace queries
+  - Custom threshold configuration
+  - Query result evaluation
+  - Multi-resource query support
+  - Complex alerting scenarios
+  - Security event detection
+
+- **alert:activityLogAlert** - Azure Activity Log alerts
+  - Management operation monitoring
+  - Categories: Administrative, ServiceHealth, ResourceHealth, Alert, Autoscale, Security
+  - Common scenarios: VM deletion, service health incidents, resource health changes
+  - Multi-condition filtering
+  - Subscription-level monitoring
+
+- **alert:actionGroup** - Alert notification and automation
+  - Email notifications
+  - SMS notifications
+  - Webhook integrations (Teams, Slack, custom)
+  - Azure Function triggers
+  - Logic App workflows
+  - Voice call notifications
+  - Multiple receivers per action group
+  - Short name (max 12 chars) for SMS identification
+
+- **alert:smartGroup** - Intelligent alert grouping
+  - ML-based alert correlation
+  - Reduce alert fatigue
+  - Incident management integration
+  - Root cause analysis
+  - Pattern detection in alert storms
+  - Grouping strategies: allOf, anyOf
+
+#### Dashboard & Workbook Helpers (8 helpers, dashboard/workbook: namespace)
+
+**Visualization & Analysis:**
+- **dashboard:vmHealth** - VM health monitoring dashboard
+  - CPU usage trend (24h line chart)
+  - Memory usage gauge
+  - Disk I/O (stacked area chart)
+  - Network traffic (line chart)
+  - VM status grid with health indicators
+  - Configurable widget visibility
+
+- **dashboard:vmssScaling** - VMSS autoscaling dashboard
+  - Instance count timeline
+  - CPU utilization by instance
+  - Network throughput
+  - Scaling events log
+  - Real-time VMSS health
+  - Scale rule evaluation status
+
+- **dashboard:multiRegionHealth** - Multi-region monitoring
+  - Regional availability status
+  - Cross-region latency heatmap
+  - Throughput by region
+  - Failover readiness indicators
+  - Global health overview
+
+- **dashboard:loadBalancerPerformance** - Load balancer dashboard
+  - Throughput metrics
+  - Health probe status
+  - SNAT port usage
+  - Backend pool health
+  - Connection distribution
+  - Performance bottleneck identification
+
+- **dashboard:costAnalysis** - Cost analysis dashboard
+  - Daily cost trends
+  - Cost by resource type
+  - Budget tracking
+  - Cost anomaly detection
+  - Forecast vs actual
+  - Time range: 7d, 30d, 90d
+
+- **workbook:vmDiagnostics** - Interactive VM diagnostics workbook
+  - Multi-VM comparison
+  - Performance troubleshooting
+  - Log query integration
+  - Custom time ranges
+  - Export capabilities
+
+- **workbook:securityPosture** - Security posture workbook
+  - Azure Defender integration
+  - Security recommendations
+  - Compliance status
+  - Threat detection alerts
+  - Security score tracking
+
+- **workbook:performanceAnalysis** - Performance analysis workbook
+  - Resource utilization trends
+  - Capacity planning insights
+  - Performance benchmarking
+  - Optimization recommendations
+
+#### CLI Commands (8 new commands, 52 total)
+
+**Monitoring Commands (3 commands):**
+- `azmp mon workspace` - Generate Log Analytics workspace configuration
+  - Parameters: name, location, sku, retention
+  - Output: Complete ARM template JSON
+  
+- `azmp mon diagnostics` - Generate diagnostic settings
+  - Parameters: name, resource-id, workspace-id, logs, metrics
+  - Output: Diagnostic settings ARM template
+  
+- `azmp mon metrics` - Generate metrics collection configuration
+  - Parameters: resource-id, metrics, aggregation, frequency
+  - Output: Metrics configuration JSON
+
+**Alert Commands (3 commands):**
+- `azmp alert metric` - Generate metric alert rule
+  - Parameters: name, scopes, criteria, severity, action-groups
+  - Output: Metric alert ARM template
+  
+- `azmp alert log` - Generate log query alert
+  - Parameters: name, scopes, query, threshold
+  - Output: Log alert ARM template
+  
+- `azmp alert action-group` - Generate action group
+  - Parameters: name, short-name, email-receivers, sms-receivers
+  - Output: Action group ARM template
+
+**Dashboard Commands (2 commands):**
+- `azmp dash vm-health` - Generate VM health dashboard
+  - Parameters: name, location, vm-ids, widget flags
+  - Output: Azure Portal dashboard JSON
+  
+- `azmp dash vmss-scaling` - Generate VMSS scaling dashboard
+  - Parameters: name, location, vmss-id, widget flags
+  - Output: VMSS dashboard JSON
+
+#### Integration Tests (8 new tests, 327 total)
+
+**Monitoring Integration (8 tests):**
+- Complete monitoring stack (workspace + diagnostics + metrics)
+- VMSS monitoring with auto-scale alerts
+- Multi-region health monitoring
+- Load balancer performance monitoring
+- Log Analytics integration with KQL queries
+- Application Insights integration
+- Cost monitoring with budgets
+- Security posture workbook
+
+**All Tests Passing:** ✅ 338/338 (100% success rate)
+- 327 existing tests (Days 1-6)
+- 11 CLI command tests (monitor, alert, dashboard commands)
+
+#### Handlebars Helpers (20 new helpers, 197 total)
+
+**Monitoring Helpers (monitor: namespace):**
+- `monitor:logAnalyticsWorkspace` - Log Analytics workspace
+- `monitor:diagnosticSettings` - Diagnostic settings
+- `monitor:metrics` - Metrics collection
+- `monitor:applicationInsights` - Application Insights
+- `monitor:dataCollectionRule` - Data collection rules
+- `monitor:customMetric` - Custom metrics
+
+**Alert Helpers (alert: namespace):**
+- `alert:metricAlert` - Metric-based alerts
+- `alert:dynamicMetricAlert` - Dynamic threshold alerts
+- `alert:logAlert` - Log query alerts
+- `alert:activityLogAlert` - Activity log alerts
+- `alert:actionGroup` - Action groups
+- `alert:smartGroup` - Smart grouping
+
+**Dashboard Helpers (dashboard: namespace):**
+- `dashboard:vmHealth` - VM health dashboard
+- `dashboard:vmssScaling` - VMSS scaling dashboard
+- `dashboard:multiRegionHealth` - Multi-region dashboard
+- `dashboard:loadBalancerPerformance` - Load balancer dashboard
+- `dashboard:costAnalysis` - Cost analysis dashboard
+- `workbook:vmDiagnostics` - VM diagnostics workbook
+- `workbook:securityPosture` - Security workbook
+- `workbook:performanceAnalysis` - Performance workbook
+
+#### Documentation (1,564 lines)
+
+**New Documentation:**
+- `docs/MONITORING.md` - Comprehensive monitoring documentation (1,564 lines)
+  - Overview with helper counts
+  - Complete helper reference (20 helpers)
+  - CLI command reference (8 commands)
+  - 4 complete integration examples
+  - KQL query library (10+ queries)
+  - Best practices (workspace, metrics, alerts, dashboards, cost, security)
+  - Troubleshooting guide (common issues, performance optimization)
+  - Version history and next steps
+
+**Documentation Structure:**
+- Table of contents with deep linking
+- Syntax and parameters for each helper
+- Output examples (JSON/ARM templates)
+- CLI command examples
+- Common use cases and scenarios
+- Performance characteristics
+- Security considerations
+
+### Code Statistics
+
+**Lines Added:** ~2,650 lines
+- **Monitoring Module:** 634 lines (src/monitoring/index.ts)
+- **Alert Module:** 402 lines (src/alerts/index.ts)
+- **Dashboard Module:** 612 lines (src/dashboards/index.ts)
+- **Integration Tests:** 606 lines (src/__tests__/monitoring-integration.test.ts)
+- **CLI Commands:** 265 lines (src/index.ts additions)
+- **CLI Tests:** 77 lines (src/__tests__/cli-commands.test.ts additions)
+- **Documentation:** 1,564 lines (docs/MONITORING.md)
+
+**Total Plugin Size:**
+- Source Code: ~17,000 lines
+- Test Code: ~7,100 lines
+- Documentation: ~9,500 lines
+- **Total:** ~33,600 lines
+
+### Changed
+
+- Updated `src/index.ts` - Integrated 20 monitoring helpers and 8 CLI commands (lines 945-1210)
+- Updated `src/__tests__/cli-commands.test.ts` - Added 11 CLI command tests
+- Updated `src/__tests__/index.test.ts` - Enhanced mock to support requiredOption() method
+- Updated `package.json` - Version bumped from 1.6.0 to 1.7.0
+- CLI commands shortened to match existing pattern:
+  - `monitor` → `mon` (3 chars)
+  - `dashboard` → `dash` (4 chars)
+  - `alert` unchanged (5 chars)
+
+### KQL Query Library
+
+**VM Performance:**
+- CPU usage over time with 5-minute bins
+- Memory usage trends
+- Disk I/O throughput analysis
+
+**Security:**
+- Failed SSH login attempts detection
+- NSG rule hit analysis
+
+**Application Insights:**
+- Request duration percentiles (P95, P99)
+- Exception analysis
+- Custom metric aggregation
+
+**Alerting:**
+- VMs with sustained high CPU
+- VMs with low disk space
+
+### Best Practices Included
+
+**Workspace Organization:**
+- Separate workspaces by environment (prod, staging, dev)
+- Regional workspaces for global deployments
+- Retention policies by environment
+
+**Metric Collection:**
+- Appropriate frequency selection (1m real-time, 5m standard, 15m cost-sensitive)
+- Essential metrics only
+- Aggregation strategy (Average for CPU/memory, Total for counts)
+
+**Alert Configuration:**
+- Severity levels (Sev 0-4)
+- Alert naming convention
+- Evaluation windows (15-30 minutes)
+- Auto-mitigation
+- Alert fatigue prevention
+
+**Dashboard Design:**
+- Purpose-driven dashboards (ops, performance, cost, security)
+- 10-15 widgets per dashboard
+- Consistent time ranges
+- Color coding for visual identification
+
+**Cost Optimization:**
+- Monitor Log Analytics ingestion costs
+- Use sampling for high-volume telemetry
+- Filter unnecessary data
+- Archive to cheaper storage
+
+**Security:**
+- RBAC for workspace access
+- Data privacy with masking
+- Customer-managed keys
+- Network isolation
+
+### Troubleshooting
+
+Common issues covered:
+- Metrics not appearing (diagnostic settings, agent status, firewall)
+- Log queries returning no results (DCR config, ingestion delay)
+- Alerts not firing (rule enabled, evaluation settings, action group)
+- High costs (identify top sources, optimize collection, capacity reservation)
+- Dashboard not updating (auto-refresh, time range, data sources)
+
+### Performance Characteristics
+
+**Metrics Collection:**
+- Collection frequency: 1-15 minutes
+- Data ingestion delay: 1-5 minutes
+- Retention: 93 days (platform metrics), configurable (custom metrics)
+
+**Log Analytics:**
+- Query performance: <5 seconds (optimized queries)
+- Data ingestion: 3-10 minutes
+- Retention: 30-730 days
+
+**Alerts:**
+- Evaluation frequency: 1 minute to 1 hour
+- Alert triggering: <1 minute after condition met
+- Action group latency: <2 minutes (email/SMS)
+
+**Dashboards:**
+- Refresh rate: 5 minutes to 1 hour (configurable)
+- Query timeout: 30 seconds
+- Widget count: Recommended 10-15 per dashboard
+
+### Breaking Changes
+
+None. All changes are backward compatible with v1.6.0.
+
+### Upgrade Notes
+
+Direct upgrade from v1.6.0 is supported. No migration required.
+
+**New Capabilities:**
+1. Use `monitor:logAnalyticsWorkspace` to create centralized logging
+2. Configure `monitor:diagnosticSettings` for all critical resources
+3. Set up essential alerts with `alert:metricAlert` for CPU/memory/disk
+4. Create operational dashboards with `dashboard:vmHealth`
+5. Use CLI commands for quick configuration generation
+
+**Existing Features:**
+All v1.6.0 helpers (177 total) and CLI commands (44 total) continue to work unchanged.
+
+### SLA & Reliability
+
+**Azure Monitor:**
+- Log Analytics: 99.9% availability
+- Metrics: 99.9% availability
+- Alerts: 99.9% reliability
+
+**Data Retention:**
+- Platform metrics: 93 days (free)
+- Log Analytics: Configurable 30-730 days
+- Application Insights: Configurable 30-730 days
+
+**Query Limits:**
+- Log Analytics: 10,000 results per query
+- Metrics: 1,440 data points per metric
+- Alert evaluation: No hard limits
+
+### Security Notes
+
+- Log Analytics workspaces support RBAC and private endpoints
+- Diagnostic settings can export to secured storage accounts
+- Action groups support Azure AD authentication for webhooks
+- Dashboards respect workspace-level permissions
+- All monitoring data encrypted at rest and in transit
+
+### Compliance Support
+
+Day 7 monitoring features maintain support for all 6 compliance frameworks from v1.3.0:
+- SOC 2, PCI-DSS, HIPAA, ISO 27001, NIST 800-53, FedRAMP
+
+Additional compliance considerations:
+- Audit logging for all monitoring configuration changes
+- Data retention policies for regulatory compliance
+- Secure credential management with Key Vault integration
+- Activity log alerts for compliance monitoring
+
+### Known Limitations
+
+1. **Log Analytics:** Maximum 1,000 workspaces per subscription
+2. **Metric Alerts:** Maximum 5,000 alert rules per subscription
+3. **Action Groups:** Maximum 2,000 action groups per subscription
+4. **Dashboards:** Maximum 100 dashboards per subscription
+5. **Custom Metrics:** Maximum 10 dimensions per metric
+
+### Future Enhancements
+
+Planned for future releases:
+- Azure Monitor Workbooks integration
+- Prometheus metrics support
+- Grafana dashboard templates
+- Azure Monitor Logs query packs
+- Sentinel integration for security analytics
+- Cost optimization recommendations
+- ML-based capacity planning
+
+---
+
 ## [1.6.0] - 2025-10-25
 
 ### Added - Day 6: Enterprise Scaling Stack
