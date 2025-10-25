@@ -943,6 +943,263 @@ export class VmPlugin implements IPlugin {
         this.context.logger.info('\n5. Contributor');
         this.context.logger.info('   - Full management (all resources)');
       });
+
+    // ========================================
+    // Monitoring Commands
+    // ========================================
+    const monitorCommand = program
+      .command('mon')
+      .description('Azure Monitor and observability commands');
+
+    monitorCommand
+      .command('workspace')
+      .description('Generate Log Analytics workspace configuration')
+      .requiredOption('-n, --name <name>', 'Workspace name')
+      .requiredOption('-l, --location <location>', 'Azure region')
+      .option('-s, --sku <sku>', 'Workspace SKU', 'PerGB2018')
+      .option('-r, --retention <days>', 'Data retention in days', '30')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerMonitoringHelpers();
+        
+        const helper = Handlebars.helpers['monitor:logAnalyticsWorkspace'];
+        const result = helper.call(null, {
+          hash: {
+            name: options.name,
+            location: options.location,
+            sku: options.sku,
+            retentionInDays: parseInt(options.retention)
+          }
+        });
+        
+        this.context.logger.info('Log Analytics Workspace configuration:');
+        this.context.logger.info(result);
+      });
+
+    monitorCommand
+      .command('diagnostics')
+      .description('Generate diagnostic settings configuration')
+      .requiredOption('-n, --name <name>', 'Diagnostic setting name')
+      .requiredOption('-r, --resource-id <id>', 'Target resource ID')
+      .requiredOption('-w, --workspace-id <id>', 'Log Analytics workspace ID')
+      .option('-l, --logs <categories>', 'Log categories (JSON array)', '[]')
+      .option('-m, --metrics <categories>', 'Metric categories (JSON array)', '[]')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerMonitoringHelpers();
+        
+        const helper = Handlebars.helpers['monitor:diagnosticSettings'];
+        const result = helper.call(null, {
+          hash: {
+            name: options.name,
+            targetResourceId: options.resourceId,
+            workspaceId: options.workspaceId,
+            logs: options.logs,
+            metrics: options.metrics
+          }
+        });
+        
+        this.context.logger.info('Diagnostic Settings configuration:');
+        this.context.logger.info(result);
+      });
+
+    monitorCommand
+      .command('metrics')
+      .description('Generate metrics collection configuration')
+      .requiredOption('-r, --resource-id <id>', 'Target resource ID')
+      .requiredOption('-m, --metrics <names>', 'Metric names (JSON array)')
+      .option('-a, --aggregation <type>', 'Aggregation type', 'Average')
+      .option('-f, --frequency <freq>', 'Collection frequency', 'PT1M')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerMonitoringHelpers();
+        
+        const helper = Handlebars.helpers['monitor:metrics'];
+        const result = helper.call(null, {
+          hash: {
+            targetResourceId: options.resourceId,
+            metrics: options.metrics,
+            aggregation: options.aggregation,
+            frequency: options.frequency
+          }
+        });
+        
+        this.context.logger.info('Metrics configuration:');
+        this.context.logger.info(result);
+      });
+
+    // ========================================
+    // Alert Commands
+    // ========================================
+    const alertCommand = program
+      .command('alert')
+      .description('Azure Monitor alert commands');
+
+    alertCommand
+      .command('metric')
+      .description('Generate metric alert configuration')
+      .requiredOption('-n, --name <name>', 'Alert name')
+      .requiredOption('-s, --scopes <ids>', 'Resource scopes (JSON array)')
+      .requiredOption('-c, --criteria <json>', 'Alert criteria (JSON array)')
+      .option('-d, --description <desc>', 'Alert description')
+      .option('--severity <level>', 'Alert severity (0-4)', '2')
+      .option('--frequency <freq>', 'Evaluation frequency', 'PT5M')
+      .option('--window <size>', 'Time window', 'PT15M')
+      .option('-a, --action-groups <ids>', 'Action group IDs (JSON array)')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerAlertHelpers();
+        
+        const helper = Handlebars.helpers['alert:metricAlert'];
+        const result = helper.call(null, {
+          name: options.name,
+          description: options.description || `Metric alert for ${options.name}`,
+          severity: parseInt(options.severity),
+          scopes: options.scopes,
+          evaluationFrequency: options.frequency,
+          windowSize: options.window,
+          criteria: options.criteria,
+          actionGroupIds: options.actionGroups
+        });
+        
+        this.context.logger.info('Metric Alert configuration:');
+        this.context.logger.info(result);
+      });
+
+    alertCommand
+      .command('log')
+      .description('Generate log query alert configuration')
+      .requiredOption('-n, --name <name>', 'Alert name')
+      .requiredOption('-s, --scopes <ids>', 'Resource scopes (JSON array)')
+      .requiredOption('-q, --query <kql>', 'KQL query')
+      .option('-d, --description <desc>', 'Alert description')
+      .option('--severity <level>', 'Alert severity (0-4)', '2')
+      .option('--frequency <freq>', 'Evaluation frequency', 'PT5M')
+      .option('--window <size>', 'Time window', 'PT15M')
+      .option('--threshold <value>', 'Result count threshold', '0')
+      .option('-a, --action-groups <ids>', 'Action group IDs (JSON array)')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerAlertHelpers();
+        
+        const helper = Handlebars.helpers['alert:logAlert'];
+        const result = helper.call(null, {
+          name: options.name,
+          description: options.description || `Log alert for ${options.name}`,
+          severity: parseInt(options.severity),
+          scopes: options.scopes,
+          evaluationFrequency: options.frequency,
+          windowSize: options.window,
+          query: options.query,
+          threshold: parseInt(options.threshold),
+          actionGroupIds: options.actionGroups
+        });
+        
+        this.context.logger.info('Log Alert configuration:');
+        this.context.logger.info(result);
+      });
+
+    alertCommand
+      .command('action-group')
+      .description('Generate action group configuration')
+      .requiredOption('-n, --name <name>', 'Action group name')
+      .requiredOption('-s, --short-name <short>', 'Short name (max 12 chars)')
+      .option('-e, --email-receivers <json>', 'Email receivers (JSON array)')
+      .option('--sms-receivers <json>', 'SMS receivers (JSON array)')
+      .option('--webhook-receivers <json>', 'Webhook receivers (JSON array)')
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerAlertHelpers();
+        
+        const helper = Handlebars.helpers['alert:actionGroup'];
+        const result = helper.call(null, {
+          name: options.name,
+          shortName: options.shortName,
+          emailReceivers: options.emailReceivers,
+          smsReceivers: options.smsReceivers,
+          webhookReceivers: options.webhookReceivers
+        });
+        
+        this.context.logger.info('Action Group configuration:');
+        this.context.logger.info(result);
+      });
+
+    // ========================================
+    // Dashboard Commands
+    // ========================================
+    const dashboardCommand = program
+      .command('dash')
+      .description('Azure Portal dashboard commands');
+
+    dashboardCommand
+      .command('vm-health')
+      .description('Generate VM health monitoring dashboard')
+      .requiredOption('-n, --name <name>', 'Dashboard name')
+      .requiredOption('-l, --location <location>', 'Azure region')
+      .requiredOption('-v, --vm-ids <ids>', 'VM resource IDs (JSON array)')
+      .option('--show-cpu', 'Include CPU metrics', true)
+      .option('--show-memory', 'Include memory metrics', true)
+      .option('--show-disk', 'Include disk metrics', true)
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerDashboardHelpers();
+        
+        const helper = Handlebars.helpers['dashboard:vmHealth'];
+        const result = helper.call(null, {
+          name: options.name,
+          location: options.location,
+          vmResourceIds: options.vmIds,
+          showCpu: options.showCpu,
+          showMemory: options.showMemory,
+          showDisk: options.showDisk
+        });
+        
+        this.context.logger.info('VM Health Dashboard configuration:');
+        this.context.logger.info(result);
+      });
+
+    dashboardCommand
+      .command('vmss-scaling')
+      .description('Generate VMSS autoscaling dashboard')
+      .requiredOption('-n, --name <name>', 'Dashboard name')
+      .requiredOption('-l, --location <location>', 'Azure region')
+      .requiredOption('-v, --vmss-id <id>', 'VMSS resource ID')
+      .option('--show-instances', 'Include instance count', true)
+      .option('--show-cpu', 'Include CPU metrics', true)
+      .option('--show-network', 'Include network metrics', true)
+      .action((options) => {
+        if (!this.context) return;
+        
+        const Handlebars = require('handlebars');
+        registerDashboardHelpers();
+        
+        const helper = Handlebars.helpers['dashboard:vmssScaling'];
+        const result = helper.call(null, {
+          name: options.name,
+          location: options.location,
+          vmssResourceId: options.vmssId,
+          showInstanceCount: options.showInstances,
+          showCpu: options.showCpu,
+          showNetwork: options.showNetwork
+        });
+        
+        this.context.logger.info('VMSS Scaling Dashboard configuration:');
+        this.context.logger.info(result);
+      });
   }
 }
 

@@ -134,10 +134,19 @@ describe('VmPlugin', () => {
 
   describe('CLI Commands', () => {
     it('should register vm command group', () => {
-      const mockProgram = {
+      const mockSubCommand = {
         command: jest.fn().mockReturnThis(),
         description: jest.fn().mockReturnThis(),
         option: jest.fn().mockReturnThis(),
+        requiredOption: jest.fn().mockReturnThis(),
+        action: jest.fn().mockReturnThis()
+      };
+
+      const mockProgram = {
+        command: jest.fn().mockReturnValue(mockSubCommand),
+        description: jest.fn().mockReturnThis(),
+        option: jest.fn().mockReturnThis(),
+        requiredOption: jest.fn().mockReturnThis(),
         action: jest.fn().mockReturnThis()
       };
 

@@ -241,11 +241,99 @@ describe('VmPlugin CLI Commands', () => {
     });
   });
 
+  describe('Monitoring Commands', () => {
+    it('should register mon command', () => {
+      const monitorCommand = program.commands.find(cmd => cmd.name() === 'mon');
+      expect(monitorCommand).toBeDefined();
+      expect(monitorCommand?.description()).toBe('Azure Monitor and observability commands');
+    });
+
+    it('should register mon workspace subcommand', () => {
+      const monitorCommand = program.commands.find(cmd => cmd.name() === 'mon');
+      const workspaceCommand = monitorCommand?.commands.find(cmd => cmd.name() === 'workspace');
+      
+      expect(workspaceCommand).toBeDefined();
+      expect(workspaceCommand?.description()).toBe('Generate Log Analytics workspace configuration');
+    });
+
+    it('should register mon diagnostics subcommand', () => {
+      const monitorCommand = program.commands.find(cmd => cmd.name() === 'mon');
+      const diagnosticsCommand = monitorCommand?.commands.find(cmd => cmd.name() === 'diagnostics');
+      
+      expect(diagnosticsCommand).toBeDefined();
+      expect(diagnosticsCommand?.description()).toBe('Generate diagnostic settings configuration');
+    });
+
+    it('should register mon metrics subcommand', () => {
+      const monitorCommand = program.commands.find(cmd => cmd.name() === 'mon');
+      const metricsCommand = monitorCommand?.commands.find(cmd => cmd.name() === 'metrics');
+      
+      expect(metricsCommand).toBeDefined();
+      expect(metricsCommand?.description()).toBe('Generate metrics collection configuration');
+    });
+  });
+
+  describe('Alert Commands', () => {
+    it('should register alert command', () => {
+      const alertCommand = program.commands.find(cmd => cmd.name() === 'alert');
+      expect(alertCommand).toBeDefined();
+      expect(alertCommand?.description()).toBe('Azure Monitor alert commands');
+    });
+
+    it('should register alert metric subcommand', () => {
+      const alertCommand = program.commands.find(cmd => cmd.name() === 'alert');
+      const metricCommand = alertCommand?.commands.find(cmd => cmd.name() === 'metric');
+      
+      expect(metricCommand).toBeDefined();
+      expect(metricCommand?.description()).toBe('Generate metric alert configuration');
+    });
+
+    it('should register alert log subcommand', () => {
+      const alertCommand = program.commands.find(cmd => cmd.name() === 'alert');
+      const logCommand = alertCommand?.commands.find(cmd => cmd.name() === 'log');
+      
+      expect(logCommand).toBeDefined();
+      expect(logCommand?.description()).toBe('Generate log query alert configuration');
+    });
+
+    it('should register alert action-group subcommand', () => {
+      const alertCommand = program.commands.find(cmd => cmd.name() === 'alert');
+      const actionGroupCommand = alertCommand?.commands.find(cmd => cmd.name() === 'action-group');
+      
+      expect(actionGroupCommand).toBeDefined();
+      expect(actionGroupCommand?.description()).toBe('Generate action group configuration');
+    });
+  });
+
+  describe('Dashboard Commands', () => {
+    it('should register dash command', () => {
+      const dashboardCommand = program.commands.find(cmd => cmd.name() === 'dash');
+      expect(dashboardCommand).toBeDefined();
+      expect(dashboardCommand?.description()).toBe('Azure Portal dashboard commands');
+    });
+
+    it('should register dash vm-health subcommand', () => {
+      const dashboardCommand = program.commands.find(cmd => cmd.name() === 'dash');
+      const vmHealthCommand = dashboardCommand?.commands.find(cmd => cmd.name() === 'vm-health');
+      
+      expect(vmHealthCommand).toBeDefined();
+      expect(vmHealthCommand?.description()).toBe('Generate VM health monitoring dashboard');
+    });
+
+    it('should register dash vmss-scaling subcommand', () => {
+      const dashboardCommand = program.commands.find(cmd => cmd.name() === 'dash');
+      const vmssScalingCommand = dashboardCommand?.commands.find(cmd => cmd.name() === 'vmss-scaling');
+      
+      expect(vmssScalingCommand).toBeDefined();
+      expect(vmssScalingCommand?.description()).toBe('Generate VMSS autoscaling dashboard');
+    });
+  });
+
   describe('Command Count', () => {
     it('should have comprehensive command coverage', () => {
-      // Should have 8 top-level commands: vm + 7 networking resource types
       const commandNames = program.commands.map(cmd => cmd.name());
       
+      // Original commands
       expect(commandNames).toContain('vm');
       expect(commandNames).toContain('vnet');
       expect(commandNames).toContain('subnet');
@@ -255,8 +343,13 @@ describe('VmPlugin CLI Commands', () => {
       expect(commandNames).toContain('bastion');
       expect(commandNames).toContain('peering');
       
-      // Verify total count
-      expect(program.commands.length).toBeGreaterThanOrEqual(8);
+      // New monitoring commands
+      expect(commandNames).toContain('mon');
+      expect(commandNames).toContain('alert');
+      expect(commandNames).toContain('dash');
+      
+      // Verify total count includes monitoring commands
+      expect(program.commands.length).toBeGreaterThanOrEqual(11);
     });
   });
 });
