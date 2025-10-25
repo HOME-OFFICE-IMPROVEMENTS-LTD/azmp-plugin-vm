@@ -12,9 +12,16 @@ import {
   createScheduleProfile,
   createCpuScalingPolicy,
   createBusinessHoursSchedule,
+  createTrafficManagerProfile,
+  createTrafficManagerEndpointConfig,
+  createMultiRegionDeploymentPlan,
+  createFailoverPlan,
   type VmssDefinitionOptions,
   type AutoScalePolicyOptions,
-  type MetricScaleRule
+  type MetricScaleRule,
+  type TrafficManagerProfileOptions,
+  type TrafficManagerEndpointOptions,
+  type MultiRegionDeploymentPlan
 } from '../scaling';
 import { VmPlugin } from '../index';
 
@@ -312,6 +319,156 @@ describe('Scaling Module', () => {
         expect(parsed.type).toBe('Microsoft.Insights/autoscalesettings');
         expect(parsed.name).toBe('template-autoscale');
       }
+    });
+  });
+
+  describe('Traffic Manager and Multi-region', () => {
+    it('creates a Traffic Manager profile with endpoints', () => {
+      const profile = createTrafficManagerProfile({
+        name: 'global-profile',
+        dnsName: 'my-global-app',
+        routingMethod: 'Priority',
+        monitor: {
+          protocol: 'HTTPS',
+          port: 443,
+          path: '/health'
+        },
+        endpoints: [
+          {
+            name: 'primary-endpoint',
+            type: 'AzureEndpoint',
+            targetResourceId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachineScaleSets/app-primary',
+            priority: 1,
+            location: 'eastus'
+          },
+          {
+            name: 'secondary-endpoint',
+            type: 'AzureEndpoint',
+            targetResourceId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachineScaleSets/app-secondary',
+            priority: 2,
+            location: 'westus'
+          }
+        ]
+      } as TrafficManagerProfileOptions) as any;
+
+      expect(profile.type).toBe('Microsoft.Network/trafficManagerProfiles');
+      expect(profile.properties.dnsConfig.relativeName).toBe('my-global-app');
+      expect(profile.properties.endpoints).toHaveLength(2);
+      expect(profile.properties.endpoints[0].properties.priority).toBe(1);
+    });
+
+    it('validates Traffic Manager endpoint requirements', () => {
+      expect(() => createTrafficManagerEndpointConfig({
+        name: 'invalid-endpoint',
+        type: 'AzureEndpoint'
+      } as TrafficManagerEndpointOptions)).toThrow('Azure endpoints require a targetResourceId');
+    });
+
+    it('creates multi-region deployment plan with validation', () => {
+      const plan = createMultiRegionDeploymentPlan({
+        applicationName: 'globalApp',
+        trafficManagerProfile: 'global-profile',
+        regions: [
+          {
+            region: 'eastus',
+            role: 'Primary',
+            vmssName: 'app-eastus',
+            trafficManagerEndpointName: 'primary-endpoint',
+            baselineCapacity: 4,
+            maxCapacity: 20
+          },
+          {
+            region: 'westus',
+            role: 'Secondary',
+            vmssName: 'app-westus',
+            trafficManagerEndpointName: 'secondary-endpoint',
+            baselineCapacity: 2,
+            maxCapacity: 15,
+            failoverPriority: 2
+          }
+        ],
+        replication: {
+          enabled: true,
+          recoveryVaultName: 'globalVault',
+          replicationPolicyName: 'globalPolicy'
+        },
+        monitoring: {
+          applicationInsightsResourceId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Insights/components/app-insights'
+        }
+      } as MultiRegionDeploymentPlan) as any;
+
+      expect(plan.applicationName).toBe('globalApp');
+      expect(plan.regions).toHaveLength(2);
+      expect(plan.regions[0].role).toBe('Primary');
+      expect(plan.replication.enabled).toBe(true);
+      expect(plan.monitoring.applicationInsightsResourceId).toBeDefined();
+    });
+
+    it('throws when multi-region plan has multiple primaries', () => {
+      expect(() => createMultiRegionDeploymentPlan({
+        applicationName: 'invalidApp',
+        trafficManagerProfile: 'global-profile',
+        regions: [
+          { region: 'eastus', role: 'Primary' },
+          { region: 'westus', role: 'Primary' }
+        ],
+        replication: { enabled: false },
+        monitoring: {}
+      } as any)).toThrow('Multi-region deployment plan must have exactly one primary region');
+    });
+
+    it('creates failover plan with steps', () => {
+      const plan = createFailoverPlan({
+        name: 'global-failover',
+        primaryRegion: 'eastus',
+        secondaryRegion: 'westus',
+        detectionThresholdMinutes: 7,
+        steps: [
+          {
+            name: 'Notify stakeholders',
+            description: 'Send outage notification',
+            automation: {
+              logicAppResourceId: '/subscriptions/000/resourceGroups/rg/providers/Microsoft.Logic/workflows/notify'
+            }
+          },
+          {
+            name: 'Promote secondary',
+            description: 'Scale up secondary region capacity',
+            validation: ['Verify application availability', 'Confirm Traffic Manager routing']
+          }
+        ]
+      });
+
+      expect(plan.name).toBe('global-failover');
+      expect(plan.detectionThresholdMinutes).toBe(7);
+      expect(plan.steps).toHaveLength(2);
+      expect((plan as any).steps[1].validation).toContain('Verify application availability');
+    });
+
+    it('renders multi-region helpers via Handlebars', () => {
+      const profileTemplate = Handlebars.compile(`{{{[scale:multiregion.profile] this}}}`);
+      const profileResult = profileTemplate({
+        name: 'template-profile',
+        dnsName: 'template-dns'
+      });
+
+      const parsedProfile = JSON.parse(profileResult);
+      expect(parsedProfile.name).toBe('template-profile');
+      expect(parsedProfile.properties.trafficRoutingMethod).toBe('Priority');
+
+      const helperPlan = helpers['scale:multiregion.plan']({
+        applicationName: 'helperApp',
+        trafficManagerProfile: 'helper-profile',
+        regions: [
+          { region: 'centralus', role: 'Primary' },
+          { region: 'eastus2', role: 'Secondary' }
+        ],
+        replication: { enabled: false },
+        monitoring: {}
+      });
+
+      expect((helperPlan as any).regions).toHaveLength(2);
+      expect((helperPlan as any).regions[0].role).toBe('Primary');
     });
   });
 });

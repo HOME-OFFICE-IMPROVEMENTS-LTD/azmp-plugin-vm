@@ -10,6 +10,7 @@
 import Handlebars from 'handlebars';
 import { vmssHelpers } from './vmss';
 import { autoscaleHelpers } from './autoscale';
+import { multiregionHelpers } from './multiregion';
 
 type HelperFunction = (...args: any[]) => unknown;
 
@@ -18,7 +19,8 @@ type HelperFunction = (...args: any[]) => unknown;
  */
 export const scalingHelpers = {
   ...vmssHelpers,
-  ...autoscaleHelpers
+  ...autoscaleHelpers,
+  ...multiregionHelpers
 };
 
 /**
@@ -61,3 +63,19 @@ export {
   type TimeAggregationType,
   type ComparisonOperator
 } from './autoscale';
+
+export {
+  multiregionHelpers,
+  createTrafficManagerProfile,
+  createTrafficManagerEndpointConfig,
+  createMultiRegionDeploymentPlan,
+  createFailoverPlan,
+  type TrafficManagerProfileOptions,
+  type TrafficManagerEndpointOptions,
+  type TrafficRoutingMethod,
+  type TrafficManagerMonitorProtocol,
+  type MultiRegionDeploymentPlan,
+  type RegionDeployment,
+  type FailoverPlanOptions,
+  type FailoverStep
+} from './multiregion';
