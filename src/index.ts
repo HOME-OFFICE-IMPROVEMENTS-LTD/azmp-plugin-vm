@@ -325,25 +325,129 @@ export class VmPlugin implements IPlugin {
 
     vmCommand
       .command('list-sizes')
-      .description('List available VM sizes for a location')
+      .description('List available VM sizes for a location (requires Azure credentials)')
       .option('-l, --location <location>', 'Azure location', 'eastus')
-      .action((options) => {
+      .option('-s, --subscription <subscription>', 'Azure subscription ID (required for Azure API)', process.env.AZURE_SUBSCRIPTION_ID)
+      .action(async (options) => {
         if (this.context) {
-          this.context.logger.info(`Listing VM sizes for location: ${options.location}`);
-          // TODO: Implement actual Azure API call
-          this.context.logger.info('Standard_D2s_v3, Standard_D4s_v3, Standard_D8s_v3...');
+          if (!options.subscription) {
+            this.context.logger.error('Azure subscription ID required. Use --subscription or set AZURE_SUBSCRIPTION_ID environment variable.');
+            return;
+          }
+
+          try {
+            this.context.logger.info(`Listing VM sizes for location: ${options.location}`);
+            
+            // Use Azure SDK for real API call
+            const { azureAuth, ComputeHelper } = await import('./azure');
+            const credential = azureAuth.getCredential();
+            const compute = new ComputeHelper(credential, options.subscription);
+            
+            const sizes = await compute.listVmSizes(options.location);
+            
+            if (sizes.length === 0) {
+              this.context.logger.info('No VM sizes found for this location.');
+            } else {
+              this.context.logger.info(`Found ${sizes.length} VM sizes:`);
+              sizes.slice(0, 20).forEach(size => {
+                this.context!.logger.info(
+                  `  ${size.name.padEnd(25)} - ${size.numberOfCores} cores, ${(size.memoryInMB / 1024).toFixed(1)}GB RAM, ${size.maxDataDiskCount} data disks`
+                );
+              });
+              
+              if (sizes.length > 20) {
+                this.context.logger.info(`  ... and ${sizes.length - 20} more`);
+              }
+            }
+          } catch (error) {
+            this.context.logger.error(`Failed to list VM sizes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            this.context.logger.error('Ensure Azure credentials are configured (az login or environment variables).');
+          }
         }
       });
 
     vmCommand
       .command('list-images')
-      .description('List available VM images')
-      .option('-p, --publisher <publisher>', 'Image publisher', 'Canonical')
-      .action((options) => {
+      .description('List popular VM images for a location (requires Azure credentials)')
+      .option('-l, --location <location>', 'Azure location', 'eastus')
+      .option('-p, --publisher <publisher>', 'Image publisher (optional, defaults to popular images)')
+      .option('-s, --subscription <subscription>', 'Azure subscription ID (required for Azure API)', process.env.AZURE_SUBSCRIPTION_ID)
+      .action(async (options) => {
         if (this.context) {
-          this.context.logger.info(`Listing images for publisher: ${options.publisher}`);
-          // TODO: Implement actual Azure API call
-          this.context.logger.info('Ubuntu 22.04-LTS, Ubuntu 20.04-LTS...');
+          if (!options.subscription) {
+            this.context.logger.error('Azure subscription ID required. Use --subscription or set AZURE_SUBSCRIPTION_ID environment variable.');
+            return;
+          }
+
+          try {
+            const { azureAuth, ComputeHelper } = await import('./azure');
+            const credential = azureAuth.getCredential();
+            const compute = new ComputeHelper(credential, options.subscription);
+
+            if (options.publisher) {
+              // List images for specific publisher
+              this.context.logger.info(`Listing images for publisher: ${options.publisher} in ${options.location}`);
+              const offers = await compute.listVmImageOffers(options.location, options.publisher);
+              
+              if (offers.length === 0) {
+                this.context.logger.info(`No offers found for publisher ${options.publisher}`);
+              } else {
+                this.context.logger.info(`Found ${offers.length} offers:`);
+                offers.forEach(offer => {
+                  this.context!.logger.info(`  ${offer}`);
+                });
+              }
+            } else {
+              // List popular images
+              this.context.logger.info(`Listing popular VM images for ${options.location}...`);
+              const images = await compute.listPopularVmImages(options.location);
+              
+              if (images.length === 0) {
+                this.context.logger.info('No popular images available for this location.');
+              } else {
+                this.context.logger.info(`Found ${images.length} popular images:`);
+                images.forEach(img => {
+                  this.context!.logger.info(`  ${img.publisher}/${img.offer} - ${img.sku} (${img.version})`);
+                });
+              }
+            }
+          } catch (error) {
+            this.context.logger.error(`Failed to list VM images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            this.context.logger.error('Ensure Azure credentials are configured (az login or environment variables).');
+          }
+        }
+      });
+
+    vmCommand
+      .command('validate-credentials')
+      .description('Validate Azure credentials and subscription access')
+      .option('-s, --subscription <subscription>', 'Azure subscription ID', process.env.AZURE_SUBSCRIPTION_ID)
+      .action(async (options) => {
+        if (this.context) {
+          try {
+            this.context.logger.info('Validating Azure credentials...');
+            
+            const { azureAuth } = await import('./azure');
+            const isValid = await azureAuth.validateCredentials(options.subscription);
+            
+            if (isValid) {
+              this.context.logger.info('✅ Azure credentials are valid');
+              const status = azureAuth.getAuthStatus();
+              this.context.logger.info(`   Credential type: ${status.credentialType}`);
+              
+              if (options.subscription) {
+                this.context.logger.info(`   Subscription: ${options.subscription}`);
+              }
+            } else {
+              this.context.logger.error('❌ Azure credentials validation failed');
+              this.context.logger.error('   Please run "az login" or configure environment variables:');
+              this.context.logger.error('   - AZURE_CLIENT_ID');
+              this.context.logger.error('   - AZURE_CLIENT_SECRET');
+              this.context.logger.error('   - AZURE_TENANT_ID');
+            }
+          } catch (error) {
+            this.context.logger.error(`Failed to validate credentials: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         }
       });
 
