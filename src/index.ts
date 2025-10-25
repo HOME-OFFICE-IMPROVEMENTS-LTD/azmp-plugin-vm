@@ -19,6 +19,7 @@ import { registerRecoveryHelpers } from './recovery';
 import { registerScalingHelpers, scalingHelpers } from './scaling';
 import { registerMonitoringHelpers } from './modules/monitoring';
 import { registerAlertHelpers } from './modules/alert';
+import { registerDashboardHelpers } from './modules/dashboard';
 import * as availabilityHelpers from './availability/availabilitysets';
 import * as zoneHelpers from './availability/availabilityzones';
 import * as vmssHelpers from './availability/vmss';
@@ -80,6 +81,7 @@ export class VmPlugin implements IPlugin {
     registerScalingHelpers();
     registerMonitoringHelpers();
     registerAlertHelpers();
+    registerDashboardHelpers();
   }
 
   /**
