@@ -12,7 +12,7 @@
       "type": "string",
       "defaultValue": "{{defaultVmSize}}",
       "metadata": {
-        "description": "{{vm-size vmSize}}"
+        "description": "Size of the virtual machine (e.g., Standard_D2s_v3)"
       }
     },
     "adminUsername": {
@@ -41,17 +41,106 @@
       "metadata": {
         "description": "Location for all resources"
       }
+    },
+    "enableMonitoring": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Azure Monitor integration with Log Analytics and Application Insights"
+      }
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('vmName'), '-law')]",
+      "metadata": {
+        "description": "Name of the Log Analytics workspace for monitoring"
+      }
+    },
+    "logAnalyticsRetentionDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 30,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Number of days to retain logs in Log Analytics workspace"
+      }
+    },
+    "enableApplicationInsights": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Application Insights for advanced monitoring and diagnostics"
+      }
+    },
+    "alertEmailRecipients": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Email addresses to receive alert notifications"
+      }
+    },
+    "enableMetricAlerts": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable metric-based alerts for CPU, memory, and disk"
+      }
+    },
+    "cpuAlertThreshold": {
+      "type": "int",
+      "defaultValue": 80,
+      "minValue": 1,
+      "maxValue": 100,
+      "metadata": {
+        "description": "CPU percentage threshold for alerts (1-100)"
+      }
+    },
+    "memoryAlertThreshold": {
+      "type": "int",
+      "defaultValue": 80,
+      "minValue": 1,
+      "maxValue": 100,
+      "metadata": {
+        "description": "Memory percentage threshold for alerts (1-100)"
+      }
+    },
+    "diskAlertThreshold": {
+      "type": "int",
+      "defaultValue": 85,
+      "minValue": 1,
+      "maxValue": 100,
+      "metadata": {
+        "description": "Disk usage percentage threshold for alerts (1-100)"
+      }
+    },
+    "enableWorkbooks": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy Azure Monitor Workbooks for enhanced visualization"
+      }
+    },
+    "workbookTypes": {
+      "type": "array",
+      "defaultValue": [
+        "performance",
+        "security",
+        "availability"
+      ],
+      "metadata": {
+        "description": "Types of workbooks to deploy: performance, security, availability, cost"
+      }
     }
   },
   "variables": {
-    "nicName": "{{vm-resource-name parameters('vmName') 'nic'}}",
+    "nicName": "[concat(parameters('vmName'), '-nic')]",
     "addressPrefix": "10.0.0.0/16",
     "subnetName": "Subnet",
     "subnetPrefix": "10.0.0.0/24",
-    "publicIPAddressName": "{{vm-resource-name parameters('vmName') 'pip'}}",
-    "virtualNetworkName": "{{vm-resource-name parameters('vmName') 'vnet'}}",
+    "publicIPAddressName": "[concat(parameters('vmName'), '-pip')]",
+    "virtualNetworkName": "[concat(parameters('vmName'), '-vnet')]",
     "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
-    "networkSecurityGroupName": "{{vm-resource-name parameters('vmName') 'nsg'}}",
+    "networkSecurityGroupName": "[concat(parameters('vmName'), '-nsg')]",
     "linuxConfiguration": {
       "disablePasswordAuthentication": true,
       "ssh": {
@@ -59,6 +148,49 @@
           {
             "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
             "keyData": "[parameters('adminPasswordOrKey')]"
+          }
+        ]
+      }
+    },
+    "applicationInsightsName": "[concat(parameters('vmName'), '-ai')]",
+    "actionGroupName": "[concat(parameters('vmName'), '-ag')]",
+    "diagnosticSettingsName": "[concat(parameters('vmName'), '-diag')]",
+    "performanceWorkbookName": "[concat(parameters('vmName'), '-perf-wb')]",
+    "securityWorkbookName": "[concat(parameters('vmName'), '-sec-wb')]",
+    "availabilityWorkbookName": "[concat(parameters('vmName'), '-avail-wb')]",
+    "diagnosticSettingsConfig": {
+      "metrics": [
+        {
+          "category": "AllMetrics",
+          "enabled": true,
+          "retentionPolicy": {
+            "enabled": true,
+            "days": "[parameters('logAnalyticsRetentionDays')]"
+          }
+        }
+      ],
+      "logs": []
+    },
+    "dataCollectionRuleConfig": {
+      "dataSources": {
+        "performanceCounters": [
+          {
+            "name": "perfCounterDataSource",
+            "samplingFrequencyInSeconds": 60,
+            "streams": ["Microsoft-Perf"],
+            "counterSpecifiers": [
+              "\\Processor(_Total)\\% Processor Time",
+              "\\Memory\\Available MBytes",
+              "\\LogicalDisk(_Total)\\% Free Space"
+            ]
+          }
+        ],
+        "syslog": [
+          {
+            "name": "syslogDataSource",
+            "streams": ["Microsoft-Syslog"],
+            "facilityNames": ["auth", "authpriv", "cron", "daemon", "kern", "syslog"],
+            "logLevels": ["Error", "Warning", "Info"]
           }
         ]
       }
@@ -185,6 +317,139 @@
           ]
         }
       }
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[parameters('logAnalyticsWorkspaceName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": "[parameters('logAnalyticsRetentionDays')]",
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        }
+      },
+      "tags": {
+        "Purpose": "VM Monitoring",
+        "CreatedBy": "Azure Marketplace VM Plugin"
+      }
+    },
+    {
+      "condition": "[and(parameters('enableMonitoring'), parameters('enableApplicationInsights'))]",
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('applicationInsightsName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      ],
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      },
+      "tags": {
+        "Purpose": "VM Advanced Monitoring",
+        "CreatedBy": "Azure Marketplace VM Plugin"
+      }
+    },
+    {
+      "condition": "[and(parameters('enableMonitoring'), parameters('enableMetricAlerts'), greater(length(parameters('alertEmailRecipients')), 0))]",
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('actionGroupName')]",
+      "location": "Global",
+      "properties": {
+        "groupShortName": "[take(parameters('vmName'), 12)]",
+        "enabled": true,
+        "emailReceivers": "[if(greater(length(parameters('alertEmailRecipients')), 0), json(concat('[', string(map(parameters('alertEmailRecipients'), lambda('email', json(concat('{\"name\":\"Email', copyIndex(), '\",\"emailAddress\":\"', variables('email'), '\",\"useCommonAlertSchema\":true}'))))), ']')), json('[]'))]"
+      },
+      "tags": {
+        "Purpose": "Alert Notifications",
+        "CreatedBy": "Azure Marketplace VM Plugin"
+      }
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]",
+      "name": "[variables('diagnosticSettingsName')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      ],
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]",
+        "metrics": "[variables('diagnosticSettingsConfig').metrics]",
+        "logs": "[variables('diagnosticSettingsConfig').logs]"
+      }
+    },
+    {
+      "condition": "[and(parameters('enableMonitoring'), parameters('enableMetricAlerts'))]",
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(parameters('vmName'), '-cpu-alert')]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]",
+        "[if(greater(length(parameters('alertEmailRecipients')), 0), resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName')), resourceId('Microsoft.Compute/virtualMachines', parameters('vmName')))]"
+      ],
+      "properties": {
+        "description": "Alert when CPU exceeds threshold",
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+        ],
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": "[parameters('cpuAlertThreshold')]",
+              "name": "Metric1",
+              "metricNamespace": "Microsoft.Compute/virtualMachines",
+              "metricName": "Percentage CPU",
+              "operator": "GreaterThan",
+              "timeAggregation": "Average",
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "actions": "[if(greater(length(parameters('alertEmailRecipients')), 0), json(concat('[{\"actionGroupId\":\"', resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName')), '\"}]')), json('[]'))]"
+      },
+      "tags": {
+        "AlertType": "CPU",
+        "CreatedBy": "Azure Marketplace VM Plugin"
+      }
+    },
+    {
+      "condition": "[and(parameters('enableMonitoring'), parameters('enableWorkbooks'), contains(parameters('workbookTypes'), 'performance'))]",
+      "type": "Microsoft.Insights/workbooks",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceGroup().id, 'performance-workbook')]",
+      "location": "[parameters('location')]",
+      "kind": "shared",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      ],
+      "properties": {
+        "displayName": "[concat(parameters('vmName'), ' - Performance Analysis')]",
+        "serializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"## VM Performance Dashboard\\n\\nMonitor CPU, Memory, Disk, and Network metrics.\"},\"name\":\"text-header\"},{\"type\":10,\"content\":{\"chartId\":\"workbook-perf\",\"version\":\"MetricsItem/2.0\",\"size\":0,\"chartType\":2,\"resourceIds\":[\"/subscriptions/{subscription}/resourceGroups/{resourceGroup}/providers/Microsoft.Compute/virtualMachines/{vmName}\"],\"timeContext\":{\"durationMs\":3600000},\"metrics\":[{\"namespace\":\"Microsoft.Compute/virtualMachines\",\"metric\":\"Microsoft.Compute/virtualMachines--Percentage CPU\",\"aggregation\":4}]},\"name\":\"cpu-metrics\"}],\"fallbackResourceIds\":[\"/subscriptions/{subscription}/resourceGroups/{resourceGroup}/providers/Microsoft.Compute/virtualMachines/{vmName}\"]}",
+        "category": "Azure Monitor",
+        "sourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      },
+      "tags": {
+        "WorkbookType": "Performance",
+        "CreatedBy": "Azure Marketplace VM Plugin"
+      }
     }
   ],
   "outputs": {
@@ -195,6 +460,51 @@
     "sshCommand": {
       "type": "string",
       "value": "[concat('ssh ', parameters('adminUsername'), '@', reference(variables('publicIPAddressName')).ipAddress)]"
+    },
+    "logAnalyticsWorkspaceId": {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "string",
+      "value": "[if(parameters('enableMonitoring'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '')]",
+      "metadata": {
+        "description": "Resource ID of the Log Analytics workspace"
+      }
+    },
+    "logAnalyticsWorkspaceUrl": {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "string",
+      "value": "[if(parameters('enableMonitoring'), concat('https://portal.azure.com/#@', subscription().tenantId, '/resource', resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '/Overview'), '')]",
+      "metadata": {
+        "description": "URL to Log Analytics workspace in Azure Portal"
+      }
+    },
+    "applicationInsightsKey": {
+      "condition": "[and(parameters('enableMonitoring'), parameters('enableApplicationInsights'))]",
+      "type": "string",
+      "value": "[if(and(parameters('enableMonitoring'), parameters('enableApplicationInsights')), reference(resourceId('Microsoft.Insights/components', variables('applicationInsightsName'))).InstrumentationKey, '')]",
+      "metadata": {
+        "description": "Application Insights instrumentation key"
+      }
+    },
+    "applicationInsightsConnectionString": {
+      "condition": "[and(parameters('enableMonitoring'), parameters('enableApplicationInsights'))]",
+      "type": "string",
+      "value": "[if(and(parameters('enableMonitoring'), parameters('enableApplicationInsights')), reference(resourceId('Microsoft.Insights/components', variables('applicationInsightsName'))).ConnectionString, '')]",
+      "metadata": {
+        "description": "Application Insights connection string"
+      }
+    },
+    "monitoringStatus": {
+      "type": "object",
+      "value": {
+        "monitoringEnabled": "[parameters('enableMonitoring')]",
+        "applicationInsightsEnabled": "[parameters('enableApplicationInsights')]",
+        "metricsAlertsEnabled": "[parameters('enableMetricAlerts')]",
+        "workbooksDeployed": "[if(parameters('enableWorkbooks'), length(parameters('workbookTypes')), 0)]",
+        "logRetentionDays": "[parameters('logAnalyticsRetentionDays')]"
+      },
+      "metadata": {
+        "description": "Summary of monitoring configuration"
+      }
     }
   }
 }
