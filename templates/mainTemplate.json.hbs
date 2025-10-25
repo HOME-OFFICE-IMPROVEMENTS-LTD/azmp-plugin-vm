@@ -130,6 +130,90 @@
       "metadata": {
         "description": "Types of workbooks to deploy: performance, security, availability, cost"
       }
+    },
+    "enableCostOptimization": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable cost optimization features including right-sizing recommendations and budget alerts"
+      }
+    },
+    "monthlyBudgetLimit": {
+      "type": "int",
+      "defaultValue": 500,
+      "minValue": 0,
+      "metadata": {
+        "description": "Monthly budget limit in USD for cost alerts (0 to disable budget alerts)"
+      }
+    },
+    "budgetAlertThreshold": {
+      "type": "int",
+      "defaultValue": 80,
+      "minValue": 1,
+      "maxValue": 100,
+      "metadata": {
+        "description": "Budget alert threshold percentage (1-100)"
+      }
+    },
+    "enableRightSizing": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable automatic right-sizing recommendations based on usage patterns"
+      }
+    },
+    "enablePerformanceOptimization": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable performance optimization features including autoscale and performance baselines"
+      }
+    },
+    "enableAutoscale": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable autoscaling for the VM (requires VMSS deployment)"
+      }
+    },
+    "autoscaleMinInstances": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 100,
+      "metadata": {
+        "description": "Minimum number of instances for autoscale"
+      }
+    },
+    "autoscaleMaxInstances": {
+      "type": "int",
+      "defaultValue": 10,
+      "minValue": 1,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Maximum number of instances for autoscale"
+      }
+    },
+    "autoscaleCpuThreshold": {
+      "type": "int",
+      "defaultValue": 75,
+      "minValue": 1,
+      "maxValue": 100,
+      "metadata": {
+        "description": "CPU percentage threshold to trigger scale-out (1-100)"
+      }
+    },
+    "performanceProfile": {
+      "type": "string",
+      "defaultValue": "Balanced",
+      "allowedValues": [
+        "LowCost",
+        "Balanced",
+        "HighPerformance"
+      ],
+      "metadata": {
+        "description": "Performance profile for VM configuration: LowCost (cost-optimized), Balanced (mixed), HighPerformance (performance-optimized)"
+      }
     }
   },
   "variables": {
@@ -193,6 +277,41 @@
             "logLevels": ["Error", "Warning", "Info"]
           }
         ]
+      }
+    },
+    "costOptimizationConfig": {
+      "budgetName": "[concat(parameters('vmName'), '-budget')]",
+      "estimatedMonthlyCost": "[mul(730, 0.096)]",
+      "costAllocationTags": {
+        "CostCenter": "IT",
+        "Environment": "Production",
+        "ManagedBy": "Azure Marketplace"
+      }
+    },
+    "performanceOptimizationConfig": {
+      "autoscaleSettingsName": "[concat(parameters('vmName'), '-autoscale')]",
+      "performanceBaseline": {
+        "cpuBaseline": 30,
+        "memoryBaseline": 40,
+        "diskIOPSBaseline": 500,
+        "networkThroughputBaseline": 100
+      },
+      "performanceProfile": {
+        "LowCost": {
+          "diskType": "Standard_LRS",
+          "acceleratedNetworking": false,
+          "priority": "Low"
+        },
+        "Balanced": {
+          "diskType": "StandardSSD_LRS",
+          "acceleratedNetworking": true,
+          "priority": "Regular"
+        },
+        "HighPerformance": {
+          "diskType": "Premium_LRS",
+          "acceleratedNetworking": true,
+          "priority": "Regular"
+        }
       }
     }
   },
@@ -316,6 +435,137 @@
             }
           ]
         }
+      }
+    },
+    {
+      "condition": "[and(parameters('enableCostOptimization'), greater(parameters('monthlyBudgetLimit'), 0))]",
+      "type": "Microsoft.Consumption/budgets",
+      "apiVersion": "2021-10-01",
+      "name": "[variables('costOptimizationConfig').budgetName]",
+      "properties": {
+        "category": "Cost",
+        "amount": "[parameters('monthlyBudgetLimit')]",
+        "timeGrain": "Monthly",
+        "timePeriod": {
+          "startDate": "[concat(utcNow('yyyy-MM'), '-01')]",
+          "endDate": "[concat(string(add(int(utcNow('yyyy')), 5)), '-12-31')]"
+        },
+        "filter": {
+          "and": [
+            {
+              "dimensions": {
+                "name": "ResourceGroupName",
+                "operator": "In",
+                "values": [
+                  "[resourceGroup().name]"
+                ]
+              }
+            }
+          ]
+        },
+        "notifications": {
+          "Actual_GreaterThan_80_Percent": {
+            "enabled": true,
+            "operator": "GreaterThan",
+            "threshold": "[parameters('budgetAlertThreshold')]",
+            "contactEmails": "[if(greater(length(parameters('alertEmailRecipients')), 0), parameters('alertEmailRecipients'), json('[]'))]",
+            "contactRoles": [
+              "Owner",
+              "Contributor"
+            ],
+            "thresholdType": "Actual"
+          },
+          "Forecasted_GreaterThan_90_Percent": {
+            "enabled": true,
+            "operator": "GreaterThan",
+            "threshold": 90,
+            "contactEmails": "[if(greater(length(parameters('alertEmailRecipients')), 0), parameters('alertEmailRecipients'), json('[]'))]",
+            "contactRoles": [
+              "Owner",
+              "Contributor"
+            ],
+            "thresholdType": "Forecasted"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[and(parameters('enablePerformanceOptimization'), parameters('enableAutoscale'))]",
+      "type": "Microsoft.Insights/autoscaleSettings",
+      "apiVersion": "2022-10-01",
+      "name": "[variables('performanceOptimizationConfig').autoscaleSettingsName]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ],
+      "properties": {
+        "name": "[variables('performanceOptimizationConfig').autoscaleSettingsName]",
+        "targetResourceUri": "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]",
+        "enabled": true,
+        "profiles": [
+          {
+            "name": "Auto scale condition",
+            "capacity": {
+              "minimum": "[string(parameters('autoscaleMinInstances'))]",
+              "maximum": "[string(parameters('autoscaleMaxInstances'))]",
+              "default": "[string(parameters('autoscaleMinInstances'))]"
+            },
+            "rules": [
+              {
+                "scaleAction": {
+                  "direction": "Increase",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT5M"
+                },
+                "metricTrigger": {
+                  "metricName": "Percentage CPU",
+                  "metricNamespace": "Microsoft.Compute/virtualMachines",
+                  "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]",
+                  "operator": "GreaterThan",
+                  "statistic": "Average",
+                  "threshold": "[parameters('autoscaleCpuThreshold')]",
+                  "timeAggregation": "Average",
+                  "timeGrain": "PT1M",
+                  "timeWindow": "PT5M"
+                }
+              },
+              {
+                "scaleAction": {
+                  "direction": "Decrease",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT5M"
+                },
+                "metricTrigger": {
+                  "metricName": "Percentage CPU",
+                  "metricNamespace": "Microsoft.Compute/virtualMachines",
+                  "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]",
+                  "operator": "LessThan",
+                  "statistic": "Average",
+                  "threshold": "[sub(parameters('autoscaleCpuThreshold'), 20)]",
+                  "timeAggregation": "Average",
+                  "timeGrain": "PT1M",
+                  "timeWindow": "PT10M"
+                }
+              }
+            ]
+          }
+        ],
+        "notifications": [
+          {
+            "operation": "Scale",
+            "email": {
+              "sendToSubscriptionAdministrator": true,
+              "sendToSubscriptionCoAdministrators": false,
+              "customEmails": "[if(greater(length(parameters('alertEmailRecipients')), 0), parameters('alertEmailRecipients'), json('[]'))]"
+            }
+          }
+        ]
+      },
+      "tags": {
+        "Purpose": "Autoscale Configuration",
+        "CreatedBy": "Azure Marketplace VM Plugin"
       }
     },
     {
@@ -504,6 +754,49 @@
       },
       "metadata": {
         "description": "Summary of monitoring configuration"
+      }
+    },
+    "costAnalysis": {
+      "condition": "[parameters('enableCostOptimization')]",
+      "type": "object",
+      "value": {
+        "estimatedMonthlyCost": "[variables('costOptimizationConfig').estimatedMonthlyCost]",
+        "vmSizeCost": "[parameters('vmSize')]",
+        "budgetLimit": "[parameters('monthlyBudgetLimit')]",
+        "budgetAlertThreshold": "[parameters('budgetAlertThreshold')]",
+        "rightSizingEnabled": "[parameters('enableRightSizing')]",
+        "costAllocationTags": "[variables('costOptimizationConfig').costAllocationTags]"
+      },
+      "metadata": {
+        "description": "Cost analysis and optimization configuration"
+      }
+    },
+    "performanceMetrics": {
+      "condition": "[parameters('enablePerformanceOptimization')]",
+      "type": "object",
+      "value": {
+        "performanceProfile": "[parameters('performanceProfile')]",
+        "autoscaleEnabled": "[parameters('enableAutoscale')]",
+        "autoscaleRange": "[if(parameters('enableAutoscale'), concat(string(parameters('autoscaleMinInstances')), '-', string(parameters('autoscaleMaxInstances'))), 'N/A')]",
+        "performanceBaseline": "[variables('performanceOptimizationConfig').performanceBaseline]",
+        "diskType": "[variables('performanceOptimizationConfig').performanceProfile[parameters('performanceProfile')].diskType]",
+        "acceleratedNetworking": "[variables('performanceOptimizationConfig').performanceProfile[parameters('performanceProfile')].acceleratedNetworking]"
+      },
+      "metadata": {
+        "description": "Performance optimization configuration and baselines"
+      }
+    },
+    "optimizationStatus": {
+      "type": "object",
+      "value": {
+        "costOptimizationEnabled": "[parameters('enableCostOptimization')]",
+        "performanceOptimizationEnabled": "[parameters('enablePerformanceOptimization')]",
+        "rightSizingEnabled": "[parameters('enableRightSizing')]",
+        "autoscaleEnabled": "[parameters('enableAutoscale')]",
+        "budgetAlertsConfigured": "[greater(parameters('monthlyBudgetLimit'), 0)]"
+      },
+      "metadata": {
+        "description": "Summary of cost and performance optimization status"
       }
     }
   }
