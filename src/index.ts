@@ -16,6 +16,7 @@ import { createSecurityHelpers } from './security';
 import { createIdentityHelpers } from './identity';
 import { registerAvailabilityHelpers } from './availability';
 import { registerRecoveryHelpers } from './recovery';
+import { registerScalingHelpers, scalingHelpers } from './scaling';
 import * as availabilityHelpers from './availability/availabilitysets';
 import * as zoneHelpers from './availability/availabilityzones';
 import * as vmssHelpers from './availability/vmss';
@@ -46,8 +47,8 @@ export class VmPlugin implements IPlugin {
   metadata: PluginMetadata = {
     id: 'vm',
     name: 'Virtual Machine Plugin',
-    description: 'Generates Azure Virtual Machine marketplace offers',
-    version: '1.4.0',
+    description: 'Generates Azure Virtual Machine marketplace offers with comprehensive HA/DR and UI integration',
+    version: '1.5.0',
     author: 'HOME OFFICE IMPROVEMENTS LTD'
   };
 
@@ -74,6 +75,7 @@ export class VmPlugin implements IPlugin {
     // Register availability and recovery helpers with Handlebars
     registerAvailabilityHelpers();
     registerRecoveryHelpers();
+    registerScalingHelpers();
   }
 
   /**
@@ -89,14 +91,14 @@ export class VmPlugin implements IPlugin {
    * Get template definitions
    */
   getTemplates(): TemplateDefinition[] {
-    const templatesDir = path.join(__dirname, '../templates');
+    const templatesDir = path.join(__dirname, 'templates');
     
     return [
       {
         type: 'vm',
         name: 'Virtual Machine',
-        description: 'Azure Virtual Machine with networking and storage',
-        version: '1.0.0',
+        description: 'Azure Virtual Machine with comprehensive networking, extensions, and HA/DR capabilities',
+        version: '1.5.0',
         templatePath: templatesDir,
         files: {
           mainTemplate: 'mainTemplate.json.hbs',
@@ -123,6 +125,92 @@ export class VmPlugin implements IPlugin {
             allowedValues: ['sshPublicKey', 'password'],
             metadata: {
               description: 'Type of authentication to use'
+            }
+          },
+          adminPasswordOrKey: {
+            type: 'securestring',
+            metadata: {
+              description: 'SSH public key or password for the admin user'
+            }
+          },
+          // Networking parameters
+          virtualNetworkName: {
+            type: 'string',
+            defaultValue: '',
+            metadata: {
+              description: 'Virtual network name'
+            }
+          },
+          subnetName: {
+            type: 'string',
+            defaultValue: 'default',
+            metadata: {
+              description: 'Subnet name'
+            }
+          },
+          publicIPName: {
+            type: 'string',
+            defaultValue: '',
+            metadata: {
+              description: 'Public IP address name'
+            }
+          },
+          // Extension parameters
+          installExtensions: {
+            type: 'bool',
+            defaultValue: true,
+            metadata: {
+              description: 'Whether to install VM extensions'
+            }
+          },
+          installMonitoringExtension: {
+            type: 'bool',
+            defaultValue: true,
+            metadata: {
+              description: 'Whether to install Azure Monitor Agent'
+            }
+          },
+          installSecurityExtension: {
+            type: 'bool',
+            defaultValue: true,
+            metadata: {
+              description: 'Whether to install Azure Security Agent'
+            }
+          },
+          enableManagedIdentity: {
+            type: 'bool',
+            defaultValue: true,
+            metadata: {
+              description: 'Whether to enable system-assigned managed identity'
+            }
+          },
+          // HA/DR parameters
+          createAvailabilitySet: {
+            type: 'bool',
+            defaultValue: false,
+            metadata: {
+              description: 'Whether to create an Availability Set'
+            }
+          },
+          useAvailabilityZones: {
+            type: 'bool',
+            defaultValue: false,
+            metadata: {
+              description: 'Whether to deploy VM in Availability Zones'
+            }
+          },
+          enableBackup: {
+            type: 'bool',
+            defaultValue: false,
+            metadata: {
+              description: 'Whether to enable Azure Backup'
+            }
+          },
+          enableSnapshot: {
+            type: 'bool',
+            defaultValue: false,
+            metadata: {
+              description: 'Whether to enable disk snapshots'
             }
           }
         }
@@ -160,6 +248,11 @@ export class VmPlugin implements IPlugin {
       'recovery:estimateBackupStorage': backupHelpers.estimateBackupStorage,
       'recovery:getRecommendedTargetRegion': siteRecoveryHelpers.getRecommendedTargetRegion,
       'recovery:estimateRTO': siteRecoveryHelpers.estimateRTO,
+    };
+    
+    // Create scaling helpers object for CLI access
+    const scaleHelpers = {
+      ...scalingHelpers
     };
     
     // Combine VM helpers with networking, extension, security, and identity helpers
@@ -200,7 +293,7 @@ export class VmPlugin implements IPlugin {
       }
     };
 
-    // Return combined helpers (VM + Networking + Extensions + Security + Identity + Availability + Recovery)
+    // Return combined helpers (VM + Networking + Extensions + Security + Identity + Availability + Recovery + Scaling)
     return {
       ...vmHelpers,
       ...networkingHelpers,
@@ -208,7 +301,8 @@ export class VmPlugin implements IPlugin {
       ...securityHelpers,
       ...identityHelpers,
       ...availHelpers,
-      ...recovHelpers
+      ...recovHelpers,
+      ...scaleHelpers
     };
   }
 

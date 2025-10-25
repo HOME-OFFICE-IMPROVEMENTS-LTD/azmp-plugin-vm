@@ -93,32 +93,430 @@
       "metadata": {
         "description": "Storage account type for OS disk"
       }
-    }{{else}}"_placeholder": {
+    },
+    {{/if}}
+    {{#if vnetAddressSpace}}
+    "vnetAddressSpace": {
       "type": "string",
-      "defaultValue": "placeholder"
-    }{{/if}}
+      "defaultValue": "{{vnetAddressSpace}}",
+      "metadata": {
+        "description": "Address space for the virtual network"
+      }
+    },
+    {{/if}}
+    {{#if subnetAddressPrefix}}
+    "subnetAddressPrefix": {
+      "type": "string", 
+      "defaultValue": "{{subnetAddressPrefix}}",
+      "metadata": {
+        "description": "Address prefix for the subnet"
+      }
+    },
+    {{/if}}
+    {{#if loadBalancerSku}}
+    "loadBalancerSku": {
+      "type": "string",
+      "defaultValue": "{{loadBalancerSku}}",
+      "allowedValues": [
+        "Basic",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "SKU for the load balancer"
+      }
+    },
+    {{/if}}
+    {{#if applicationGatewayTier}}
+    "applicationGatewayTier": {
+      "type": "string",
+      "defaultValue": "{{applicationGatewayTier}}",
+      "allowedValues": [
+        "Standard_v2",
+        "WAF_v2"
+      ],
+      "metadata": {
+        "description": "Tier for the application gateway"
+      }
+    },
+    {{/if}}
+    "createLoadBalancer": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to create a load balancer"
+      }
+    },
+    "createApplicationGateway": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to create an application gateway"
+      }
+    },
+    "createBastion": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to create Azure Bastion"
+      }
+    },
+    "bastionSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/27",
+      "metadata": {
+        "description": "Address prefix for the Azure Bastion subnet"
+      }
+    },
+    "loadBalancingProtocol": {
+      "type": "string",
+      "defaultValue": "Tcp",
+      "allowedValues": [
+        "Tcp",
+        "Udp"
+      ],
+      "metadata": {
+        "description": "Load balancing rule protocol"
+      }
+    },
+    "loadBalancingFrontendPort": {
+      "type": "int",
+      "defaultValue": 80,
+      "metadata": {
+        "description": "Load balancing rule frontend port"
+      }
+    },
+    "loadBalancingBackendPort": {
+      "type": "int",
+      "defaultValue": 80,
+      "metadata": {
+        "description": "Load balancing rule backend port"
+      }
+    },
+    "healthProbeProtocol": {
+      "type": "string",
+      "defaultValue": "Http",
+      "allowedValues": [
+        "Http",
+        "Https",
+        "Tcp"
+      ],
+      "metadata": {
+        "description": "Health probe protocol"
+      }
+    },
+    "healthProbePort": {
+      "type": "int",
+      "defaultValue": 80,
+      "metadata": {
+        "description": "Health probe port"
+      }
+    },
+    "healthProbeInterval": {
+      "type": "int",
+      "defaultValue": 15,
+      "metadata": {
+        "description": "Health probe interval in seconds"
+      }
+    },
+    "healthProbeRetries": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Health probe number of retries"
+      }
+    },
+    "applicationGatewaySize": {
+      "type": "string",
+      "defaultValue": "Standard_Small",
+      "allowedValues": [
+        "Standard_Small",
+        "Standard_Medium",
+        "Standard_Large"
+      ],
+      "metadata": {
+        "description": "Application Gateway size"
+      }
+    },
+    "applicationGatewayCapacity": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 1,
+      "maxValue": 10,
+      "metadata": {
+        "description": "Application Gateway instance count"
+      }
+    },
+    "applicationGatewayPort": {
+      "type": "int",
+      "defaultValue": 80,
+      "metadata": {
+        "description": "Application Gateway frontend port"
+      }
+    },
+    "applicationGatewayBackendPort": {
+      "type": "int",
+      "defaultValue": 80,
+      "metadata": {
+        "description": "Application Gateway backend port"
+      }
+    },
+    "applicationGatewayProtocol": {
+      "type": "string",
+      "defaultValue": "Http",
+      "allowedValues": [
+        "Http",
+        "Https"
+      ],
+      "metadata": {
+        "description": "Application Gateway protocol"
+      }
+    },
+    "publicIPAllocationMethod": {
+      "type": "string",
+      "defaultValue": "Dynamic",
+      "allowedValues": [
+        "Dynamic",
+        "Static"
+      ],
+      "metadata": {
+        "description": "Public IP allocation method"
+      }
+    },
+    "publicIPSku": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Public IP SKU"
+      }
+    },
+    "dnsLabelPrefix": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "DNS label prefix for the public IP"
+      }
+    },
+    "virtualNetworkAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Address prefix for the virtual network"
+      }
+    },
+    "installExtensions": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to install VM extensions"
+      }
+    },
+    "installCustomScriptExtension": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to install Custom Script Extension"
+      }
+    },
+    "customScriptUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "URL to the custom script to execute"
+      }
+    },
+    "customScriptCommand": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Command to execute the custom script"
+      }
+    },
+    "installMonitoringExtension": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to install Azure Monitor Agent"
+      }
+    },
+    "workspaceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Log Analytics Workspace ID for monitoring"
+      }
+    },
+    "workspaceKey": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Log Analytics Workspace Key for monitoring"
+      }
+    },
+    "installSecurityExtension": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to install Azure Security Agent"
+      }
+    },
+    "installAntimalwareExtension": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to install Windows Antimalware Extension (Windows only)"
+      }
+    },
+    "antimalwareExclusions": {
+      "type": "object",
+      "defaultValue": {
+        "Paths": [],
+        "Extensions": [],
+        "Processes": []
+      },
+      "metadata": {
+        "description": "Antimalware exclusion settings"
+      }
+    },
+    "enableManagedIdentity": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to enable system-assigned managed identity"
+      }
+    },
+    "userAssignedIdentities": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "List of user-assigned managed identity resource IDs"
+      }
+    },
+    "createAvailabilitySet": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to create an Availability Set for high availability"
+      }
+    },
+    "availabilitySetName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Availability Set (auto-generated if empty)"
+      }
+    },
+    "platformFaultDomainCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 1,
+      "maxValue": 3,
+      "metadata": {
+        "description": "Number of fault domains for the Availability Set"
+      }
+    },
+    "platformUpdateDomainCount": {
+      "type": "int",
+      "defaultValue": 5,
+      "minValue": 1,
+      "maxValue": 20,
+      "metadata": {
+        "description": "Number of update domains for the Availability Set"
+      }
+    },
+    "useAvailabilityZones": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to deploy VM in Availability Zones. Cannot be used with createAvailabilitySet=true (mutually exclusive)"
+      }
+    },
+    "availabilityZone": {
+      "type": "string",
+      "defaultValue": "1",
+      "allowedValues": ["1", "2", "3"],
+      "metadata": {
+        "description": "Availability Zone for the VM (1, 2, or 3)"
+      }
+    },
+    "enableBackup": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to enable Azure Backup for the VM"
+      }
+    },
+    "backupVaultName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the Recovery Services Vault for backup (auto-generated if empty)"
+      }
+    },
+    "backupPolicyName": {
+      "type": "string",
+      "defaultValue": "DefaultPolicy",
+      "metadata": {
+        "description": "Name of the backup policy to use"
+      }
+    },
+    "dailyRetentionDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 7,
+      "maxValue": 9999,
+      "metadata": {
+        "description": "Number of days to retain daily backups"
+      }
+    },
+    "backupScheduleTime": {
+      "type": "string",
+      "defaultValue": "02:00",
+      "metadata": {
+        "description": "Time for daily backup schedule (HH:mm format)"
+      }
+    },
+    "enableSnapshot": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Whether to enable disk snapshots for the VM"
+      }
+    },
+    "snapshotRetentionDays": {
+      "type": "int",
+      "defaultValue": 7,
+      "minValue": 1,
+      "maxValue": 365,
+      "metadata": {
+        "description": "Number of days to retain disk snapshots"
+      }
+    }
   },
   "variables": {
     {{#if vmName}}
     "vmName": "[parameters('vmName')]",
     {{/if}}
     {{#if networkInterfaceName}}
-    "networkInterfaceName": "{{networkInterfaceName}}",
+    "networkInterfaceName": "{{{networkInterfaceName}}}",
     {{/if}}
     {{#if networkSecurityGroupName}}
-    "networkSecurityGroupName": "{{networkSecurityGroupName}}",
+    "networkSecurityGroupName": "{{{networkSecurityGroupName}}}",
     {{/if}}
     {{#if virtualNetworkName}}
-    "virtualNetworkName": "{{virtualNetworkName}}",
+    "virtualNetworkName": "{{{virtualNetworkName}}}",
     {{/if}}
     {{#if subnetName}}
     "subnetName": "{{subnetName}}",
     {{/if}}
     {{#if publicIPAddressName}}
-    "publicIPAddressName": "{{publicIPAddressName}}",
+    "publicIPAddressName": "{{{publicIPAddressName}}}",
     {{/if}}
     {{#if osDiskName}}
-    "osDiskName": "{{osDiskName}}",
+    "osDiskName": "{{{osDiskName}}}",
     {{/if}}
     {{#if linuxConfiguration}}
     "linuxConfiguration": {{{linuxConfiguration}}},
@@ -126,8 +524,57 @@
     {{#if windowsConfiguration}}
     "windowsConfiguration": {{{windowsConfiguration}}},
     {{/if}}
+    {{#if loadBalancerName}}
+    "loadBalancerName": "{{{loadBalancerName}}}",
+    {{/if}}
+    {{#if backendPoolName}}
+    "backendPoolName": "{{{backendPoolName}}}",
+    {{else}}
+    "backendPoolName": "[concat(variables('loadBalancerName'), '-backend')]",
+    {{/if}}
+    {{#if loadBalancingRuleName}}
+    "loadBalancingRuleName": "{{{loadBalancingRuleName}}}",
+    {{else}}
+    "loadBalancingRuleName": "[concat(variables('loadBalancerName'), '-rule')]",
+    {{/if}}
+    {{#if healthProbeName}}
+    "healthProbeName": "{{{healthProbeName}}}",
+    {{else}}
+    "healthProbeName": "[concat(variables('loadBalancerName'), '-probe')]",
+    {{/if}}
+    {{#if applicationGatewayName}}
+    "applicationGatewayName": "{{{applicationGatewayName}}}",
+    {{/if}}
+    {{#if bastionHostName}}
+    "bastionHostName": "{{{bastionHostName}}}",
+    {{else}}
+    "bastionHostName": "[concat(parameters('vmName'), '-bastion')]",
+    {{/if}}
+    {{#if bastionSubnetName}}
+    "bastionSubnetName": "{{{bastionSubnetName}}}",
+    {{else}}
+    "bastionSubnetName": "AzureBastionSubnet",
+    {{/if}}
     {{#if subnetRef}}
-    "subnetRef": "{{subnetRef}}"{{else}}"_placeholder": "placeholder"{{/if}}
+    "subnetRef": "{{{subnetRef}}}",
+    {{else}}
+    "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
+    {{/if}}
+    "extensionPublisher": "[if(equals(parameters('osType'), 'Windows'), 'Microsoft.Compute', 'Microsoft.Azure.Extensions')]",
+    "customScriptExtensionName": "[if(equals(parameters('osType'), 'Windows'), 'CustomScriptExtension', 'CustomScript')]",
+    "monitoringExtensionName": "[if(equals(parameters('osType'), 'Windows'), 'MicrosoftMonitoringAgent', 'OmsAgentForLinux')]",
+    "securityExtensionName": "[if(equals(parameters('osType'), 'Windows'), 'IaaSAntimalware', 'LinuxDiagnostic')]",
+    "antimalwareExtensionName": "IaaSAntimalware",
+    "azureMonitorExtensionName": "AzureMonitorWindowsAgent",
+    "extensionApiVersion": "2021-03-01",
+    "managedIdentityType": "[if(empty(parameters('userAssignedIdentities')), 'SystemAssigned', 'SystemAssigned,UserAssigned')]",
+    "userAssignedIdentityConfig": "[if(empty(parameters('userAssignedIdentities')), json('{}'), json(concat('{\"', string(parameters('userAssignedIdentities')[0]), '\": {}}')))]",
+    "customScriptFileUris": "[if(empty(parameters('customScriptUrl')), json('[]'), array(parameters('customScriptUrl')))]",
+    "availabilitySetName": "[if(empty(parameters('availabilitySetName')), concat(parameters('vmName'), '-avset'), parameters('availabilitySetName'))]",
+    "backupVaultName": "[if(empty(parameters('backupVaultName')), concat(parameters('vmName'), '-vault'), parameters('backupVaultName'))]",
+    "backupPolicyName": "[if(equals(parameters('backupPolicyName'), 'DefaultPolicy'), concat('policy-', parameters('vmName')), parameters('backupPolicyName'))]",
+    "snapshotName": "[concat(parameters('vmName'), '-snapshot')]",
+    "backupScheduleTimestamp": "[concat('2025-01-01T', parameters('backupScheduleTime'), ':00Z')]"
   },
   "resources": [
     {{#if createNetworkSecurityGroup}}
@@ -183,6 +630,229 @@
                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
               }{{/if}}
             }
+          }{{#if createBastion}},
+          {
+            "name": "[variables('bastionSubnetName')]",
+            "properties": {
+              "addressPrefix": "{{bastionSubnetAddressPrefix}}"
+            }
+          }{{/if}}
+        ]
+      }
+    },
+    {{/if}}
+    {{#if createLoadBalancer}}
+    {
+      "type": "Microsoft.Network/loadBalancers",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('loadBalancerName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "{{loadBalancerSku}}"
+      },
+      "dependsOn": [
+        {{#if createPublicIP}}
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"{{#if createVirtualNetwork}},{{/if}}
+        {{/if}}
+        {{#if createVirtualNetwork}}
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
+        {{/if}}
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "LoadBalancerFrontEnd",
+            "properties": {
+              {{#if createPublicIP}}
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+              }
+              {{else}}
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              },
+              "privateIPAllocationMethod": "Dynamic"
+              {{/if}}
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "[variables('backendPoolName')]"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "[variables('loadBalancingRuleName')]",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', variables('loadBalancerName'), 'LoadBalancerFrontEnd')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('loadBalancerName'), variables('backendPoolName'))]"
+              },
+              "probe": {
+                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', variables('loadBalancerName'), variables('healthProbeName'))]"
+              },
+              "protocol": "[parameters('loadBalancingProtocol')]",
+              "frontendPort": "[parameters('loadBalancingFrontendPort')]",
+              "backendPort": "[parameters('loadBalancingBackendPort')]"
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "[variables('healthProbeName')]",
+            "properties": {
+              "protocol": "[parameters('healthProbeProtocol')]",
+              "port": "[parameters('healthProbePort')]",
+              "intervalInSeconds": "[parameters('healthProbeInterval')]",
+              "numberOfProbes": "[parameters('healthProbeRetries')]"
+            }
+          }
+        ]
+      }
+    },
+    {{/if}}
+    {{#if createApplicationGateway}}
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('applicationGatewayName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        {{#if createVirtualNetwork}}
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"{{#if createPublicIP}},{{/if}}
+        {{/if}}
+        {{#if createPublicIP}}
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+        {{/if}}
+      ],
+      "properties": {
+        "sku": {
+          "name": "[parameters('applicationGatewaySize')]",
+          "tier": "[parameters('applicationGatewayTier')]",
+          "capacity": "[parameters('applicationGatewayCapacity')]"
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGatewayFrontendIP",
+            "properties": {
+              {{#if createPublicIP}}
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+              }
+              {{else}}
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+              {{/if}}
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "appGatewayFrontendPort",
+            "properties": {
+              "port": "[parameters('applicationGatewayPort')]"
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "appGatewayBackendPool"
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "appGatewayBackendHttpSettings",
+            "properties": {
+              "port": "[parameters('applicationGatewayBackendPort')]",
+              "protocol": "[parameters('applicationGatewayProtocol')]",
+              "cookieBasedAffinity": "Disabled"
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "appGatewayHttpListener",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('applicationGatewayName'), 'appGatewayFrontendIP')]"
+              },
+              "frontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('applicationGatewayName'), 'appGatewayFrontendPort')]"
+              },
+              "protocol": "[parameters('applicationGatewayProtocol')]"
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "name": "rule1",
+            "properties": {
+              "ruleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('applicationGatewayName'), 'appGatewayHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('applicationGatewayName'), 'appGatewayBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('applicationGatewayName'), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {{/if}}
+    {{#if createBastion}}
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2021-02-01",
+      "name": "[concat(variables('bastionHostName'), '-pip')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/bastionHosts",
+      "apiVersion": "2021-02-01",
+      "name": "[variables('bastionHostName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('bastionHostName'), '-pip'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "IpConf",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('bastionHostName'), '-pip'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('bastionSubnetName'))]"
+              }
+            }
           }
         ]
       }
@@ -235,15 +905,107 @@
         ]
       }
     },
+    {{#if createAvailabilitySet}}
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('availabilitySetName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Aligned"
+      },
+      "properties": {
+        "platformFaultDomainCount": "[parameters('platformFaultDomainCount')]",
+        "platformUpdateDomainCount": "[parameters('platformUpdateDomainCount')]"
+      }
+    },
+    {{/if}}
+    {{#if enableBackup}}
+    {
+      "type": "Microsoft.RecoveryServices/vaults",
+      "apiVersion": "2023-06-01",
+      "name": "[variables('backupVaultName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "RS0",
+        "tier": "Standard"
+      },
+      "properties": {
+        "publicNetworkAccess": "Enabled",
+        "restoreSettings": {
+          "crossRegionRestoreFlag": false
+        },
+        "securitySettings": {
+          "immutabilitySettings": {
+            "state": "Unlocked"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.RecoveryServices/vaults/backupPolicies",
+      "apiVersion": "2023-06-01",
+      "name": "[concat(variables('backupVaultName'), '/', variables('backupPolicyName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.RecoveryServices/vaults', variables('backupVaultName'))]"
+      ],
+      "properties": {
+        "backupManagementType": "AzureIaasVM",
+        "schedulePolicy": {
+          "schedulePolicyType": "SimpleSchedulePolicy",
+          "scheduleRunFrequency": "Daily",
+          "scheduleRunTimes": [
+            "[variables('backupScheduleTimestamp')]"
+          ],
+          "scheduleWeeklyFrequency": 0
+        },
+        "retentionPolicy": {
+          "retentionPolicyType": "LongTermRetentionPolicy",
+          "dailySchedule": {
+            "retentionTimes": [
+              "[variables('backupScheduleTimestamp')]"
+            ],
+            "retentionDuration": {
+              "count": "[parameters('dailyRetentionDays')]",
+              "durationType": "Days"
+            }
+          }
+        },
+        "instantRpRetentionRangeInDays": 2,
+        "timeZone": "UTC"
+      }
+    },
+    {{/if}}
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2021-03-01",
       "name": "[variables('vmName')]",
       "location": "[parameters('location')]",
+      {{#if useAvailabilityZones}}
+      {{#unless createAvailabilitySet}}
+      "zones": ["[parameters('availabilityZone')]"],
+      {{/unless}}
+      {{/if}}
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"{{#if createAvailabilitySet}}{{#unless useAvailabilityZones}},
+        "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"{{/unless}}{{/if}}
       ],
+      {{#if enableManagedIdentity}}
+      "identity": {
+        "type": "{{{managedIdentityType}}}",
+        {{#if userAssignedIdentities}}
+        "userAssignedIdentities": "{{{userAssignedIdentityConfig}}}"
+        {{/if}}
+      },
+      {{/if}}
       "properties": {
+        {{#if createAvailabilitySet}}
+        {{#unless useAvailabilityZones}}
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"
+        },
+        {{/unless}}
+        {{/if}}
         "hardwareProfile": {
           "vmSize": "[parameters('vmSize')]"
         },
@@ -289,7 +1051,142 @@
           }
         }{{/if}}
       }
+    }{{#if enableBackup}},
+    {
+      "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
+      "apiVersion": "2023-06-01",
+      "name": "[concat(variables('backupVaultName'), '/Azure/iaasvmcontainer;iaasvmcontainerv2;', resourceGroup().name, ';', variables('vmName'), '/vm;iaasvmcontainerv2;', resourceGroup().name, ';', variables('vmName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]",
+        "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', variables('backupVaultName'), variables('backupPolicyName'))]"
+      ],
+      "properties": {
+        "protectedItemType": "Microsoft.Compute/virtualMachines",
+        "policyId": "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', variables('backupVaultName'), variables('backupPolicyName'))]",
+        "sourceResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      }
+    }{{/if}}{{#if enableSnapshot}},
+    {
+      "type": "Microsoft.Compute/snapshots",
+      "apiVersion": "2023-10-02",
+      "name": "[variables('snapshotName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "tags": {
+        "retentionDays": "[parameters('snapshotRetentionDays')]",
+        "createdBy": "ARM-Template",
+        "purpose": "VM-Backup"
+      },
+      "properties": {
+        "creationData": {
+          "createOption": "Copy",
+          "sourceResourceId": "[resourceId('Microsoft.Compute/disks', variables('osDiskName'))]"
+        },
+        "incremental": false
+      }
+    }{{/if}}{{#if installExtensions}},
+    {{#if installCustomScriptExtension}}
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "[variables('extensionApiVersion')]",
+      "name": "[concat(variables('vmName'), '/', variables('customScriptExtensionName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "[variables('extensionPublisher')]",
+        "type": "[variables('customScriptExtensionName')]",
+        "typeHandlerVersion": "[if(equals(parameters('osType'), 'Windows'), '1.10', '2.1')]",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          {{#if isLinux}}
+          "fileUris": "{{{customScriptFileUris}}}",
+          "commandToExecute": "[parameters('customScriptCommand')]"
+          {{else}}
+          "fileUris": "{{{customScriptFileUris}}}"
+          {{/if}}
+        }{{#unless isLinux}},
+        "protectedSettings": {
+          "commandToExecute": "[parameters('customScriptCommand')]"
+        }{{/unless}}
+      }
+    },
+    {{/if}}
+    {{#if installMonitoringExtension}}
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "[variables('extensionApiVersion')]",
+      "name": "[concat(variables('vmName'), '/', variables('monitoringExtensionName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+        "type": "[variables('monitoringExtensionName')]",
+        "typeHandlerVersion": "[if(equals(parameters('osType'), 'Windows'), '1.0', '1.13')]",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "workspaceId": "[parameters('workspaceId')]"
+        },
+        "protectedSettings": {
+          "workspaceKey": "[parameters('workspaceKey')]"
+        }
+      }
+    },
+    {{/if}}
+    {{#if installSecurityExtension}}
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "[variables('extensionApiVersion')]",
+      "name": "[concat(variables('vmName'), '/', variables('securityExtensionName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "[if(equals(parameters('osType'), 'Windows'), 'Microsoft.Azure.Security', 'Microsoft.Azure.Security.Monitoring')]",
+        "type": "[variables('securityExtensionName')]",
+        "typeHandlerVersion": "[if(equals(parameters('osType'), 'Windows'), '1.5', '3.0')]",
+        "autoUpgradeMinorVersion": true,
+        "settings": {}
+      }
+    },
+    {{/if}}
+    {{#if installAntimalwareExtension}}
+    {{#unless isLinux}}
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "[variables('extensionApiVersion')]",
+      "name": "[concat(variables('vmName'), '/', variables('antimalwareExtensionName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Azure.Security",
+        "type": "IaaSAntimalware",
+        "typeHandlerVersion": "1.5",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "AntimalwareEnabled": true,
+          "Exclusions": "[parameters('antimalwareExclusions')]",
+          "RealtimeProtectionEnabled": "true",
+          "ScheduledScanSettings": {
+            "isEnabled": "true",
+            "scanType": "Quick",
+            "day": "7",
+            "time": "120"
+          }
+        }
+      }
     }
+    {{/unless}}
+    {{/if}}
+    {{/if}}
   ],
   "outputs": {
     {{#if vmName}}
@@ -307,7 +1204,72 @@
     "adminUsername": {
       "type": "string", 
       "value": "[parameters('adminUsername')]"
-    }{{#if sshCommand}},
+    },
+    "extensionsInstalled": {
+      "type": "array",
+      "value": "[if(parameters('installExtensions'), union(if(parameters('installCustomScriptExtension'), array('CustomScript'), createArray()), if(parameters('installMonitoringExtension'), array('MonitoringAgent'), createArray()), if(parameters('installSecurityExtension'), array('SecurityAgent'), createArray()), if(and(parameters('installAntimalwareExtension'), equals(parameters('osType'), 'Windows')), array('Antimalware'), createArray())), createArray())]"
+    }{{#if installExtensions}},
+    {{#if installCustomScriptExtension}}
+    "customScriptExtensionStatus": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), variables('customScriptExtensionName'))).provisioningState]"
+    },
+    {{/if}}
+    {{#if installMonitoringExtension}}
+    "monitoringExtensionStatus": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), variables('monitoringExtensionName'))).provisioningState]"
+    },
+    {{/if}}
+    {{#if installSecurityExtension}}
+    "securityExtensionStatus": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), variables('securityExtensionName'))).provisioningState]"
+    },
+    {{/if}}
+    {{#if installAntimalwareExtension}}
+    {{#unless isLinux}}
+    "antimalwareExtensionStatus": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Compute/virtualMachines/extensions', variables('vmName'), variables('antimalwareExtensionName'))).provisioningState]"
+    },
+    {{/unless}}
+    {{/if}}
+    {{/if}}
+    {{#if enableManagedIdentity}}
+    "managedIdentityPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Compute/virtualMachines', variables('vmName')), '2021-03-01', 'Full').identity.principalId]"
+    },
+    {{/if}}
+    "vmResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+    }{{#if createAvailabilitySet}},
+    "availabilitySetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"
+    },
+    "availabilitySetName": {
+      "type": "string",
+      "value": "[variables('availabilitySetName')]"
+    }{{/if}}{{#if useAvailabilityZones}},
+    "availabilityZone": {
+      "type": "string",
+      "value": "[parameters('availabilityZone')]"
+    }{{/if}}{{#if enableBackup}},
+    "backupVaultId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.RecoveryServices/vaults', variables('backupVaultName'))]"
+    },
+    "backupPolicyId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', variables('backupVaultName'), variables('backupPolicyName'))]"
+    }{{/if}}{{#if enableSnapshot}},
+    "snapshotId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Compute/snapshots', variables('snapshotName'))]"
+    }{{/if}}{{#if sshCommand}},
     "sshCommand": {
       "type": "string",
       "value": "{{sshCommand}}"
