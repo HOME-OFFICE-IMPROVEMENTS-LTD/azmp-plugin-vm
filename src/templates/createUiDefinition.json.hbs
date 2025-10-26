@@ -3,85 +3,30 @@
   "handler": "Microsoft.Azure.CreateUIDef",
   "version": "0.1.2-preview",
   "parameters": {
-    "config": {
-      "isWizard": true,
-      "basics": {
-        "description": "**{{name}}** Azure Virtual Machine Template\n\nDeploy enterprise-ready VMs with built-in networking, extensions, and high availability/disaster recovery configurations.",
-        "subscription": {
-          "constraints": {
-            "validations": [
-              {
-                "permission": "Microsoft.Compute/virtualMachines/write",
-                "message": "Must have permission to create virtual machines"
-              },
-              {
-                "permission": "Microsoft.Network/virtualNetworks/write", 
-                "message": "Must have permission to create virtual networks"
-              }
-            ]
-          }
-        },
-        "resourceGroup": {
-          "constraints": {
-            "validations": [
-              {
-                "isValid": "[not(contains(resourceGroup().name, 'temp'))]",
-                "message": "Resource group name cannot contain 'temp'"
-              }
-            ]
-          }
-        },
-        "location": {
-          "visible": true,
-          "allowedValues": [
-            "eastus",
-            "eastus2",
-            "westus",
-            "westus2",
-            "westeurope",
-            "northeurope",
-            "southeastasia",
-            "australiaeast"
-          ]
-        }
-      }
-    },
     "basics": [
       {
         "name": "vmName",
         "type": "Microsoft.Common.TextBox",
         "label": "Virtual Machine Name",
-        "defaultValue": "{{vmName}}",
+        "defaultValue": "",
         "toolTip": "Name for the virtual machine",
         "constraints": {
           "required": true,
-          "regex": "^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,62}[a-zA-Z0-9]$",
-          "validationMessage": "VM name must be 1-64 characters, start and end with alphanumeric, can contain hyphens"
-        }
-      },
-      {
-        "name": "adminUsername",
-        "type": "Microsoft.Common.TextBox",
-        "label": "Admin Username",
-        "defaultValue": "{{adminUsername}}",
-        "toolTip": "Administrator username for the VM",
-        "constraints": {
-          "required": true,
-          "regex": "^[a-zA-Z][a-zA-Z0-9]{2,19}$",
-          "validationMessage": "Username must be 3-20 characters, start with letter, alphanumeric only"
+          "regex": "^[a-z][a-z0-9-]{1,61}[a-z0-9]$",
+          "validationMessage": "Must be 3-63 characters, start with lowercase letter, contain only lowercase letters, numbers, and hyphens"
         }
       },
       {
         "name": "authenticationType",
         "type": "Microsoft.Common.DropDown",
         "label": "Authentication Type",
-        "defaultValue": "SSH Key (Recommended)",
+        "defaultValue": "SSH Public Key",
         "toolTip": "Choose authentication method",
         "constraints": {
           "required": true,
           "allowedValues": [
             {
-              "label": "SSH Key (Recommended)",
+              "label": "SSH Public Key",
               "value": "sshPublicKey"
             },
             {
@@ -92,47 +37,75 @@
         }
       },
       {
-        "name": "adminPasswordOrKey",
-        "type": "[if(equals(basics('authenticationType'), 'password'), 'Microsoft.Common.PasswordBox', 'Microsoft.Common.TextBox')]",
-        "label": "[if(equals(basics('authenticationType'), 'password'), 'Admin Password', 'SSH Public Key')]",
-        "toolTip": "[if(equals(basics('authenticationType'), 'password'), 'Password for the admin user', 'SSH public key for authentication')]",
+        "name": "adminUsername",
+        "type": "Microsoft.Compute.UserNameTextBox",
+        "label": "Admin Username",
+        "defaultValue": "azureuser",
+        "toolTip": "Administrator username for the virtual machine",
+        "osPlatform": "Linux",
+        "constraints": {
+          "required": true
+        }
+      },
+      {
+        "name": "adminPassword",
+        "type": "Microsoft.Common.PasswordBox",
+        "label": {
+          "password": "Password",
+          "confirmPassword": "Confirm password"
+        },
+        "toolTip": "Administrator password for the VM",
+        "visible": "[equals(basics('authenticationType'), 'password')]",
         "constraints": {
           "required": true,
-          "regex": "[if(equals(basics('authenticationType'), 'password'), '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d@$!%*?&]{12,}$', '^ssh-(rsa|dss|ecdsa)\\s+[A-Za-z0-9+/]+[=]{0,2}(\\s+.*)?$')]",
-          "validationMessage": "[if(equals(basics('authenticationType'), 'password'), 'Password must be at least 12 characters with uppercase, lowercase, and numbers', 'Must be a valid SSH public key')]"
+          "regex": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{12,}$",
+          "validationMessage": "Password must be at least 12 characters with letters, numbers, and special characters"
         },
         "options": {
           "hideConfirmation": false
         }
       },
       {
-        "name": "vmSize",
-        "type": "Microsoft.Compute.SizeSelector",
-        "label": "Virtual Machine Size",
-        "toolTip": "Select the VM size based on your workload requirements",
-        "recommendedSizes": [
-          "Standard_B2s",
-          "Standard_D2s_v3",
-          "Standard_D4s_v3"
-        ],
+        "name": "adminSshKey",
+        "type": "Microsoft.Common.TextBox",
+        "label": "SSH Public Key",
+        "defaultValue": "",
+        "toolTip": "SSH public key for authentication",
+        "visible": "[equals(basics('authenticationType'), 'sshPublicKey')]",
+        "multiLine": true,
         "constraints": {
-          "allowedSizes": [
-            "Standard_B1s",
-            "Standard_B2s", 
-            "Standard_D2s_v3",
-            "Standard_D4s_v3",
-            "Standard_D8s_v3",
-            "Standard_E2s_v3",
-            "Standard_E4s_v3",
-            "Standard_F2s_v2",
-            "Standard_F4s_v2"
+          "required": true,
+          "regex": "^ssh-rsa AAAA[0-9A-Za-z+/]+[=]{0,3}( [^@]+@[^@]+)?$",
+          "validationMessage": "Must be a valid SSH RSA public key"
+        }
+      },
+      {
+        "name": "vmSize",
+        "type": "Microsoft.Common.DropDown",
+        "label": "Virtual Machine Size",
+        "defaultValue": "Standard_D2s_v3 (2 vCPU, 8 GB RAM)",
+        "toolTip": "Size of the virtual machine",
+        "constraints": {
+          "required": true,
+          "allowedValues": [
+            {
+              "label": "Standard_B2s (2 vCPU, 4 GB RAM) - Burstable",
+              "value": "Standard_B2s"
+            },
+            {
+              "label": "Standard_D2s_v3 (2 vCPU, 8 GB RAM)",
+              "value": "Standard_D2s_v3"
+            },
+            {
+              "label": "Standard_D4s_v3 (4 vCPU, 16 GB RAM)",
+              "value": "Standard_D4s_v3"
+            },
+            {
+              "label": "Standard_D8s_v3 (8 vCPU, 32 GB RAM)",
+              "value": "Standard_D8s_v3"
+            }
           ]
-        },
-        "options": {
-          "hideDiskTypeFilter": false
-        },
-        "osPlatform": "Linux",
-        "count": 1
+        }
       }
     ],
     "steps": [
@@ -140,10 +113,10 @@
         "name": "networkingConfig",
         "label": "Networking",
         "subLabel": {
-          "preValidation": "Configure network settings",
-          "postValidation": "Network configuration complete"
+          "preValidation": "Configure networking",
+          "postValidation": "Networking configured"
         },
-        "bladeTitle": "Network Configuration",
+        "bladeTitle": "Networking Configuration",
         "elements": [
           {
             "name": "networkingInfo",
@@ -151,7 +124,7 @@
             "visible": true,
             "options": {
               "icon": "Info",
-              "text": "🌐 Configure virtual network settings for your VM. You can create a new virtual network or select an existing one."
+              "text": "🌐 Configure virtual network, subnet, public IP, and network security settings for your VM."
             }
           },
           {
@@ -202,8 +175,7 @@
               "domainNameLabel": "DNS name label for the public IP"
             },
             "defaultValue": {
-              "publicIpAddressName": "[concat(basics('vmName'), '-pip')]",
-              "domainNameLabel": "[concat(basics('vmName'), '-', take(replace(guid(), '-', ''), 6))]"
+              "publicIpAddressName": "[concat(basics('vmName'), '-pip')]"
             },
             "options": {
               "hideNone": false,
@@ -217,42 +189,35 @@
             }
           },
           {
-            "name": "networkSecurityGroup",
-            "type": "Microsoft.Common.Section",
-            "label": "Network Security",
-            "elements": [
-              {
-                "name": "allowSshRdp",
-                "type": "Microsoft.Common.CheckBox",
-                "label": "Allow SSH (Linux) / RDP (Windows) access",
-                "defaultValue": true,
-                "toolTip": "Create security rule to allow SSH (port 22) or RDP (port 3389) access"
-              },
-              {
-                "name": "sshRdpSourceAddressPrefix",
-                "type": "Microsoft.Common.TextBox",
-                "label": "SSH/RDP Source Address",
-                "defaultValue": "*",
-                "visible": "[steps('networkingConfig').networkSecurityGroup.allowSshRdp]",
-                "toolTip": "Source address prefix for SSH/RDP access. Use * for any, or specify IP/CIDR (e.g., 203.0.113.0/24)",
-                "constraints": {
-                  "required": true,
-                  "regex": "^(\\*|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\/([0-9]|[1-2][0-9]|3[0-2]))?)$",
-                  "validationMessage": "Must be * or valid IP address/CIDR (e.g., 192.168.1.0/24)"
-                }
-              }
-            ]
+            "name": "allowSshRdp",
+            "type": "Microsoft.Common.CheckBox",
+            "label": "Allow SSH/RDP from specific source",
+            "defaultValue": true,
+            "toolTip": "Restrict SSH/RDP access to specific IP address or range"
+          },
+          {
+            "name": "sshRdpSourceAddressPrefix",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Source Address Prefix",
+            "defaultValue": "*",
+            "toolTip": "Source IP address or CIDR range (e.g., 1.2.3.4/32 or 10.0.0.0/8). Use * for any source.",
+            "visible": "[steps('networkingConfig').allowSshRdp]",
+            "constraints": {
+              "required": true,
+              "regex": "^(\\*|([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/[0-9]{1,2})?)$",
+              "validationMessage": "Must be a valid IP address with optional CIDR (e.g., 1.2.3.4/32) or *"
+            }
           }
         ]
       },
       {
-        "name": "extensionsConfig", 
+        "name": "extensionsConfig",
         "label": "Extensions & Monitoring",
         "subLabel": {
-          "preValidation": "Configure VM extensions",
+          "preValidation": "Configure extensions",
           "postValidation": "Extensions configured"
         },
-        "bladeTitle": "Extensions & Monitoring",
+        "bladeTitle": "Extensions Configuration",
         "elements": [
           {
             "name": "extensionsInfo",
@@ -260,131 +225,79 @@
             "visible": true,
             "options": {
               "icon": "Info",
-              "text": "🔧 VM extensions add functionality to your virtual machine. Enable monitoring, security, and custom scripts as needed."
+              "text": "🔧 Configure VM extensions for monitoring, security, and custom scripts."
             }
           },
           {
-            "name": "installExtensions",
-            "type": "Microsoft.Common.CheckBox",
-            "label": "Install VM Extensions",
-            "defaultValue": true,
-            "toolTip": "Enable VM extensions for monitoring, security, and customization"
-          },
-          {
-            "name": "monitoringSection",
+            "name": "extensionsSection",
             "type": "Microsoft.Common.Section",
-            "label": "Monitoring & Logging",
-            "visible": "[steps('extensionsConfig').installExtensions]",
+            "label": "VM Extensions",
             "elements": [
               {
-                "name": "installMonitoringExtension",
+                "name": "installMonitoring",
                 "type": "Microsoft.Common.CheckBox",
-                "label": "Enable Azure Monitor Agent",
+                "label": "Install Azure Monitor Agent",
                 "defaultValue": true,
-                "toolTip": "Install Azure Monitor Agent for performance monitoring and logging"
+                "toolTip": "Install Azure Monitor agent for metrics and logs collection"
               },
               {
-                "name": "workspaceConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "Log Analytics Workspace",
-                "visible": "[steps('extensionsConfig').monitoringSection.installMonitoringExtension]",
-                "elements": [
-                  {
-                    "name": "workspaceId",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "Workspace ID (Optional)",
-                    "placeholder": "Enter existing Log Analytics Workspace ID",
-                    "toolTip": "Leave empty to create a new workspace, or enter existing workspace ID",
-                    "constraints": {
-                      "required": false,
-                      "regex": "^$|^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$",
-                      "validationMessage": "Must be a valid GUID or leave empty"
-                    }
-                  },
-                  {
-                    "name": "workspaceKey",
-                    "type": "Microsoft.Common.PasswordBox",
-                    "label": "Workspace Primary Key (Optional)",
-                    "toolTip": "Primary key for the Log Analytics workspace (required if Workspace ID is provided)",
-                    "constraints": {
-                      "required": "[not(empty(steps('extensionsConfig').monitoringSection.workspaceConfig.workspaceId))]"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "name": "securitySection",
-            "type": "Microsoft.Common.Section",
-            "label": "Security Extensions",
-            "visible": "[steps('extensionsConfig').installExtensions]",
-            "elements": [
-              {
-                "name": "installSecurityExtension",
-                "type": "Microsoft.Common.CheckBox",
-                "label": "Enable Azure Security Agent",
-                "defaultValue": true,
-                "toolTip": "Install security monitoring and threat detection"
+                "name": "workspaceId",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Log Analytics Workspace ID",
+                "placeholder": "Leave empty to create new workspace",
+                "toolTip": "Existing Log Analytics Workspace ID (optional)",
+                "visible": "[steps('extensionsConfig').extensionsSection.installMonitoring]",
+                "constraints": {
+                  "required": false,
+                  "regex": "^$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                  "validationMessage": "Must be a valid GUID or empty"
+                }
               },
               {
-                "name": "installAntimalwareExtension",
+                "name": "installSecurity",
                 "type": "Microsoft.Common.CheckBox",
-                "label": "Enable Windows Antimalware (Windows only)",
+                "label": "Install Security Extensions",
                 "defaultValue": true,
-                "toolTip": "Install built-in antimalware protection for Windows VMs"
+                "toolTip": "Install Microsoft Defender for Cloud and vulnerability assessment"
               },
               {
-                "name": "enableManagedIdentity",
+                "name": "enableVulnerabilityAssessment",
                 "type": "Microsoft.Common.CheckBox",
-                "label": "Enable System-Assigned Managed Identity",
+                "label": "Enable Vulnerability Assessment",
                 "defaultValue": true,
-                "toolTip": "Enable managed identity for secure access to Azure resources without storing credentials"
-              }
-            ]
-          },
-          {
-            "name": "customScriptSection",
-            "type": "Microsoft.Common.Section",
-            "label": "Custom Script Execution",
-            "visible": "[steps('extensionsConfig').installExtensions]",
-            "elements": [
+                "toolTip": "Enable vulnerability scanning for the VM",
+                "visible": "[steps('extensionsConfig').extensionsSection.installSecurity]"
+              },
               {
-                "name": "installCustomScriptExtension",
+                "name": "runCustomScript",
                 "type": "Microsoft.Common.CheckBox",
-                "label": "Enable Custom Script Extension",
+                "label": "Run Custom Script on Deployment",
                 "defaultValue": false,
-                "toolTip": "Run custom scripts during VM deployment"
+                "toolTip": "Execute a custom script after VM deployment"
               },
               {
-                "name": "customScriptConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "Script Configuration",
-                "visible": "[steps('extensionsConfig').customScriptSection.installCustomScriptExtension]",
-                "elements": [
-                  {
-                    "name": "customScriptUrl",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "Script URL",
-                    "placeholder": "https://raw.githubusercontent.com/user/repo/main/script.sh",
-                    "toolTip": "URL to the script file to execute",
-                    "constraints": {
-                      "required": true,
-                      "regex": "^https:\\/\\/.*\\.(sh|ps1|py|bat|cmd)$",
-                      "validationMessage": "Must be a valid HTTPS URL pointing to a script file (.sh, .ps1, .py, .bat, .cmd)"
-                    }
-                  },
-                  {
-                    "name": "customScriptCommand",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "Execution Command",
-                    "placeholder": "bash script.sh",
-                    "toolTip": "Command to execute the script",
-                    "constraints": {
-                      "required": true
-                    }
-                  }
-                ]
+                "name": "customScriptUri",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Script URI",
+                "placeholder": "https://example.com/script.sh",
+                "toolTip": "HTTPS URI to the custom script file",
+                "visible": "[steps('extensionsConfig').extensionsSection.runCustomScript]",
+                "constraints": {
+                  "required": true,
+                  "regex": "^https://.*\\.(sh|ps1|py)$",
+                  "validationMessage": "Must be an HTTPS URL ending with .sh, .ps1, or .py"
+                }
+              },
+              {
+                "name": "customScriptArgs",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Script Arguments",
+                "placeholder": "arg1 arg2 arg3",
+                "toolTip": "Optional arguments to pass to the script",
+                "visible": "[steps('extensionsConfig').extensionsSection.runCustomScript]",
+                "constraints": {
+                  "required": false
+                }
               }
             ]
           }
@@ -394,10 +307,10 @@
         "name": "scalingConfig",
         "label": "Scaling & Load Balancing",
         "subLabel": {
-          "preValidation": "Configure scaling options",
+          "preValidation": "Configure scaling",
           "postValidation": "Scaling configured"
         },
-        "bladeTitle": "Scaling & Load Balancing Configuration",
+        "bladeTitle": "Scaling Configuration",
         "elements": [
           {
             "name": "scalingInfo",
@@ -405,13 +318,13 @@
             "visible": true,
             "options": {
               "icon": "Info",
-              "text": "⚡ Configure Virtual Machine Scale Sets (VMSS), auto-scaling policies, and load balancing for high-performance, elastic workloads."
+              "text": "⚡ Configure Virtual Machine Scale Sets (VMSS), auto-scaling policies, and load balancing for high-performance workloads."
             }
           },
           {
             "name": "vmssSection",
             "type": "Microsoft.Common.Section",
-            "label": "Virtual Machine Scale Set (VMSS)",
+            "label": "Virtual Machine Scale Set",
             "elements": [
               {
                 "name": "createVmss",
@@ -421,266 +334,161 @@
                 "toolTip": "Deploy a VMSS for elastic scaling instead of a single VM"
               },
               {
-                "name": "vmssConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "VMSS Configuration",
+                "name": "vmssName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "VMSS Name",
+                "placeholder": "Leave empty for auto-generated name",
+                "toolTip": "Name for the Virtual Machine Scale Set",
                 "visible": "[steps('scalingConfig').vmssSection.createVmss]",
-                "elements": [
-                  {
-                    "name": "vmssName",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "VMSS Name (Optional)",
-                    "placeholder": "Leave empty for auto-generated name",
-                    "toolTip": "Name for the Virtual Machine Scale Set",
-                    "constraints": {
-                      "required": false,
-                      "regex": "^$|^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,62}[a-zA-Z0-9]$",
-                      "validationMessage": "Must be 1-64 characters, start and end with alphanumeric, can contain hyphens"
-                    }
-                  },
-                  {
-                    "name": "vmssInstanceCount",
-                    "type": "Microsoft.Common.Slider",
-                    "label": "Initial Instance Count",
-                    "subLabel": "instances",
-                    "defaultValue": 2,
-                    "min": 1,
-                    "max": 100,
-                    "showStepMarkers": false,
-                    "toolTip": "Number of VM instances to create initially",
-                    "constraints": {
-                      "required": true
-                    }
-                  },
-                  {
-                    "name": "vmssOrchestrationMode",
-                    "type": "Microsoft.Common.DropDown",
-                    "label": "Orchestration Mode",
-                    "defaultValue": "Uniform",
-                    "toolTip": "Uniform provides high scale with identical VMs. Flexible allows mixed VM sizes and better fault domain control.",
-                    "constraints": {
-                      "required": true,
-                      "allowedValues": [
-                        {
-                          "label": "Uniform (Recommended for high scale)",
-                          "value": "Uniform"
-                        },
-                        {
-                          "label": "Flexible (Mixed VM sizes)",
-                          "value": "Flexible"
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "name": "vmssUpgradeMode",
-                    "type": "Microsoft.Common.DropDown",
-                    "label": "Upgrade Policy",
-                    "defaultValue": "Manual",
-                    "toolTip": "How VMSS instances are updated when the model changes",
-                    "constraints": {
-                      "required": true,
-                      "allowedValues": [
-                        {
-                          "label": "Manual (Administrator controlled)",
-                          "value": "Manual"
-                        },
-                        {
-                          "label": "Automatic (Immediate updates)",
-                          "value": "Automatic"
-                        },
-                        {
-                          "label": "Rolling (Gradual updates)",
-                          "value": "Rolling"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "name": "autoScalingSection",
-            "type": "Microsoft.Common.Section",
-            "label": "Auto-scaling Configuration",
-            "visible": "[steps('scalingConfig').vmssSection.createVmss]",
-            "elements": [
-              {
-                "name": "enableAutoScaling",
-                "type": "Microsoft.Common.CheckBox",
-                "label": "Enable Auto-scaling",
-                "defaultValue": false,
-                "toolTip": "Automatically scale VMSS instances based on CPU usage"
+                "constraints": {
+                  "required": false,
+                  "regex": "^$|^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,62}[a-zA-Z0-9]$",
+                  "validationMessage": "Must be 1-64 characters, start and end with alphanumeric, can contain hyphens"
+                }
               },
               {
-                "name": "autoScaleConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "Auto-scaling Settings",
-                "visible": "[steps('scalingConfig').autoScalingSection.enableAutoScaling]",
-                "elements": [
-                  {
-                    "name": "autoScaleMin",
-                    "type": "Microsoft.Common.Slider",
-                    "label": "Minimum Instances",
-                    "subLabel": "instances",
-                    "defaultValue": 2,
-                    "min": 1,
-                    "max": 50,
-                    "showStepMarkers": false,
-                    "toolTip": "Minimum number of VM instances",
-                    "constraints": {
-                      "required": true
-                    }
-                  },
-                  {
-                    "name": "autoScaleMax",
-                    "type": "Microsoft.Common.Slider",
-                    "label": "Maximum Instances",
-                    "subLabel": "instances",
-                    "defaultValue": 10,
-                    "min": 2,
-                    "max": 100,
-                    "showStepMarkers": false,
-                    "toolTip": "Maximum number of VM instances",
-                    "constraints": {
-                      "required": true
-                    }
-                  },
-                  {
-                    "name": "autoScaleDefault",
-                    "type": "Microsoft.Common.Slider",
-                    "label": "Default Instances",
-                    "subLabel": "instances",
-                    "defaultValue": 3,
-                    "min": 1,
-                    "max": 50,
-                    "showStepMarkers": false,
-                    "toolTip": "Default number of VM instances",
-                    "constraints": {
-                      "required": true
-                    }
-                  },
-                  {
-                    "name": "cpuThresholds",
-                    "type": "Microsoft.Common.Section",
-                    "label": "CPU Scaling Thresholds",
-                    "elements": [
-                      {
-                        "name": "cpuScaleOutThreshold",
-                        "type": "Microsoft.Common.Slider",
-                        "label": "Scale Out CPU Threshold",
-                        "subLabel": "%",
-                        "defaultValue": 75,
-                        "min": 1,
-                        "max": 100,
-                        "showStepMarkers": false,
-                        "toolTip": "CPU percentage that triggers scaling out (adding instances)",
-                        "constraints": {
-                          "required": true
-                        }
-                      },
-                      {
-                        "name": "cpuScaleInThreshold",
-                        "type": "Microsoft.Common.Slider",
-                        "label": "Scale In CPU Threshold",
-                        "subLabel": "%",
-                        "defaultValue": 25,
-                        "min": 1,
-                        "max": 100,
-                        "showStepMarkers": false,
-                        "toolTip": "CPU percentage that triggers scaling in (removing instances)",
-                        "constraints": {
-                          "required": true
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "name": "loadBalancingSection",
-            "type": "Microsoft.Common.Section",
-            "label": "Load Balancing",
-            "elements": [
+                "name": "vmssInstanceCount",
+                "type": "Microsoft.Common.Slider",
+                "min": 2,
+                "max": 100,
+                "label": "Initial Instance Count",
+                "defaultValue": 2,
+                "showStepMarkers": false,
+                "toolTip": "Number of VM instances to create initially",
+                "visible": "[steps('scalingConfig').vmssSection.createVmss]",
+                "constraints": {
+                  "required": true
+                }
+              },
+              {
+                "name": "enableAutoScale",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Auto-Scaling",
+                "defaultValue": true,
+                "toolTip": "Automatically scale VM instances based on metrics",
+                "visible": "[steps('scalingConfig').vmssSection.createVmss]"
+              },
+              {
+                "name": "autoScaleMinInstances",
+                "type": "Microsoft.Common.Slider",
+                "min": 1,
+                "max": 50,
+                "label": "Minimum Instances",
+                "defaultValue": 2,
+                "showStepMarkers": false,
+                "toolTip": "Minimum number of instances for auto-scaling",
+                "visible": "[and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale)]",
+                "constraints": {
+                  "required": true
+                }
+              },
+              {
+                "name": "autoScaleMaxInstances",
+                "type": "Microsoft.Common.Slider",
+                "min": 2,
+                "max": 100,
+                "label": "Maximum Instances",
+                "defaultValue": 10,
+                "showStepMarkers": false,
+                "toolTip": "Maximum number of instances for auto-scaling",
+                "visible": "[and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale)]",
+                "constraints": {
+                  "required": true
+                }
+              },
+              {
+                "name": "cpuThresholdScaleOut",
+                "type": "Microsoft.Common.Slider",
+                "min": 50,
+                "max": 95,
+                "label": "CPU Scale Out Threshold (%)",
+                "defaultValue": 75,
+                "showStepMarkers": false,
+                "toolTip": "CPU percentage threshold to trigger scale-out",
+                "visible": "[and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale)]",
+                "constraints": {
+                  "required": true
+                }
+              },
+              {
+                "name": "cpuThresholdScaleIn",
+                "type": "Microsoft.Common.Slider",
+                "min": 10,
+                "max": 50,
+                "label": "CPU Scale In Threshold (%)",
+                "defaultValue": 25,
+                "showStepMarkers": false,
+                "toolTip": "CPU percentage threshold to trigger scale-in",
+                "visible": "[and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale)]",
+                "constraints": {
+                  "required": true
+                }
+              },
               {
                 "name": "createLoadBalancer",
                 "type": "Microsoft.Common.CheckBox",
                 "label": "Create Load Balancer",
-                "defaultValue": false,
-                "toolTip": "Create Azure Load Balancer for distributing traffic"
+                "defaultValue": true,
+                "toolTip": "Create Azure Load Balancer for VMSS",
+                "visible": "[steps('scalingConfig').vmssSection.createVmss]"
               },
               {
-                "name": "createApplicationGateway",
-                "type": "Microsoft.Common.CheckBox",
-                "label": "Create Application Gateway",
-                "defaultValue": false,
-                "toolTip": "Create Application Gateway for advanced HTTP/HTTPS load balancing"
-              }
-            ]
-          },
-          {
-            "name": "multiRegionSection",
-            "type": "Microsoft.Common.Section",
-            "label": "Multi-region Deployment",
-            "visible": "[steps('scalingConfig').vmssSection.createVmss]",
-            "elements": [
+                "name": "loadBalancerSku",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Load Balancer SKU",
+                "defaultValue": "Standard",
+                "toolTip": "Load Balancer SKU (Standard recommended for production)",
+                "visible": "[and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.createLoadBalancer)]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "Basic",
+                      "value": "Basic"
+                    },
+                    {
+                      "label": "Standard",
+                      "value": "Standard"
+                    }
+                  ]
+                }
+              },
               {
                 "name": "enableMultiRegion",
                 "type": "Microsoft.Common.CheckBox",
-                "label": "Enable Multi-region with Traffic Manager",
+                "label": "Enable Multi-Region Deployment",
                 "defaultValue": false,
-                "toolTip": "Deploy across multiple regions with Traffic Manager for global load balancing"
+                "toolTip": "Deploy VMSS across multiple Azure regions",
+                "visible": "[steps('scalingConfig').vmssSection.createVmss]"
               },
               {
-                "name": "multiRegionConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "Traffic Manager Configuration",
-                "visible": "[steps('scalingConfig').multiRegionSection.enableMultiRegion]",
-                "elements": [
-                  {
-                    "name": "trafficManagerDnsName",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "Traffic Manager DNS Name (Optional)",
-                    "placeholder": "Leave empty for auto-generated name",
-                    "toolTip": "DNS name for the Traffic Manager profile",
-                    "constraints": {
-                      "required": false,
-                      "regex": "^$|^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]$",
-                      "validationMessage": "Must be 1-63 characters, start and end with alphanumeric, can contain hyphens"
+                "name": "secondaryRegion",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Secondary Region",
+                "defaultValue": "East US 2",
+                "toolTip": "Secondary Azure region for multi-region deployment",
+                "visible": "[and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableMultiRegion)]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "East US 2",
+                      "value": "eastus2"
+                    },
+                    {
+                      "label": "West US 2",
+                      "value": "westus2"
+                    },
+                    {
+                      "label": "North Europe",
+                      "value": "northeurope"
+                    },
+                    {
+                      "label": "West Europe",
+                      "value": "westeurope"
                     }
-                  },
-                  {
-                    "name": "trafficRoutingMethod",
-                    "type": "Microsoft.Common.DropDown",
-                    "label": "Routing Method",
-                    "defaultValue": "Priority",
-                    "toolTip": "How Traffic Manager routes traffic between regions",
-                    "constraints": {
-                      "required": true,
-                      "allowedValues": [
-                        {
-                          "label": "Priority (Primary/Secondary)",
-                          "value": "Priority"
-                        },
-                        {
-                          "label": "Performance (Lowest latency)",
-                          "value": "Performance"
-                        },
-                        {
-                          "label": "Geographic (Location-based)",
-                          "value": "Geographic"
-                        },
-                        {
-                          "label": "Weighted (Distribute load)",
-                          "value": "Weighted"
-                        }
-                      ]
-                    }
-                  }
-                ]
+                  ]
+                }
               }
             ]
           }
@@ -688,9 +496,9 @@
       },
       {
         "name": "hadrConfig",
-        "label": "High Availability & Disaster Recovery",
+        "label": "High Availability & DR",
         "subLabel": {
-          "preValidation": "Configure HA/DR settings",
+          "preValidation": "Configure HA/DR",
           "postValidation": "HA/DR configured"
         },
         "bladeTitle": "High Availability & Disaster Recovery",
@@ -701,117 +509,75 @@
             "visible": true,
             "options": {
               "icon": "Info",
-              "text": "🛡️ Configure high availability and disaster recovery options to protect your workload against failures and ensure business continuity."
+              "text": "🛡️ Configure high availability, backup policies, and disaster recovery options for business continuity."
             }
           },
           {
             "name": "availabilitySection",
             "type": "Microsoft.Common.Section",
-            "label": "High Availability Configuration",
+            "label": "Availability Options",
             "elements": [
               {
-                "name": "availabilityChoice",
-                "type": "Microsoft.Common.OptionsGroup",
-                "label": "High Availability Option",
+                "name": "availabilityOption",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Availability Option",
                 "defaultValue": "None",
-                "toolTip": "Choose high availability configuration. Availability Sets and Zones are mutually exclusive.",
+                "toolTip": "Choose availability configuration for the VM",
                 "constraints": {
                   "required": true,
                   "allowedValues": [
                     {
-                      "label": "None - Single VM (no HA)",
+                      "label": "None",
                       "value": "none"
                     },
                     {
-                      "label": "Availability Set - Protect against hardware failures",
+                      "label": "Availability Set",
                       "value": "availabilitySet"
                     },
                     {
-                      "label": "Availability Zones - Protect against datacenter failures",
-                      "value": "availabilityZones"
+                      "label": "Availability Zone",
+                      "value": "availabilityZone"
                     }
                   ]
                 }
               },
               {
-                "name": "availabilitySetConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "Availability Set Configuration",
-                "visible": "[equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilitySet')]",
-                "elements": [
-                  {
-                    "name": "availabilitySetName",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "Availability Set Name (Optional)",
-                    "placeholder": "Leave empty for auto-generated name",
-                    "toolTip": "Name for the availability set. Leave empty to auto-generate.",
-                    "constraints": {
-                      "required": false,
-                      "regex": "^$|^[a-zA-Z0-9][a-zA-Z0-9\\-_.]{0,78}[a-zA-Z0-9]$",
-                      "validationMessage": "Must be 1-80 characters, start and end with alphanumeric, can contain hyphens, underscores, and periods"
-                    }
-                  },
-                  {
-                    "name": "platformFaultDomainCount",
-                    "type": "Microsoft.Common.Slider",
-                    "label": "Fault Domains",
-                    "subLabel": "domains",
-                    "defaultValue": 2,
-                    "min": 1,
-                    "max": 3,
-                    "showStepMarkers": true,
-                    "toolTip": "Number of fault domains (1-3). Determines how many server racks VMs are spread across.",
-                    "constraints": {
-                      "required": true
-                    }
-                  },
-                  {
-                    "name": "platformUpdateDomainCount",
-                    "type": "Microsoft.Common.Slider",
-                    "label": "Update Domains",
-                    "subLabel": "domains",
-                    "defaultValue": 5,
-                    "min": 1,
-                    "max": 20,
-                    "showStepMarkers": false,
-                    "toolTip": "Number of update domains (1-20). Determines how many VMs can be updated simultaneously.",
-                    "constraints": {
-                      "required": true
-                    }
-                  }
-                ]
+                "name": "availabilitySetName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Availability Set Name",
+                "placeholder": "Leave empty for auto-generated name",
+                "toolTip": "Name for the availability set",
+                "visible": "[equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilitySet')]",
+                "constraints": {
+                  "required": false,
+                  "regex": "^$|^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,78}[a-zA-Z0-9]$",
+                  "validationMessage": "Must be 1-80 characters, start and end with alphanumeric"
+                }
               },
               {
-                "name": "availabilityZoneConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "Availability Zone Configuration", 
-                "visible": "[equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilityZones')]",
-                "elements": [
-                  {
-                    "name": "availabilityZone",
-                    "type": "Microsoft.Common.DropDown",
-                    "label": "Availability Zone",
-                    "defaultValue": "Zone 1",
-                    "toolTip": "Select the availability zone for VM deployment",
-                    "constraints": {
-                      "required": true,
-                      "allowedValues": [
-                        {
-                          "label": "Zone 1",
-                          "value": "1"
-                        },
-                        {
-                          "label": "Zone 2", 
-                          "value": "2"
-                        },
-                        {
-                          "label": "Zone 3",
-                          "value": "3"
-                        }
-                      ]
+                "name": "availabilityZone",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Availability Zone",
+                "defaultValue": "Zone 1",
+                "toolTip": "Select the availability zone for the VM",
+                "visible": "[equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilityZone')]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "Zone 1",
+                      "value": "1"
+                    },
+                    {
+                      "label": "Zone 2",
+                      "value": "2"
+                    },
+                    {
+                      "label": "Zone 3",
+                      "value": "3"
                     }
-                  }
-                ]
+                  ]
+                }
               }
             ]
           },
@@ -824,144 +590,99 @@
                 "name": "enableBackup",
                 "type": "Microsoft.Common.CheckBox",
                 "label": "Enable Azure Backup",
-                "defaultValue": false,
-                "toolTip": "Enable automated backup for the VM using Azure Backup service"
+                "defaultValue": true,
+                "toolTip": "Enable automated backup for the VM"
               },
               {
-                "name": "backupConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "Backup Settings",
+                "name": "backupPolicyType",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Backup Policy",
+                "defaultValue": "Standard",
+                "toolTip": "Choose backup frequency and retention policy",
                 "visible": "[steps('hadrConfig').backupSection.enableBackup]",
-                "elements": [
-                  {
-                    "name": "backupVaultName",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "Recovery Services Vault Name (Optional)",
-                    "placeholder": "Leave empty for auto-generated name",
-                    "toolTip": "Name for the Recovery Services vault. Leave empty to auto-generate.",
-                    "constraints": {
-                      "required": false,
-                      "regex": "^$|^[a-zA-Z0-9][a-zA-Z0-9\\-]{0,48}[a-zA-Z0-9]$",
-                      "validationMessage": "Must be 2-50 characters, start and end with alphanumeric, can contain hyphens"
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "Standard (Daily, 30 days retention)",
+                      "value": "standard"
+                    },
+                    {
+                      "label": "Enhanced (Daily, 90 days retention)",
+                      "value": "enhanced"
+                    },
+                    {
+                      "label": "Premium (Hourly, 365 days retention)",
+                      "value": "premium"
                     }
-                  },
-                  {
-                    "name": "backupPolicyName",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "Backup Policy Name",
-                    "defaultValue": "DefaultPolicy",
-                    "toolTip": "Name of the backup policy to create/use",
-                    "constraints": {
-                      "required": true,
-                      "regex": "^[a-zA-Z0-9][a-zA-Z0-9\\-_.]{0,148}[a-zA-Z0-9]$",
-                      "validationMessage": "Must be 1-150 characters, start and end with alphanumeric, can contain hyphens, underscores, and periods"
-                    }
-                  },
-                  {
-                    "name": "backupScheduleTime",
-                    "type": "Microsoft.Common.TextBox",
-                    "label": "Backup Time",
-                    "defaultValue": "02:00",
-                    "toolTip": "Daily backup schedule time in HH:mm format (24-hour)",
-                    "constraints": {
-                      "required": true,
-                      "regex": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
-                      "validationMessage": "Must be in HH:mm format (e.g., 02:00, 14:30)"
-                    }
-                  },
-                  {
-                    "name": "dailyRetentionDays",
-                    "type": "Microsoft.Common.Slider",
-                    "label": "Daily Backup Retention",
-                    "subLabel": "days",
-                    "defaultValue": 30,
-                    "min": 7,
-                    "max": 180,
-                    "showStepMarkers": false,
-                    "toolTip": "Number of days to retain daily backups (7-180 days)",
-                    "constraints": {
-                      "required": true
-                    }
-                  }
-                ]
+                  ]
+                }
+              },
+              {
+                "name": "backupVaultName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Recovery Services Vault Name",
+                "placeholder": "Leave empty for auto-generated name",
+                "toolTip": "Name for the Recovery Services vault",
+                "visible": "[steps('hadrConfig').backupSection.enableBackup]",
+                "constraints": {
+                  "required": false,
+                  "regex": "^$|^[a-zA-Z][a-zA-Z0-9\\-]{1,48}[a-zA-Z0-9]$",
+                  "validationMessage": "Must be 2-50 characters, start with letter, contain only letters, numbers, and hyphens"
+                }
               }
             ]
           },
           {
             "name": "snapshotSection",
             "type": "Microsoft.Common.Section",
-            "label": "Disk Snapshots",
+            "label": "Snapshot Configuration",
             "elements": [
               {
-                "name": "enableSnapshot",
+                "name": "enableSnapshots",
                 "type": "Microsoft.Common.CheckBox",
                 "label": "Enable Disk Snapshots",
                 "defaultValue": false,
-                "toolTip": "Create point-in-time snapshots of VM disks for additional recovery options"
+                "toolTip": "Enable automated disk snapshots for point-in-time recovery"
               },
               {
-                "name": "snapshotConfig",
-                "type": "Microsoft.Common.Section",
-                "label": "Snapshot Settings",
-                "visible": "[steps('hadrConfig').snapshotSection.enableSnapshot]",
-                "elements": [
-                  {
-                    "name": "snapshotRetentionDays",
-                    "type": "Microsoft.Common.Slider",
-                    "label": "Snapshot Retention",
-                    "subLabel": "days",
-                    "defaultValue": 7,
-                    "min": 1,
-                    "max": 365,
-                    "showStepMarkers": false,
-                    "toolTip": "Number of days to retain disk snapshots (1-365 days)",
-                    "constraints": {
-                      "required": true
+                "name": "snapshotFrequency",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Snapshot Frequency",
+                "defaultValue": "Daily",
+                "toolTip": "How often to create disk snapshots",
+                "visible": "[steps('hadrConfig').snapshotSection.enableSnapshots]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "Hourly",
+                      "value": "hourly"
+                    },
+                    {
+                      "label": "Daily",
+                      "value": "daily"
+                    },
+                    {
+                      "label": "Weekly",
+                      "value": "weekly"
                     }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "name": "reviewConfig",
-        "label": "Review + Create",
-        "subLabel": {
-          "preValidation": "Review configuration",
-          "postValidation": "Configuration validated"
-        },
-        "bladeTitle": "Review Configuration",
-        "elements": [
-          {
-            "name": "reviewInfo",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": true,
-            "options": {
-              "icon": "Info",
-              "text": "📋 Review your VM configuration before deployment. All settings can be modified after deployment except authentication type and some HA settings."
-            }
-          },
-          {
-            "name": "configSummary",
-            "type": "Microsoft.Common.Section",
-            "label": "Configuration Summary",
-            "elements": [
-              {
-                "name": "vmSummary",
-                "type": "Microsoft.Common.TextBlock",
-                "text": "[concat('VM Name: ', basics('vmName'), '\\nVM Size: ', basics('vmSize'), '\\nOS: ', 'Linux', '\\nAuth: ', if(equals(basics('authenticationType'), 'password'), 'Password', 'SSH Key'))]"
+                  ]
+                }
               },
               {
-                "name": "haSummary",
-                "type": "Microsoft.Common.TextBlock",
-                "text": "[concat('High Availability: ', if(equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'none'), 'None', if(equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilitySet'), 'Availability Set', 'Availability Zones')), '\\nBackup: ', if(steps('hadrConfig').backupSection.enableBackup, 'Enabled', 'Disabled'), '\\nSnapshots: ', if(steps('hadrConfig').snapshotSection.enableSnapshot, 'Enabled', 'Disabled'))]"
-              },
-              {
-                "name": "extensionsSummary", 
-                "type": "Microsoft.Common.TextBlock",
-                "text": "[concat('Extensions: ', if(steps('extensionsConfig').installExtensions, 'Enabled', 'Disabled'), '\\nMonitoring: ', if(and(steps('extensionsConfig').installExtensions, steps('extensionsConfig').monitoringSection.installMonitoringExtension), 'Enabled', 'Disabled'), '\\nSecurity: ', if(and(steps('extensionsConfig').installExtensions, steps('extensionsConfig').securitySection.installSecurityExtension), 'Enabled', 'Disabled'))]"
+                "name": "snapshotRetention",
+                "type": "Microsoft.Common.Slider",
+                "min": 7,
+                "max": 365,
+                "label": "Snapshot Retention (Days)",
+                "defaultValue": 30,
+                "showStepMarkers": false,
+                "toolTip": "Number of days to retain snapshots",
+                "visible": "[steps('hadrConfig').snapshotSection.enableSnapshots]",
+                "constraints": {
+                  "required": true
+                }
               }
             ]
           }
@@ -969,62 +690,52 @@
       }
     ],
     "outputs": {
-      "vmName": "[basics('vmName')]",
-      "adminUsername": "[basics('adminUsername')]",
-      "authenticationType": "[basics('authenticationType')]",
-      "adminPasswordOrKey": "[basics('adminPasswordOrKey')]",
-      "vmSize": "[basics('vmSize')]",
       "location": "[location()]",
+      "vmName": "[basics('vmName')]",
+      "authenticationType": "[basics('authenticationType')]",
+      "adminUsername": "[basics('adminUsername')]",
+      "adminPasswordOrKey": "[if(equals(basics('authenticationType'), 'password'), basics('adminPassword'), basics('adminSshKey'))]",
+      "vmSize": "[basics('vmSize')]",
       "virtualNetworkName": "[steps('networkingConfig').virtualNetwork.name]",
       "virtualNetworkNewOrExisting": "[steps('networkingConfig').virtualNetwork.newOrExisting]",
-      "virtualNetworkAddressPrefix": "[first(steps('networkingConfig').virtualNetwork.addressPrefixes)]",
+      "virtualNetworkResourceGroup": "[steps('networkingConfig').virtualNetwork.resourceGroup]",
+      "virtualNetworkAddressPrefix": "[steps('networkingConfig').virtualNetwork.addressPrefix]",
       "subnetName": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.name]",
       "subnetAddressPrefix": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.addressPrefix]",
-      "publicIPNewOrExisting": "[steps('networkingConfig').publicIPAddress.newOrExistingOrNone]",
-      "publicIPName": "[steps('networkingConfig').publicIPAddress.name]",
-      "dnsLabelPrefix": "[steps('networkingConfig').publicIPAddress.domainNameLabel]",
-      "allowSshRdp": "[steps('networkingConfig').networkSecurityGroup.allowSshRdp]",
-      "sshRdpSourceAddressPrefix": "[steps('networkingConfig').networkSecurityGroup.sshRdpSourceAddressPrefix]",
-      "installExtensions": "[steps('extensionsConfig').installExtensions]",
-      "installMonitoringExtension": "[if(steps('extensionsConfig').installExtensions, steps('extensionsConfig').monitoringSection.installMonitoringExtension, false)]",
-      "workspaceId": "[if(and(steps('extensionsConfig').installExtensions, steps('extensionsConfig').monitoringSection.installMonitoringExtension), steps('extensionsConfig').monitoringSection.workspaceConfig.workspaceId, '')]",
-      "workspaceKey": "[if(and(steps('extensionsConfig').installExtensions, steps('extensionsConfig').monitoringSection.installMonitoringExtension), steps('extensionsConfig').monitoringSection.workspaceConfig.workspaceKey, '')]",
-      "installSecurityExtension": "[if(steps('extensionsConfig').installExtensions, steps('extensionsConfig').securitySection.installSecurityExtension, false)]",
-      "installAntimalwareExtension": "[if(steps('extensionsConfig').installExtensions, steps('extensionsConfig').securitySection.installAntimalwareExtension, false)]",
-      "enableManagedIdentity": "[if(steps('extensionsConfig').installExtensions, steps('extensionsConfig').securitySection.enableManagedIdentity, false)]",
-      "installCustomScriptExtension": "[if(steps('extensionsConfig').installExtensions, steps('extensionsConfig').customScriptSection.installCustomScriptExtension, false)]",
-      "customScriptUrl": "[if(and(steps('extensionsConfig').installExtensions, steps('extensionsConfig').customScriptSection.installCustomScriptExtension), steps('extensionsConfig').customScriptSection.customScriptConfig.customScriptUrl, '')]",
-      "customScriptCommand": "[if(and(steps('extensionsConfig').installExtensions, steps('extensionsConfig').customScriptSection.installCustomScriptExtension), steps('extensionsConfig').customScriptSection.customScriptConfig.customScriptCommand, '')]",
-      "createAvailabilitySet": "[equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilitySet')]",
-      "availabilitySetName": "[if(equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilitySet'), steps('hadrConfig').availabilitySection.availabilitySetConfig.availabilitySetName, '')]",
-      "platformFaultDomainCount": "[if(equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilitySet'), steps('hadrConfig').availabilitySection.availabilitySetConfig.platformFaultDomainCount, 2)]",
-      "platformUpdateDomainCount": "[if(equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilitySet'), steps('hadrConfig').availabilitySection.availabilitySetConfig.platformUpdateDomainCount, 5)]",
-      "useAvailabilityZones": "[equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilityZones')]",
-      "availabilityZone": "[if(equals(steps('hadrConfig').availabilitySection.availabilityChoice, 'availabilityZones'), steps('hadrConfig').availabilitySection.availabilityZoneConfig.availabilityZone, '1')]",
-      "enableBackup": "[steps('hadrConfig').backupSection.enableBackup]",
-      "backupVaultName": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupConfig.backupVaultName, '')]",
-      "backupPolicyName": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupConfig.backupPolicyName, 'DefaultPolicy')]",
-      "backupScheduleTime": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupConfig.backupScheduleTime, '02:00')]",
-      "dailyRetentionDays": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupConfig.dailyRetentionDays, 30)]",
-      "enableSnapshot": "[steps('hadrConfig').snapshotSection.enableSnapshot]",
-      "snapshotRetentionDays": "[if(steps('hadrConfig').snapshotSection.enableSnapshot, steps('hadrConfig').snapshotSection.snapshotConfig.snapshotRetentionDays, 7)]",
+      "publicIPAddressName": "[steps('networkingConfig').publicIPAddress.name]",
+      "publicIPAddressNewOrExisting": "[steps('networkingConfig').publicIPAddress.newOrExistingOrNone]",
+      "publicIPAddressResourceGroup": "[steps('networkingConfig').publicIPAddress.resourceGroup]",
+      "domainNameLabel": "[steps('networkingConfig').publicIPAddress.domainNameLabel]",
+      "allowSshRdp": "[steps('networkingConfig').allowSshRdp]",
+      "sshRdpSourceAddressPrefix": "[if(steps('networkingConfig').allowSshRdp, steps('networkingConfig').sshRdpSourceAddressPrefix, '*')]",
+      "installMonitoring": "[steps('extensionsConfig').extensionsSection.installMonitoring]",
+      "workspaceId": "[steps('extensionsConfig').extensionsSection.workspaceId]",
+      "installSecurity": "[steps('extensionsConfig').extensionsSection.installSecurity]",
+      "enableVulnerabilityAssessment": "[if(steps('extensionsConfig').extensionsSection.installSecurity, steps('extensionsConfig').extensionsSection.enableVulnerabilityAssessment, bool('false'))]",
+      "runCustomScript": "[steps('extensionsConfig').extensionsSection.runCustomScript]",
+      "customScriptUri": "[if(steps('extensionsConfig').extensionsSection.runCustomScript, steps('extensionsConfig').extensionsSection.customScriptUri, '')]",
+      "customScriptArgs": "[if(steps('extensionsConfig').extensionsSection.runCustomScript, steps('extensionsConfig').extensionsSection.customScriptArgs, '')]",
       "createVmss": "[steps('scalingConfig').vmssSection.createVmss]",
-      "vmssName": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssConfig.vmssName, '')]",
-      "vmssInstanceCount": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssConfig.vmssInstanceCount, 2)]",
-      "vmssOrchestrationMode": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssConfig.vmssOrchestrationMode, 'Uniform')]",
-      "vmssUpgradeMode": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssConfig.vmssUpgradeMode, 'Manual')]",
-      "enableAutoScaling": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling, false)]",
-      "autoScaleMin": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.autoScaleMin, 2)]",
-      "autoScaleMax": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.autoScaleMax, 10)]",
-      "autoScaleDefault": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.autoScaleDefault, 3)]",
-      "cpuScaleOutThreshold": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.cpuThresholds.cpuScaleOutThreshold, 75)]",
-      "cpuScaleInThreshold": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').autoScalingSection.enableAutoScaling), steps('scalingConfig').autoScalingSection.autoScaleConfig.cpuThresholds.cpuScaleInThreshold, 25)]",
-      "createLoadBalancer": "[steps('scalingConfig').loadBalancingSection.createLoadBalancer]",
-      "createApplicationGateway": "[steps('scalingConfig').loadBalancingSection.createApplicationGateway]",
-      "enableMultiRegion": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').multiRegionSection.enableMultiRegion, false)]",
-      "trafficManagerProfileName": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').multiRegionSection.enableMultiRegion), steps('scalingConfig').multiRegionSection.multiRegionConfig.trafficManagerProfileName, '')]",
-      "trafficManagerDnsName": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').multiRegionSection.enableMultiRegion), steps('scalingConfig').multiRegionSection.multiRegionConfig.trafficManagerDnsName, '')]",
-      "trafficRoutingMethod": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').multiRegionSection.enableMultiRegion), steps('scalingConfig').multiRegionSection.multiRegionConfig.trafficRoutingMethod, 'Priority')]"
+      "vmssName": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssName, '')]",
+      "vmssInstanceCount": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssInstanceCount, 0)]",
+      "enableAutoScale": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale, bool('false'))]",
+      "autoScaleMinInstances": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.autoScaleMinInstances, 0)]",
+      "autoScaleMaxInstances": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.autoScaleMaxInstances, 0)]",
+      "cpuThresholdScaleOut": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.cpuThresholdScaleOut, 0)]",
+      "cpuThresholdScaleIn": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.cpuThresholdScaleIn, 0)]",
+      "createLoadBalancer": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.createLoadBalancer, bool('false'))]",
+      "loadBalancerSku": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.createLoadBalancer), steps('scalingConfig').vmssSection.loadBalancerSku, 'Standard')]",
+      "enableMultiRegion": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableMultiRegion, bool('false'))]",
+      "secondaryRegion": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableMultiRegion), steps('scalingConfig').vmssSection.secondaryRegion, '')]",
+      "availabilityOption": "[steps('hadrConfig').availabilitySection.availabilityOption]",
+      "availabilitySetName": "[if(equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilitySet'), steps('hadrConfig').availabilitySection.availabilitySetName, '')]",
+      "availabilityZone": "[if(equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilityZone'), steps('hadrConfig').availabilitySection.availabilityZone, '')]",
+      "enableBackup": "[steps('hadrConfig').backupSection.enableBackup]",
+      "backupPolicyType": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupPolicyType, 'standard')]",
+      "backupVaultName": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupVaultName, '')]",
+      "enableSnapshots": "[steps('hadrConfig').snapshotSection.enableSnapshots]",
+      "snapshotFrequency": "[if(steps('hadrConfig').snapshotSection.enableSnapshots, steps('hadrConfig').snapshotSection.snapshotFrequency, 'daily')]",
+      "snapshotRetention": "[if(steps('hadrConfig').snapshotSection.enableSnapshots, steps('hadrConfig').snapshotSection.snapshotRetention, 30)]"
     }
   }
 }
