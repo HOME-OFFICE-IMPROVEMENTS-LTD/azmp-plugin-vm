@@ -361,6 +361,10 @@ export class VmPlugin implements IPlugin {
     if (this.context) {
       const { registerTemplateCommands } = require('./cli/template-commands');
       registerTemplateCommands(vmCommand, { context: this.context, plugin: this });
+      
+      // Import and register cleanup commands
+      const { registerCleanupCommands } = require('./cli/cleanup-commands');
+      registerCleanupCommands(vmCommand, { context: this.context });
     }
 
     vmCommand
