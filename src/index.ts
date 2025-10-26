@@ -350,6 +350,12 @@ export class VmPlugin implements IPlugin {
       .command('vm')
       .description('Virtual Machine commands');
 
+    // Import and register template commands
+    if (this.context) {
+      const { registerTemplateCommands } = require('./cli/template-commands');
+      registerTemplateCommands(vmCommand, { context: this.context });
+    }
+
     vmCommand
       .command('list-sizes')
       .description('List available VM sizes for a location (requires Azure credentials)')
