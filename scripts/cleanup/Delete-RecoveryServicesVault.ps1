@@ -28,12 +28,56 @@ param(
     [switch]$Force,
     
     [Parameter(Mandatory=$false)]
-    [switch]$SkipModuleUpdates
+    [switch]$SkipModuleUpdates,
+    
+    [Parameter(Mandatory=$false)]
+    [switch]$JsonOutput
 )
 
+if (-not $JsonOutput) {
 Write-Host "WARNING: Please ensure that you have at least PowerShell 7 before running this script. Visit https://go.microsoft.com/fwlink/?linkid=2181071 for the procedure." -ForegroundColor Yellow
+}
+
+# Initialize operation tracking for JSON output
+$script:operationPlan = @{
+    vaultInfo = @{
+        name = $VaultName
+        resourceGroup = $ResourceGroupName
+        subscription = $SubscriptionName
+        subscriptionId = $SubscriptionId
+    }
+    timestamp = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+    mode = if ($DryRun) { "dry-run" } elseif ($Force) { "force" } else { "invalid" }
+    operations = @()
+    warnings = @()
+}
+
+# Helper function to add operations to the plan
+function Add-Operation {
+    param(
+        [string]$Category,
+        [string]$Action,
+        [string]$Resource,
+        [int]$Count = 0,
+        [string]$Details = ""
+    )
+    $script:operationPlan.operations += @{
+        category = $Category
+        action = $Action
+        resource = $Resource
+        count = $Count
+        details = $Details
+    }
+}
+
+# Helper function to add warnings
+function Add-Warning {
+    param([string]$Message)
+    $script:operationPlan.warnings += $Message
+}
 
 # Display configuration
+if (-not $JsonOutput) {
 Write-Host "Recovery Services Vault Cleanup Configuration:" -ForegroundColor Cyan
 Write-Host "  Vault Name: $VaultName"
 Write-Host "  Resource Group: $ResourceGroupName"
@@ -42,14 +86,23 @@ Write-Host "  Dry Run: $DryRun"
 Write-Host "  Force: $Force"
 Write-Host "  Skip Module Updates: $SkipModuleUpdates"
 Write-Host ""
+}
 
 # Safety check for non-interactive destructive operations
 if (-not $Force -and -not $DryRun) {
-    Write-Error "Destructive operations require -Force flag or use -DryRun to preview operations"
+    if ($JsonOutput) {
+        $errorOutput = @{
+            error = "Destructive operations require -Force flag or use -DryRun to preview operations"
+            vaultInfo = $script:operationPlan.vaultInfo
+        }
+        Write-Output ($errorOutput | ConvertTo-Json -Depth 10)
+    } else {
+        Write-Error "Destructive operations require -Force flag or use -DryRun to preview operations"
+    }
     exit 1
 }
 
-if ($DryRun) {
+if ($DryRun -and -not $JsonOutput) {
     Write-Host "DRY RUN MODE: No actual changes will be made" -ForegroundColor Yellow
     Write-Host "=============================================" -ForegroundColor Yellow
 }
@@ -57,23 +110,26 @@ if ($DryRun) {
 # Check and update required modules
 if (-not $SkipModuleUpdates) {
     if ($DryRun) {
-        Write-Host "[DRY RUN] Would check and update PowerShell modules"
+        Add-Operation -Category "Prerequisites" -Action "Check and update" -Resource "PowerShell modules (Az.RecoveryServices, Az.Network)"
+        if (-not $JsonOutput) {
+            Write-Host "[DRY RUN] Would check and update PowerShell modules"
+        }
     } elseif ($Force) {
-        Write-Host "Checking PowerShell modules..."
+        if (-not $JsonOutput) { Write-Host "Checking PowerShell modules..." }
         $RSmodule = Get-Module -Name Az.RecoveryServices -ListAvailable
         $NWmodule = Get-Module -Name Az.Network -ListAvailable
         $RSversion = $RSmodule.Version.ToString()
         $NWversion = $NWmodule.Version.ToString()
 
         if($RSversion -lt "5.3.0") {
-            Write-Host "Updating Az.RecoveryServices module..."
+            if (-not $JsonOutput) { Write-Host "Updating Az.RecoveryServices module..." }
             Uninstall-Module -Name Az.RecoveryServices
             Set-ExecutionPolicy -ExecutionPolicy Unrestricted
             Install-Module -Name Az.RecoveryServices -Repository PSGallery -Force -AllowClobber
         }
 
         if($NWversion -lt "4.15.0") {
-            Write-Host "Updating Az.Network module..."
+            if (-not $JsonOutput) { Write-Host "Updating Az.Network module..." }
             Uninstall-Module -Name Az.Network
             Set-ExecutionPolicy -ExecutionPolicy Unrestricted
             Install-Module -Name Az.Network -Repository PSGallery -Force -AllowClobber
@@ -82,14 +138,17 @@ if (-not $SkipModuleUpdates) {
         Write-Warning "Module updates skipped (use -Force to execute)"
     }
 } else {
-    Write-Host "Skipping module updates as requested"
+    if (-not $JsonOutput) { Write-Host "Skipping module updates as requested" }
 }
 
 # Connect to Azure and set context
 if ($DryRun) {
-    Write-Host "[DRY RUN] Would connect to Azure and set subscription context"
+    Add-Operation -Category "Prerequisites" -Action "Connect" -Resource "Azure subscription" -Details $SubscriptionName
+    if (-not $JsonOutput) {
+        Write-Host "[DRY RUN] Would connect to Azure and set subscription context"
+    }
 } elseif ($Force) {
-    Write-Host "Connecting to Azure..."
+    if (-not $JsonOutput) { Write-Host "Connecting to Azure..." }
     Connect-AzAccount
     Select-AzSubscription $SubscriptionName
     $VaultToDelete = Get-AzRecoveryServicesVault -Name $VaultName -ResourceGroupName $ResourceGroupName
@@ -102,20 +161,25 @@ if ($DryRun) {
 # Handle soft delete if enabled
 if($IsVaultSoftDeleteEnabled -eq $false) {
     if ($DryRun) {
-        Write-Host "[DRY RUN] Would disable soft delete for vault $VaultName"
-        Write-Host "[DRY RUN] Would restore soft-deleted backup items"
+        Add-Operation -Category "Vault Configuration" -Action "Disable" -Resource "Soft delete"
+        Add-Operation -Category "Vault Configuration" -Action "Restore" -Resource "Soft-deleted VM backup items"
+        Add-Operation -Category "Vault Configuration" -Action "Restore" -Resource "Soft-deleted SQL backup items"
+        if (-not $JsonOutput) {
+            Write-Host "[DRY RUN] Would disable soft delete for vault $VaultName"
+            Write-Host "[DRY RUN] Would restore soft-deleted backup items"
+        }
     } elseif ($Force) {
-        Write-Host "Disabling soft delete for vault $VaultName..."
+        if (-not $JsonOutput) { Write-Host "Disabling soft delete for vault $VaultName..." }
         Set-AzRecoveryServicesVaultProperty -VaultId $VaultToDelete.ID -SoftDeleteFeatureState Disable
-        Write-Host "Soft delete disabled for the vault" $VaultName
+        if (-not $JsonOutput) { Write-Host "Soft delete disabled for the vault" $VaultName }
 
-        Write-Host "Restoring soft-deleted VM backup items..."
+        if (-not $JsonOutput) { Write-Host "Restoring soft-deleted VM backup items..." }
         $containerSoftDelete = Get-AzRecoveryServicesBackupItem -BackupManagementType AzureVM -WorkloadType AzureVM -VaultId $VaultToDelete.ID | Where-Object {$_.DeleteState -eq "ToBeDeleted"}
         foreach ($softitem in $containerSoftDelete) {
             Undo-AzRecoveryServicesBackupItemDeletion -Item $softitem -VaultId $VaultToDelete.ID -Force
         }
 
-        Write-Host "Restoring soft-deleted SQL backup items..."
+        if (-not $JsonOutput) { Write-Host "Restoring soft-deleted SQL backup items..." }
         $containerSoftDeleteSql = Get-AzRecoveryServicesBackupItem -BackupManagementType AzureWorkload -WorkloadType MSSQL -VaultId $VaultToDelete.ID | Where-Object {$_.DeleteState -eq "ToBeDeleted"}
         foreach ($softitemsql in $containerSoftDeleteSql) {
             Undo-AzRecoveryServicesBackupItemDeletion -Item $softitemsql -VaultId $VaultToDelete.ID -Force
@@ -127,20 +191,26 @@ if($IsVaultSoftDeleteEnabled -eq $false) {
 
 # Disable security features
 if ($DryRun) {
-    Write-Host "[DRY RUN] Would disable security features for vault"
+    Add-Operation -Category "Vault Configuration" -Action "Disable" -Resource "Hybrid backup security features"
+    if (-not $JsonOutput) {
+        Write-Host "[DRY RUN] Would disable security features for vault"
+    }
 } elseif ($Force) {
-    Write-Host "Disabling security features for vault..."
+    if (-not $JsonOutput) { Write-Host "Disabling security features for vault..." }
     Set-AzRecoveryServicesVaultProperty -VaultId $VaultToDelete.ID -DisableHybridBackupSecurityFeature $true
-    Write-Host "Disabled Security features for the vault"
+    if (-not $JsonOutput) { Write-Host "Disabled Security features for the vault" }
 } else {
     Write-Warning "Skipping security feature disabling (use -Force to execute)"
 }
 
 # Fetch all protected items and servers (for inventory)
 if ($DryRun) {
-    Write-Host "[DRY RUN] Would fetch inventory of protected items and servers"
+    Add-Operation -Category "Inventory" -Action "Fetch" -Resource "All protected items and servers"
+    if (-not $JsonOutput) {
+        Write-Host "[DRY RUN] Would fetch inventory of protected items and servers"
+    }
 } elseif ($Force) {
-    Write-Host "Fetching inventory of protected items and servers..."
+    if (-not $JsonOutput) { Write-Host "Fetching inventory of protected items and servers..." }
     $backupItemsVM = Get-AzRecoveryServicesBackupItem -BackupManagementType AzureVM -WorkloadType AzureVM -VaultId $VaultToDelete.ID
     $backupItemsSQL = Get-AzRecoveryServicesBackupItem -BackupManagementType AzureWorkload -WorkloadType MSSQL -VaultId $VaultToDelete.ID
     $backupItemsAFS = Get-AzRecoveryServicesBackupItem -BackupManagementType AzureStorage -WorkloadType AzureFiles -VaultId $VaultToDelete.ID
@@ -159,87 +229,108 @@ if ($DryRun) {
 
 # Clean up all backup items
 if ($DryRun) {
-    Write-Host "[DRY RUN] Would clean up all backup items and containers:"
-    Write-Host "[DRY RUN]   - Azure VM backup items"
-    Write-Host "[DRY RUN]   - SQL Server backup items"
-    Write-Host "[DRY RUN]   - SQL protectable items"
-    Write-Host "[DRY RUN]   - SQL containers"
-    Write-Host "[DRY RUN]   - SAP HANA backup items"
-    Write-Host "[DRY RUN]   - SAP HANA containers"
-    Write-Host "[DRY RUN]   - Azure File Share backups"
-    Write-Host "[DRY RUN]   - Storage Accounts"
-    Write-Host "[DRY RUN]   - MARS Servers"
-    Write-Host "[DRY RUN]   - MAB Servers"
-    Write-Host "[DRY RUN]   - DPM Servers"
+    Add-Operation -Category "Backup Items" -Action "Disable and delete" -Resource "Azure VM backup items"
+    Add-Operation -Category "Backup Items" -Action "Disable and delete" -Resource "SQL Server backup items"
+    Add-Operation -Category "Backup Items" -Action "Disable auto-protection" -Resource "SQL protectable items"
+    Add-Operation -Category "Backup Containers" -Action "Unregister" -Resource "SQL containers"
+    Add-Operation -Category "Backup Items" -Action "Disable and delete" -Resource "SAP HANA backup items"
+    Add-Operation -Category "Backup Containers" -Action "Unregister" -Resource "SAP HANA containers"
+    Add-Operation -Category "Backup Items" -Action "Disable and delete" -Resource "Azure File Share backups"
+    Add-Operation -Category "Backup Containers" -Action "Unregister" -Resource "Storage Accounts"
+    Add-Operation -Category "Backup Servers" -Action "Delete" -Resource "MARS Servers"
+    Add-Operation -Category "Backup Servers" -Action "Delete" -Resource "MAB Servers"
+    Add-Operation -Category "Backup Servers" -Action "Delete" -Resource "DPM Servers"
+    Add-Warning "You must stop protection and delete backup items from MARS, MAB and DPM consoles manually"
+    if (-not $JsonOutput) {
+        Write-Host "[DRY RUN] Would clean up all backup items and containers:"
+        Write-Host "[DRY RUN]   - Azure VM backup items"
+        Write-Host "[DRY RUN]   - SQL Server backup items"
+        Write-Host "[DRY RUN]   - SQL protectable items"
+        Write-Host "[DRY RUN]   - SQL containers"
+        Write-Host "[DRY RUN]   - SAP HANA backup items"
+        Write-Host "[DRY RUN]   - SAP HANA containers"
+        Write-Host "[DRY RUN]   - Azure File Share backups"
+        Write-Host "[DRY RUN]   - Storage Accounts"
+        Write-Host "[DRY RUN]   - MARS Servers"
+        Write-Host "[DRY RUN]   - MAB Servers"
+        Write-Host "[DRY RUN]   - DPM Servers"
+    }
 } elseif ($Force) {
 foreach($item in $backupItemsVM) {
 	Disable-AzRecoveryServicesBackupProtection -Item $item -VaultId $VaultToDelete.ID -RemoveRecoveryPoints -Force
 }
-Write-Host "Disabled and deleted Azure VM backup items"
+if (-not $JsonOutput) { Write-Host "Disabled and deleted Azure VM backup items" }
 
 foreach($item in $backupItemsSQL) {
 	Disable-AzRecoveryServicesBackupProtection -Item $item -VaultId $VaultToDelete.ID -RemoveRecoveryPoints -Force
 }
-Write-Host "Disabled and deleted SQL Server backup items"
+if (-not $JsonOutput) { Write-Host "Disabled and deleted SQL Server backup items" }
 
 foreach($item in $protectableItemsSQL) {
 	Disable-AzRecoveryServicesBackupAutoProtection -BackupManagementType AzureWorkload -WorkloadType MSSQL -InputItem $item -VaultId $VaultToDelete.ID
 }
-Write-Host "Disabled auto-protection and deleted SQL protectable items"
+if (-not $JsonOutput) { Write-Host "Disabled auto-protection and deleted SQL protectable items" }
 
 foreach($item in $backupContainersSQL) {
 	Unregister-AzRecoveryServicesBackupContainer -Container $item -Force -VaultId $VaultToDelete.ID
 }
-Write-Host "Deleted SQL Servers in Azure VM containers"
+if (-not $JsonOutput) { Write-Host "Deleted SQL Servers in Azure VM containers" }
 
 foreach($item in $backupItemsSAP) {
 	Disable-AzRecoveryServicesBackupProtection -Item $item -VaultId $VaultToDelete.ID -RemoveRecoveryPoints -Force
 }
-Write-Host "Disabled and deleted SAP HANA backup items"
+if (-not $JsonOutput) { Write-Host "Disabled and deleted SAP HANA backup items" }
 
 foreach($item in $backupContainersSAP) {
 	Unregister-AzRecoveryServicesBackupContainer -Container $item -Force -VaultId $VaultToDelete.ID
 }
-Write-Host "Deleted SAP HANA in Azure VM containers"
+if (-not $JsonOutput) { Write-Host "Deleted SAP HANA in Azure VM containers" }
 
 foreach($item in $backupItemsAFS) {
 	Disable-AzRecoveryServicesBackupProtection -Item $item -VaultId $VaultToDelete.ID -RemoveRecoveryPoints -Force
 }
-Write-Host "Disabled and deleted Azure File Share backups"
+if (-not $JsonOutput) { Write-Host "Disabled and deleted Azure File Share backups" }
 
 foreach($item in $StorageAccounts) {
 	Unregister-AzRecoveryServicesBackupContainer -container $item -Force -VaultId $VaultToDelete.ID
 }
-Write-Host "Unregistered Storage Accounts"
+if (-not $JsonOutput) { Write-Host "Unregistered Storage Accounts" }
 
 foreach($item in $backupServersMARS) {
 	Unregister-AzRecoveryServicesBackupContainer -Container $item -Force -VaultId $VaultToDelete.ID
 }
-Write-Host "Deleted MARS Servers"
+if (-not $JsonOutput) { Write-Host "Deleted MARS Servers" }
 
 foreach($item in $backupServersMABS) {
 	Unregister-AzRecoveryServicesBackupManagementServer -AzureRmBackupManagementServer $item -VaultId $VaultToDelete.ID
 }
-Write-Host "Deleted MAB Servers"
+if (-not $JsonOutput) { Write-Host "Deleted MAB Servers" }
 
 foreach($item in $backupServersDPM) {
 	Unregister-AzRecoveryServicesBackupManagementServer -AzureRmBackupManagementServer $item -VaultId $VaultToDelete.ID
 }
-Write-Host "Deleted DPM Servers"
-Write-Host "Ensure that you stop protection and delete backup items from the respective MARS, MAB and DPM consoles as well. Visit https://go.microsoft.com/fwlink/?linkid=2186234 to learn more." -ForegroundColor Yellow
+if (-not $JsonOutput) { Write-Host "Deleted DPM Servers" }
+if (-not $JsonOutput) { Write-Host "Ensure that you stop protection and delete backup items from the respective MARS, MAB and DPM consoles as well. Visit https://go.microsoft.com/fwlink/?linkid=2186234 to learn more." -ForegroundColor Yellow }
 } else {
     Write-Warning "Skipping backup item cleanup (use -Force to execute)"
 }
 
 # Clean up ASR items
 if ($DryRun) {
-    Write-Host "[DRY RUN] Would clean up ASR (Azure Site Recovery) items:"
-    Write-Host "[DRY RUN]   - Replication protected items"
-    Write-Host "[DRY RUN]   - Protection container mappings"
-    Write-Host "[DRY RUN]   - Network mappings"
-    Write-Host "[DRY RUN]   - ASR fabrics"
+    Add-Operation -Category "ASR" -Action "Remove" -Resource "Replication protected items"
+    Add-Operation -Category "ASR" -Action "Remove" -Resource "Protection container mappings"
+    Add-Operation -Category "ASR" -Action "Remove" -Resource "Network mappings"
+    Add-Operation -Category "ASR" -Action "Remove" -Resource "ASR fabrics"
+    Add-Warning "Script only removes replication configuration from Azure Site Recovery, not from source"
+    if (-not $JsonOutput) {
+        Write-Host "[DRY RUN] Would clean up ASR (Azure Site Recovery) items:"
+        Write-Host "[DRY RUN]   - Replication protected items"
+        Write-Host "[DRY RUN]   - Protection container mappings"
+        Write-Host "[DRY RUN]   - Network mappings"
+        Write-Host "[DRY RUN]   - ASR fabrics"
+    }
 } elseif ($Force) {
-    Write-Host "Cleaning up ASR items..."
+    if (-not $JsonOutput) { Write-Host "Cleaning up ASR items..." }
     $fabricObjects = Get-AzRecoveryServicesAsrFabric
     if ($null -ne $fabricObjects) {
         foreach ($fabricObject in $fabricObjects) {
@@ -247,16 +338,16 @@ if ($DryRun) {
             foreach ($containerObject in $containerObjects) {
                 $protectedItems = Get-AzRecoveryServicesAsrReplicationProtectedItem -ProtectionContainer $containerObject
                 foreach ($protectedItem in $protectedItems) {
-                    Write-Host "Triggering DisableDR(Purge) for item:" $protectedItem.Name
+                    if (-not $JsonOutput) { Write-Host "Triggering DisableDR(Purge) for item:" $protectedItem.Name }
                     Remove-AzRecoveryServicesAsrReplicationProtectedItem -InputObject $protectedItem -Force
-                    Write-Host "DisableDR(Purge) completed"
+                    if (-not $JsonOutput) { Write-Host "DisableDR(Purge) completed" }
                 }
 
                 $containerMappings = Get-AzRecoveryServicesAsrProtectionContainerMapping -ProtectionContainer $containerObject
                 foreach ($containerMapping in $containerMappings) {
-                    Write-Host "Triggering Remove Container Mapping: " $containerMapping.Name
+                    if (-not $JsonOutput) { Write-Host "Triggering Remove Container Mapping: " $containerMapping.Name }
                     Remove-AzRecoveryServicesAsrProtectionContainerMapping -ProtectionContainerMapping $containerMapping -Force
-                    Write-Host "Removed Container Mapping."
+                    if (-not $JsonOutput) { Write-Host "Removed Container Mapping." }
                 }
             }
             $NetworkObjects = Get-AzRecoveryServicesAsrNetwork -Fabric $fabricObject
@@ -268,38 +359,44 @@ if ($DryRun) {
                     Remove-AzRecoveryServicesAsrNetworkMapping -InputObject $NetworkMapping
                 }
             }
-            Write-Host "Triggering Remove Fabric:" $fabricObject.FriendlyName
+            if (-not $JsonOutput) { Write-Host "Triggering Remove Fabric:" $fabricObject.FriendlyName }
             Remove-AzRecoveryServicesAsrFabric -InputObject $fabricObject -Force
-            Write-Host "Removed Fabric."
+            if (-not $JsonOutput) { Write-Host "Removed Fabric." }
         }
     }
-    Write-Host "Warning: This script will only remove the replication configuration from Azure Site Recovery and not from the source. Please cleanup the source manually. Visit https://go.microsoft.com/fwlink/?linkid=2182781 to learn more." -ForegroundColor Yellow
+    if (-not $JsonOutput) { Write-Host "Warning: This script will only remove the replication configuration from Azure Site Recovery and not from the source. Please cleanup the source manually. Visit https://go.microsoft.com/fwlink/?linkid=2182781 to learn more." -ForegroundColor Yellow }
 } else {
     Write-Warning "Skipping ASR cleanup (use -Force to execute)"
 }
 
 # Clean up private endpoints
 if ($DryRun) {
-    Write-Host "[DRY RUN] Would clean up private endpoints"
+    Add-Operation -Category "Network" -Action "Remove" -Resource "Private endpoints"
+    if (-not $JsonOutput) {
+        Write-Host "[DRY RUN] Would clean up private endpoints"
+    }
 } elseif ($Force) {
-    Write-Host "Cleaning up private endpoints..."
+    if (-not $JsonOutput) { Write-Host "Cleaning up private endpoints..." }
     foreach($item in $pvtendpoints) {
         $penamesplit = $item.Name.Split(".")
         $pename = $penamesplit[0]
         Remove-AzPrivateEndpointConnection -ResourceId $item.Id -Force
         Remove-AzPrivateEndpoint -Name $pename -ResourceGroupName $ResourceGroupName -Force
     }
-    Write-Host "Removed Private Endpoints"
+    if (-not $JsonOutput) { Write-Host "Removed Private Endpoints" }
 } else {
     Write-Warning "Skipping private endpoint cleanup (use -Force to execute)"
 }
 
 # Final validation and cleanup report
 if ($DryRun) {
-    Write-Host "[DRY RUN] Would perform final validation and vault deletion"
-    Write-Host "[DRY RUN] Script completed in dry-run mode. No actual changes were made."
+    Add-Operation -Category "Vault" -Action "Delete" -Resource $VaultName
+    if (-not $JsonOutput) {
+        Write-Host "[DRY RUN] Would perform final validation and vault deletion"
+        Write-Host "[DRY RUN] Script completed in dry-run mode. No actual changes were made."
+    }
 } elseif ($Force) {
-    Write-Host "Performing final validation..."
+    if (-not $JsonOutput) { Write-Host "Performing final validation..." }
     $fabricCount = 0
     $ASRProtectedItems = 0
     $ASRPolicyMappings = 0
@@ -336,24 +433,54 @@ if ($DryRun) {
     $pvtendpointsFin = Get-AzPrivateEndpointConnection -PrivateLinkResourceId $VaultToDelete.ID
 
     # Display cleanup report
-    if($backupItemsVMFin.count -ne 0) {Write-Host $backupItemsVMFin.count "Azure VM backups are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($backupItemsSQLFin.count -ne 0) {Write-Host $backupItemsSQLFin.count "SQL Server Backup Items are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($backupContainersSQLFin.count -ne 0) {Write-Host $backupContainersSQLFin.count "SQL Server Backup Containers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($protectableItemsSQLFin.count -ne 0) {Write-Host $protectableItemsSQLFin.count "SQL Server Instances are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($backupItemsSAPFin.count -ne 0) {Write-Host $backupItemsSAPFin.count "SAP HANA Backup Items are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($backupContainersSAPFin.count -ne 0) {Write-Host $backupContainersSAPFin.count "SAP HANA Backup Containers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($backupItemsAFSFin.count -ne 0) {Write-Host $backupItemsAFSFin.count "Azure File Shares are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($StorageAccountsFin.count -ne 0) {Write-Host $StorageAccountsFin.count "Storage Accounts are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($backupServersMARSFin.count -ne 0) {Write-Host $backupServersMARSFin.count "MARS Servers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($backupServersMABSFin.count -ne 0) {Write-Host $backupServersMABSFin.count "MAB Servers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($backupServersDPMFin.count -ne 0) {Write-Host $backupServersDPMFin.count "DPM Servers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($ASRProtectedItems -ne 0) {Write-Host $ASRProtectedItems "ASR protected items are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($ASRPolicyMappings -ne 0) {Write-Host $ASRPolicyMappings "ASR policy mappings are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($fabricCount -ne 0) {Write-Host $fabricCount "ASR Fabrics are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
-    if($pvtendpointsFin.count -ne 0) {Write-Host $pvtendpointsFin.count "Private endpoints are still linked to the vault. Remove the same for successful vault deletion." -ForegroundColor Red}
+    if($backupItemsVMFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupItemsVMFin.count "Azure VM backups are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($backupItemsSQLFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupItemsSQLFin.count "SQL Server Backup Items are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($backupContainersSQLFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupContainersSQLFin.count "SQL Server Backup Containers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($protectableItemsSQLFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $protectableItemsSQLFin.count "SQL Server Instances are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($backupItemsSAPFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupItemsSAPFin.count "SAP HANA Backup Items are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($backupContainersSAPFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupContainersSAPFin.count "SAP HANA Backup Containers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($backupItemsAFSFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupItemsAFSFin.count "Azure File Shares are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($StorageAccountsFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $StorageAccountsFin.count "Storage Accounts are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($backupServersMARSFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupServersMARSFin.count "MARS Servers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($backupServersMABSFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupServersMABSFin.count "MAB Servers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($backupServersDPMFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $backupServersDPMFin.count "DPM Servers are still registered to the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($ASRProtectedItems -ne 0) {
+        if (-not $JsonOutput) { Write-Host $ASRProtectedItems "ASR protected items are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($ASRPolicyMappings -ne 0) {
+        if (-not $JsonOutput) { Write-Host $ASRPolicyMappings "ASR policy mappings are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($fabricCount -ne 0) {
+        if (-not $JsonOutput) { Write-Host $fabricCount "ASR Fabrics are still present in the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
+    if($pvtendpointsFin.count -ne 0) {
+        if (-not $JsonOutput) { Write-Host $pvtendpointsFin.count "Private endpoints are still linked to the vault. Remove the same for successful vault deletion." -ForegroundColor Red }
+    }
 
     # Attempt vault deletion using REST API
-    Write-Host "Attempting to delete Recovery Services Vault: $VaultName"
+    if (-not $JsonOutput) { Write-Host "Attempting to delete Recovery Services Vault: $VaultName" }
     try {
         $accesstoken = Get-AzAccessToken
         $token = $accesstoken.Token
@@ -366,14 +493,33 @@ if ($DryRun) {
         
         $VaultDeleted = Get-AzRecoveryServicesVault -Name $VaultName -ResourceGroupName $ResourceGroupName -erroraction 'silentlycontinue'
         if ($VaultDeleted -eq $null) {
-            Write-Host "Recovery Services Vault" $VaultName "successfully deleted" -ForegroundColor Green
+            if (-not $JsonOutput) { Write-Host "Recovery Services Vault" $VaultName "successfully deleted" -ForegroundColor Green }
         }
     } catch {
-        Write-Host "REST API deletion failed. Please try: az backup vault delete --resource-group $ResourceGroupName --name $VaultName --yes" -ForegroundColor Yellow
-        Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+        if (-not $JsonOutput) {
+            Write-Host "REST API deletion failed. Please try: az backup vault delete --resource-group $ResourceGroupName --name $VaultName --yes" -ForegroundColor Yellow
+            Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+        }
     }
 } else {
     Write-Warning "Skipping final validation and vault deletion (use -Force to execute)"
 }
 
-Write-Host "Cleanup script completed." -ForegroundColor Green
+# Output JSON if requested
+if ($JsonOutput) {
+    # Generate hash for approval tracking
+    $operationsJson = ($script:operationPlan.operations | ConvertTo-Json -Depth 10 -Compress)
+    $vaultJson = ($script:operationPlan.vaultInfo | ConvertTo-Json -Depth 10 -Compress)
+    $hashInput = "$vaultJson$operationsJson"
+    $hashBytes = [System.Text.Encoding]::UTF8.GetBytes($hashInput)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $hashValue = $sha256.ComputeHash($hashBytes)
+    $hashString = [System.BitConverter]::ToString($hashValue).Replace("-", "").ToLower()
+    
+    $script:operationPlan.hash = $hashString
+    
+    # Output the complete plan as JSON
+    Write-Output ($script:operationPlan | ConvertTo-Json -Depth 10)
+} else {
+    Write-Host "Cleanup script completed." -ForegroundColor Green
+}
