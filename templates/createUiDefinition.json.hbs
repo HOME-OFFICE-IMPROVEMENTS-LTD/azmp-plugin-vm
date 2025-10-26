@@ -118,6 +118,15 @@
         "bladeTitle": "Networking Configuration",
         "elements": [
           {
+            "name": "trustedLaunchInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "🔒 Trusted Launch is enabled by default for enhanced security. Your VM will use Secure Boot and vTPM (Virtual Trusted Platform Module) to protect against rootkits, bootkits, and other boot-level threats. This is recommended for production workloads and required by many compliance frameworks."
+            }
+          },
+          {
             "name": "networkingInfo",
             "type": "Microsoft.Common.InfoBox",
             "visible": true,
