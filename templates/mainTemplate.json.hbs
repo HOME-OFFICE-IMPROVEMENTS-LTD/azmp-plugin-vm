@@ -95,24 +95,6 @@
         "description": "CPU percentage threshold for alerts (1-100)"
       }
     },
-    "memoryAlertThreshold": {
-      "type": "int",
-      "defaultValue": 80,
-      "minValue": 1,
-      "maxValue": 100,
-      "metadata": {
-        "description": "Memory percentage threshold for alerts (1-100)"
-      }
-    },
-    "diskAlertThreshold": {
-      "type": "int",
-      "defaultValue": 85,
-      "minValue": 1,
-      "maxValue": 100,
-      "metadata": {
-        "description": "Disk usage percentage threshold for alerts (1-100)"
-      }
-    },
     "enableWorkbooks": {
       "type": "bool",
       "defaultValue": true,
@@ -142,8 +124,16 @@
       "type": "int",
       "defaultValue": 500,
       "minValue": 0,
+      "maxValue": 10000000,
       "metadata": {
         "description": "Monthly budget limit in USD for cost alerts (0 to disable budget alerts)"
+      }
+    },
+    "budgetStartDate": {
+      "type": "string",
+      "defaultValue": "[concat(utcNow('yyyy-MM'), '-01')]",
+      "metadata": {
+        "description": "Budget start date (YYYY-MM-DD format)"
       }
     },
     "budgetAlertThreshold": {
@@ -260,15 +250,6 @@
         "description": "Number of update domains for availability set (1-20)"
       }
     },
-    "vmssInstanceCount": {
-      "type": "int",
-      "defaultValue": 2,
-      "minValue": 1,
-      "maxValue": 1000,
-      "metadata": {
-        "description": "Number of VM instances in VMSS (1-1000)"
-      }
-    },
     "enableDisasterRecovery": {
       "type": "bool",
       "defaultValue": false,
@@ -321,6 +302,13 @@
         "description": "Backup time in HH:MM format (24-hour clock)"
       }
     },
+    "backupScheduleStart": {
+      "type": "string",
+      "defaultValue": "[utcNow('yyyy-MM-dd')]",
+      "metadata": {
+        "description": "Backup schedule start date (YYYY-MM-DD format)"
+      }
+    },
     "enableSiteRecovery": {
       "type": "bool",
       "defaultValue": false,
@@ -359,49 +347,17 @@
     "applicationInsightsName": "[concat(parameters('vmName'), '-ai')]",
     "actionGroupName": "[concat(parameters('vmName'), '-ag')]",
     "diagnosticSettingsName": "[concat(parameters('vmName'), '-diag')]",
-    "performanceWorkbookName": "[concat(parameters('vmName'), '-perf-wb')]",
-    "securityWorkbookName": "[concat(parameters('vmName'), '-sec-wb')]",
-    "availabilityWorkbookName": "[concat(parameters('vmName'), '-avail-wb')]",
     "diagnosticSettingsConfig": {
       "metrics": [
         {
           "category": "AllMetrics",
-          "enabled": true,
-          "retentionPolicy": {
-            "enabled": true,
-            "days": "[parameters('logAnalyticsRetentionDays')]"
-          }
+          "enabled": true
         }
-      ],
-      "logs": []
-    },
-    "dataCollectionRuleConfig": {
-      "dataSources": {
-        "performanceCounters": [
-          {
-            "name": "perfCounterDataSource",
-            "samplingFrequencyInSeconds": 60,
-            "streams": ["Microsoft-Perf"],
-            "counterSpecifiers": [
-              "\\Processor(_Total)\\% Processor Time",
-              "\\Memory\\Available MBytes",
-              "\\LogicalDisk(_Total)\\% Free Space"
-            ]
-          }
-        ],
-        "syslog": [
-          {
-            "name": "syslogDataSource",
-            "streams": ["Microsoft-Syslog"],
-            "facilityNames": ["auth", "authpriv", "cron", "daemon", "kern", "syslog"],
-            "logLevels": ["Error", "Warning", "Info"]
-          }
-        ]
-      }
+      ]
     },
     "costOptimizationConfig": {
       "budgetName": "[concat(parameters('vmName'), '-budget')]",
-      "estimatedMonthlyCost": "[mul(730, 0.096)]",
+      "estimatedMonthlyCost": "[div(mul(730, 96), 1000)]",
       "costAllocationTags": {
         "CostCenter": "IT",
         "Environment": "Production",
@@ -454,7 +410,7 @@
   "resources": [
     {
       "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-06-01",
       "name": "[variables('publicIPAddressName')]",
       "location": "[parameters('location')]",
       "properties": {
@@ -463,7 +419,7 @@
     },
     {
       "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-06-01",
       "name": "[variables('networkSecurityGroupName')]",
       "location": "[parameters('location')]",
       "properties": {
@@ -486,7 +442,7 @@
     },
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-06-01",
       "name": "[variables('virtualNetworkName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
@@ -513,7 +469,7 @@
     },
     {
       "type": "Microsoft.Network/networkInterfaces",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-06-01",
       "name": "[variables('nicName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
@@ -539,7 +495,7 @@
     },
     {
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2021-03-01",
+      "apiVersion": "2023-09-01",
       "name": "[parameters('vmName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
@@ -556,7 +512,7 @@
           "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
         },
         "storageProfile": {
-          "imageReference": {{vm-image "Canonical" "UbuntuServer" "22.04-LTS"}},
+          "imageReference": {{#if osImageReference}}{{{json osImageReference}}}{{else}}{{{vm-image "Canonical" "0001-com-ubuntu-server-jammy" "22_04-lts-gen2"}}}{{/if}},
           "osDisk": {
             "createOption": "FromImage",
             "managedDisk": {
@@ -576,7 +532,7 @@
     {
       "condition": "[and(parameters('enableHighAvailability'), variables('highAvailabilityConfig').useAvailabilitySet)]",
       "type": "Microsoft.Compute/availabilitySets",
-      "apiVersion": "2021-03-01",
+      "apiVersion": "2023-09-01",
       "name": "[variables('highAvailabilityConfig').availabilitySetName]",
       "location": "[parameters('location')]",
       "sku": {
@@ -594,14 +550,16 @@
     {
       "condition": "[and(parameters('enableDisasterRecovery'), parameters('enableBackup'))]",
       "type": "Microsoft.RecoveryServices/vaults",
-      "apiVersion": "2022-10-01",
+      "apiVersion": "2023-06-01",
       "name": "[variables('disasterRecoveryConfig').recoveryVaultName]",
       "location": "[parameters('location')]",
       "sku": {
         "name": "RS0",
         "tier": "Standard"
       },
-      "properties": {},
+      "properties": {
+        "publicNetworkAccess": "Enabled"
+      },
       "tags": {
         "Purpose": "Backup and Disaster Recovery",
         "CreatedBy": "Azure Marketplace VM Plugin"
@@ -610,7 +568,7 @@
     {
       "condition": "[and(parameters('enableDisasterRecovery'), parameters('enableBackup'))]",
       "type": "Microsoft.RecoveryServices/vaults/backupPolicies",
-      "apiVersion": "2022-10-01",
+      "apiVersion": "2023-06-01",
       "name": "[concat(variables('disasterRecoveryConfig').recoveryVaultName, '/', variables('disasterRecoveryConfig').backupPolicyName)]",
       "dependsOn": [
         "[resourceId('Microsoft.RecoveryServices/vaults', variables('disasterRecoveryConfig').recoveryVaultName)]"
@@ -621,7 +579,7 @@
           "schedulePolicyType": "SimpleSchedulePolicy",
           "scheduleRunFrequency": "[parameters('backupFrequency')]",
           "scheduleRunTimes": [
-            "[concat(utcNow('yyyy-MM-dd'), 'T', parameters('backupTime'), ':00Z')]"
+            "[concat(parameters('backupScheduleStart'), 'T', parameters('backupTime'), ':00Z')]"
           ],
           "scheduleRunDays": "[if(equals(parameters('backupFrequency'), 'Weekly'), json('[\"Sunday\"]'), json('null'))]"
         },
@@ -629,7 +587,7 @@
           "retentionPolicyType": "LongTermRetentionPolicy",
           "dailySchedule": {
             "retentionTimes": [
-              "[concat(utcNow('yyyy-MM-dd'), 'T', parameters('backupTime'), ':00Z')]"
+              "[concat(parameters('backupScheduleStart'), 'T', parameters('backupTime'), ':00Z')]"
             ],
             "retentionDuration": {
               "count": "[parameters('backupRetentionDays')]",
@@ -645,7 +603,7 @@
     {
       "condition": "[and(parameters('enableDisasterRecovery'), parameters('enableBackup'))]",
       "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
-      "apiVersion": "2022-10-01",
+      "apiVersion": "2023-06-01",
       "name": "[concat(variables('disasterRecoveryConfig').recoveryVaultName, '/', variables('disasterRecoveryConfig').backupFabricName, '/', variables('disasterRecoveryConfig').backupContainerName, '/', variables('disasterRecoveryConfig').backupItemName)]",
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]",
@@ -660,28 +618,24 @@
     {
       "condition": "[and(parameters('enableCostOptimization'), greater(parameters('monthlyBudgetLimit'), 0))]",
       "type": "Microsoft.Consumption/budgets",
-      "apiVersion": "2021-10-01",
+      "apiVersion": "2023-11-01",
       "name": "[variables('costOptimizationConfig').budgetName]",
       "properties": {
         "category": "Cost",
         "amount": "[parameters('monthlyBudgetLimit')]",
         "timeGrain": "Monthly",
         "timePeriod": {
-          "startDate": "[concat(utcNow('yyyy-MM'), '-01')]",
-          "endDate": "[concat(string(add(int(utcNow('yyyy')), 5)), '-12-31')]"
+          "startDate": "[parameters('budgetStartDate')]",
+          "endDate": "[concat(string(add(int(substring(parameters('budgetStartDate'), 0, 4)), 5)), '-12-31')]"
         },
         "filter": {
-          "and": [
-            {
-              "dimensions": {
-                "name": "ResourceGroupName",
-                "operator": "In",
-                "values": [
-                  "[resourceGroup().name]"
-                ]
-              }
-            }
-          ]
+          "dimensions": {
+            "name": "ResourceGroupName",
+            "operator": "In",
+            "values": [
+              "[resourceGroup().name]"
+            ]
+          }
         },
         "notifications": {
           "Actual_GreaterThan_80_Percent": {
@@ -836,7 +790,17 @@
       "properties": {
         "groupShortName": "[take(parameters('vmName'), 12)]",
         "enabled": true,
-        "emailReceivers": "[if(greater(length(parameters('alertEmailRecipients')), 0), json(concat('[', string(map(parameters('alertEmailRecipients'), lambda('email', json(concat('{\"name\":\"Email', copyIndex(), '\",\"emailAddress\":\"', variables('email'), '\",\"useCommonAlertSchema\":true}'))))), ']')), json('[]'))]"
+        "copy": [
+          {
+            "name": "emailReceivers",
+            "count": "[length(parameters('alertEmailRecipients'))]",
+            "input": {
+              "name": "[concat('Email', copyIndex('emailReceivers'))]",
+              "emailAddress": "[parameters('alertEmailRecipients')[copyIndex('emailReceivers')]]",
+              "useCommonAlertSchema": true
+            }
+          }
+        ]
       },
       "tags": {
         "Purpose": "Alert Notifications",
@@ -867,7 +831,7 @@
       "location": "global",
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]",
-        "[if(greater(length(parameters('alertEmailRecipients')), 0), resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName')), resourceId('Microsoft.Compute/virtualMachines', parameters('vmName')))]"
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
       ],
       "properties": {
         "description": "Alert when CPU exceeds threshold",
@@ -925,7 +889,7 @@
   "outputs": {
     "hostname": {
       "type": "string",
-      "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]"
+      "value": "[reference(variables('publicIPAddressName')).ipAddress]"
     },
     "sshCommand": {
       "type": "string",
@@ -942,7 +906,7 @@
     "logAnalyticsWorkspaceUrl": {
       "condition": "[parameters('enableMonitoring')]",
       "type": "string",
-      "value": "[if(parameters('enableMonitoring'), concat('https://portal.azure.com/#@', subscription().tenantId, '/resource', resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '/Overview'), '')]",
+      "value": "[if(parameters('enableMonitoring'), uri(format('https://portal.azure.com/#@{0}/resource{1}', subscription().tenantId, resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))), '/Overview'), '')]",
       "metadata": {
         "description": "URL to Log Analytics workspace in Azure Portal"
       }

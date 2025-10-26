@@ -40,7 +40,6 @@
         "name": "adminUsername",
         "type": "Microsoft.Compute.UserNameTextBox",
         "label": "Admin Username",
-        "defaultValue": "azureuser",
         "toolTip": "Administrator username for the virtual machine",
         "osPlatform": "Linux",
         "constraints": {
@@ -284,8 +283,8 @@
                 "visible": "[steps('extensionsConfig').extensionsSection.runCustomScript]",
                 "constraints": {
                   "required": true,
-                  "regex": "^https://.*\\.(sh|ps1|py)$",
-                  "validationMessage": "Must be an HTTPS URL ending with .sh, .ps1, or .py"
+                  "regex": "^https://.{1,2048}\\.(sh|ps1|py)$",
+                  "validationMessage": "Must be an HTTPS URL (max 2048 chars) ending with .sh, .ps1, or .py"
                 }
               },
               {
@@ -296,7 +295,9 @@
                 "toolTip": "Optional arguments to pass to the script",
                 "visible": "[steps('extensionsConfig').extensionsSection.runCustomScript]",
                 "constraints": {
-                  "required": false
+                  "required": false,
+                  "regex": "^.{0,1024}$",
+                  "validationMessage": "Script arguments must be 1024 characters or less"
                 }
               }
             ]

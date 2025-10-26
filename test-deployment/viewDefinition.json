@@ -1,208 +1,298 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/viewdefinition/0.1.0-preview/ViewDefinition.json#",
+  "$schema": "https://schema.management.azure.com/schemas/viewdefinition/0.0.1-preview/ViewDefinition.json#",
   "contentVersion": "1.0.0.0",
-  "metadata": {
-    "description": " - Virtual Machine View Definition",
-    "author": ""
-  },
-  "authorizations": [
+  "views": [
     {
-      "principalId": "",
-      "roleDefinitionId": ""
-    }
-  ],
-  "locks": [
+      "kind": "Overview",
+      "properties": {
+        "header": "Virtual Machine Overview",
+        "description": "Comprehensive view of your production-ready VM deployment with monitoring, cost optimization, high availability, and disaster recovery features.",
+        "commands": [
+          {
+            "kind": "OpenBladeCommand",
+            "displayName": "Manage VM",
+            "blade": {
+              "name": "VirtualMachineMenuBlade",
+              "extension": "Microsoft_Azure_Compute",
+              "parameters": {
+                "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+              },
+              "inContextPane": true
+            }
+          }
+        ]
+      }
+    },
     {
-      "kind": "ReadOnly",
-      "exclusions": [
-        "managedResourceGroupId"
-      ]
-    }
-  ],
-  "viewDefinition": {
-    "kind": "Overview",
-    "properties": {
-      "header": "Virtual Machine Overview",
-      "description": "Monitor and manage your  virtual machine deployment",
-      "commands": [
-        {
-          "displayName": "Start VM",
-          "path": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/virtualMachines/azmp-test-vm-01/start",
-          "icon": "Start",
-          "confirmation": {
-            "title": "Start Virtual Machine",
-            "subtitle": "Are you sure you want to start the VM? This will incur compute charges."
-          }
-        },
-        {
-          "displayName": "Stop VM",
-          "path": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/virtualMachines/azmp-test-vm-01/powerOff",
-          "icon": "Stop",
-          "confirmation": {
-            "title": "Stop Virtual Machine", 
-            "subtitle": "Are you sure you want to stop the VM? This will deallocate the VM and stop compute charges."
-          }
-        },
-        {
-          "displayName": "Restart VM",
-          "path": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/virtualMachines/azmp-test-vm-01/restart",
-          "icon": "Restart",
-          "confirmation": {
-            "title": "Restart Virtual Machine",
-            "subtitle": "Are you sure you want to restart the VM? This will cause a brief interruption."
-          }
-        }
-      ],
-      "essentials": [
-        {
-          "displayName": "VM Name",
-          "value": "azmp-test-vm-01"
-        },
-        {
-          "displayName": "VM Size",
-          "value": "Standard_B2s"
-        },
-        {
-          "displayName": "Operating System",
-          "value": "Linux"
-        },
-        {
-          "displayName": "Status",
-          "value": "[reference(resourceId('Microsoft.Compute/virtualMachines', 'azmp-test-vm-01')).instanceView.statuses[1].displayStatus]"
-        },
-        {
-          "displayName": "Location",
-          "value": "[resourceGroup().location]"
-        },
-        {
-          "displayName": "Backup Enabled",
-          "value": "Yes"
-        },
-        {
-          "displayName": "Availability Set",
-          "value": "azmp-avset-01"
-        },
-        {
-          "displayName": "Extensions",
-          "value": "Enabled"
-        }
-      ],
-      "views": [
-        {
-          "kind": "Metrics",
-          "properties": {
-            "displayName": "Performance Metrics",
-            "timespan": {
-              "relative": {
-                "duration": 24,
-                "timeUnit": 1
-              }
-            },
+      "kind": "Metrics",
+      "properties": {
+        "header": "Performance Metrics",
+        "description": "Real-time VM performance monitoring with CPU, memory, disk, and network metrics.",
+        "displayName": "Performance",
+        "charts": [
+          {
+            "displayName": "CPU Utilization",
+            "chartType": "Line",
             "metrics": [
               {
-                "resourceMetadata": {
-                  "id": "[resourceId('Microsoft.Compute/virtualMachines', 'azmp-test-vm-01')]"
-                },
                 "name": "Percentage CPU",
-                "aggregationType": 4,
-                "namespace": "Microsoft.Compute/virtualMachines",
-                "metricVisualization": {
-                  "displayName": "CPU Percentage",
-                  "color": "#0078D4"
-                }
-              },
+                "resourceType": "Microsoft.Compute/virtualMachines",
+                "aggregationType": "Average",
+                "namespace": "Microsoft.Compute/virtualMachines"
+              }
+            ]
+          },
+          {
+            "displayName": "Disk Operations",
+            "chartType": "Line",
+            "metrics": [
               {
-                "resourceMetadata": {
-                  "id": "[resourceId('Microsoft.Compute/virtualMachines', 'azmp-test-vm-01')]"
-                },
-                "name": "Available Memory Bytes",
-                "aggregationType": 4,
-                "namespace": "Microsoft.Compute/virtualMachines",
-                "metricVisualization": {
-                  "displayName": "Available Memory",
-                  "color": "#00BCF2"
-                }
-              },
-              {
-                "resourceMetadata": {
-                  "id": "[resourceId('Microsoft.Compute/virtualMachines', 'azmp-test-vm-01')]"
-                },
                 "name": "Disk Read Bytes",
-                "aggregationType": 1,
-                "namespace": "Microsoft.Compute/virtualMachines", 
-                "metricVisualization": {
-                  "displayName": "Disk Read",
-                  "color": "#40E0D0"
-                }
+                "resourceType": "Microsoft.Compute/virtualMachines",
+                "aggregationType": "Total",
+                "namespace": "Microsoft.Compute/virtualMachines"
               },
               {
-                "resourceMetadata": {
-                  "id": "[resourceId('Microsoft.Compute/virtualMachines', 'azmp-test-vm-01')]"
-                },
                 "name": "Disk Write Bytes",
-                "aggregationType": 1,
-                "namespace": "Microsoft.Compute/virtualMachines",
-                "metricVisualization": {
-                  "displayName": "Disk Write", 
-                  "color": "#FF6347"
-                }
+                "resourceType": "Microsoft.Compute/virtualMachines",
+                "aggregationType": "Total",
+                "namespace": "Microsoft.Compute/virtualMachines"
               }
             ]
-          }
-        },
-        {
-          "kind": "MonitorCharts",
-          "properties": {
-            "displayName": "Advanced Monitoring",
-            "timespan": {
-              "relative": {
-                "duration": 24,
-                "timeUnit": 1
-              }
-            },
-            "charts": [
+          },
+          {
+            "displayName": "Network Traffic",
+            "chartType": "Line",
+            "metrics": [
               {
-                "displayName": "Log Analytics Data",
-                "metrics": [
-                  {
-                    "resourceMetadata": {
-                      "id": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
-                    },
-                    "name": "Usage",
-                    "aggregationType": 4
-                  }
-                ]
+                "name": "Network In Total",
+                "resourceType": "Microsoft.Compute/virtualMachines",
+                "aggregationType": "Total",
+                "namespace": "Microsoft.Compute/virtualMachines"
+              },
+              {
+                "name": "Network Out Total",
+                "resourceType": "Microsoft.Compute/virtualMachines",
+                "aggregationType": "Total",
+                "namespace": "Microsoft.Compute/virtualMachines"
               }
             ]
           }
-        },
-        {
-          "kind": "ActivityLogBlade",
-          "properties": {
-            "displayName": "Activity Log",
-            "timespan": {
-              "relative": {
-                "duration": 24,
-                "timeUnit": 1
-              }
+        ]
+      }
+    },
+    {
+      "kind": "CustomResources",
+      "properties": {
+        "header": "Monitoring & Observability",
+        "description": "Azure Monitor integration with Log Analytics, Application Insights, and alerting.",
+        "displayName": "Monitoring",
+        "commands": [
+          {
+            "kind": "OpenBladeCommand",
+            "displayName": "Open Log Analytics",
+            "blade": {
+              "name": "LogsBlade",
+              "extension": "Microsoft_Azure_Monitoring",
+              "parameters": {
+                "resourceId": "[reference('logAnalyticsWorkspace').id]"
+              },
+              "inContextPane": false
+            }
+          },
+          {
+            "kind": "OpenBladeCommand",
+            "displayName": "View Application Insights",
+            "blade": {
+              "name": "ApplicationInsightsBlade",
+              "extension": "AppInsightsExtension",
+              "parameters": {
+                "resourceId": "[reference('applicationInsights').id]"
+              },
+              "inContextPane": false
             }
           }
-        },
-        {
-          "kind": "CustomBlade",
-          "properties": {
-            "displayName": "Backup Status",
-            "description": "View backup job status and restore points",
-            "bladeReference": {
-              "name": "BackupItemBlade",
+        ],
+        "columns": [
+          {
+            "key": "name",
+            "displayName": "Resource Name"
+          },
+          {
+            "key": "type",
+            "displayName": "Resource Type"
+          },
+          {
+            "key": "status",
+            "displayName": "Status"
+          }
+        ],
+        "resources": [
+          {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "name": "[parameters('logAnalyticsWorkspaceName')]"
+          },
+          {
+            "type": "Microsoft.Insights/components",
+            "name": "[concat(parameters('vmName'), '-ai')]"
+          },
+          {
+            "type": "Microsoft.Insights/actionGroups",
+            "name": "[concat(parameters('vmName'), '-ag')]"
+          },
+          {
+            "type": "Microsoft.Insights/metricAlerts",
+            "name": "[concat(parameters('vmName'), '-cpu-alert')]"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "CustomResources",
+      "properties": {
+        "header": "Cost Optimization",
+        "description": "Budget tracking, cost analysis, and right-sizing recommendations.",
+        "displayName": "Cost Management",
+        "commands": [
+          {
+            "kind": "OpenBladeCommand",
+            "displayName": "View Cost Analysis",
+            "blade": {
+              "name": "CostAnalysisBlade",
+              "extension": "Microsoft_Azure_CostManagement",
+              "parameters": {
+                "scope": "[resourceGroup().id]"
+              },
+              "inContextPane": false
+            }
+          }
+        ],
+        "columns": [
+          {
+            "key": "metric",
+            "displayName": "Metric"
+          },
+          {
+            "key": "value",
+            "displayName": "Value"
+          },
+          {
+            "key": "status",
+            "displayName": "Status"
+          }
+        ],
+        "resources": [
+          {
+            "type": "Microsoft.Consumption/budgets",
+            "name": "[concat(parameters('vmName'), '-budget')]"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "CustomResources",
+      "properties": {
+        "header": "High Availability & Disaster Recovery",
+        "description": "Availability configuration, backup status, and disaster recovery readiness.",
+        "displayName": "Resilience",
+        "commands": [
+          {
+            "kind": "OpenBladeCommand",
+            "displayName": "Manage Backups",
+            "blade": {
+              "name": "RecoveryServicesVaultBlade",
               "extension": "Microsoft_Azure_RecoveryServices",
               "parameters": {
-                "resourceId": "[resourceId('Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems', variables('backupVaultName'), 'Azure', concat('iaasvmcontainer;iaasvmcontainerv2;', resourceGroup().name, ';', 'azmp-test-vm-01'), concat('vm;iaasvmcontainerv2;', resourceGroup().name, ';', 'azmp-test-vm-01'))]"
-              }
+                "resourceId": "[reference('recoveryServicesVault').id]"
+              },
+              "inContextPane": false
             }
           }
-        }
-      ]
+        ],
+        "columns": [
+          {
+            "key": "component",
+            "displayName": "Component"
+          },
+          {
+            "key": "configuration",
+            "displayName": "Configuration"
+          },
+          {
+            "key": "status",
+            "displayName": "Status"
+          }
+        ],
+        "resources": [
+          {
+            "type": "Microsoft.Compute/availabilitySets",
+            "name": "[concat(parameters('vmName'), '-avset')]"
+          },
+          {
+            "type": "Microsoft.RecoveryServices/vaults",
+            "name": "[concat(parameters('vmName'), '-rsv')]"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Properties",
+      "properties": {
+        "header": "Deployment Outputs",
+        "description": "Key information and connection details from the deployment.",
+        "displayName": "Outputs",
+        "columns": [
+          {
+            "key": "name",
+            "displayName": "Output Name"
+          },
+          {
+            "key": "value",
+            "displayName": "Value"
+          },
+          {
+            "key": "type",
+            "displayName": "Type"
+          }
+        ],
+        "rows": [
+          {
+            "name": "VM Resource ID",
+            "value": "[reference('virtualMachine').vmId]",
+            "type": "string"
+          },
+          {
+            "name": "Public IP Address",
+            "value": "[reference('publicIpAddress').ipAddress]",
+            "type": "string"
+          },
+          {
+            "name": "SSH Command",
+            "value": "[concat('ssh ', parameters('adminUsername'), '@', reference('publicIpAddress').ipAddress)]",
+            "type": "string"
+          },
+          {
+            "name": "Monitoring Status",
+            "value": "[if(parameters('enableMonitoring'), 'Enabled', 'Disabled')]",
+            "type": "string"
+          },
+          {
+            "name": "High Availability",
+            "value": "[parameters('availabilityOption')]",
+            "type": "string"
+          },
+          {
+            "name": "Backup Enabled",
+            "value": "[if(parameters('enableBackup'), 'Yes', 'No')]",
+            "type": "string"
+          },
+          {
+            "name": "Resilience Tier",
+            "value": "[reference('resilienceScore').tier]",
+            "type": "string"
+          }
+        ]
+      }
     }
-  }
+  ]
 }
