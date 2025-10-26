@@ -37,6 +37,7 @@ async function readJSON(filePath: string): Promise<any> {
 
 export interface TemplateCommandsOptions {
   context: PluginContext;
+  plugin?: any; // Reference to the plugin instance to access helpers
 }
 
 /**
@@ -46,7 +47,7 @@ export function registerTemplateCommands(
   parentCommand: Command,
   options: TemplateCommandsOptions
 ): void {
-  const { context } = options;
+  const { context, plugin } = options;
 
   const templateCommand = parentCommand
     .command('template')
@@ -91,6 +92,15 @@ export function registerTemplateCommands(
         };
 
         let generatedCount = 0;
+
+        // Register all Handlebars helpers from the plugin
+        if (plugin && typeof plugin.getHandlebarsHelpers === 'function') {
+          const helpers = plugin.getHandlebarsHelpers();
+          Object.entries(helpers).forEach(([name, helper]) => {
+            Handlebars.registerHelper(name, helper as Handlebars.HelperDelegate);
+          });
+          context.logger.info(`Registered ${Object.keys(helpers).length} Handlebars helper(s)`);
+        }
 
         // Generate mainTemplate.json
         if (templates.main) {

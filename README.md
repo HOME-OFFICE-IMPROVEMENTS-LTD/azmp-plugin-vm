@@ -52,6 +52,17 @@ Add to your `azmp-config.json`:
 }
 ```
 
+## 🔒 Security by Default (v1.8.0)
+
+**Trusted Launch is now enabled by default** for enhanced VM security:
+
+- ✅ **Secure Boot** - Protects against rootkits and bootkits  
+- ✅ **vTPM** - Virtual Trusted Platform Module for measured boot
+- ✅ **Zero Configuration** - Works automatically with Generation 2 VMs
+- ✅ **Compliance Ready** - Meets requirements for security frameworks
+
+[📖 Read more about Trusted Launch enhancement →](docs/v1.8.0/TRUSTED_LAUNCH_ENHANCEMENT.md)
+
 ## CLI Commands
 
 ### Core VM Commands (6 commands)
@@ -210,7 +221,7 @@ azmp recovery recommend-snapshot-schedule --criticality high --change-frequency 
 | `includeDiagnostics` | boolean | `true` | Include boot diagnostics |
 | `includePublicIp` | boolean | `true` | Create public IP address |
 | `includeNsg` | boolean | `true` | Create Network Security Group |
-| `security.enableTrustedLaunch` | boolean | `false` | Enable Trusted Launch (Gen 2 VMs) |
+| `security.enableTrustedLaunch` | boolean | `true` | Enable Trusted Launch (Gen 2 VMs) **Default: ON** |
 | `security.enableDiskEncryption` | boolean | `false` | Enable Azure Disk Encryption |
 | `security.encryptionType` | string | `ade` | Encryption type: `ade`, `sse-pmk`, `sse-cmk`, `encryption-at-host` |
 | `identity.type` | string | `None` | Identity type: `SystemAssigned`, `UserAssigned`, `SystemAssigned,UserAssigned`, `None` |

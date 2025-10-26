@@ -512,12 +512,7 @@
           "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
         },
         "storageProfile": {
-          "imageReference": {
-            "publisher": "Canonical",
-            "offer": "0001-com-ubuntu-server-jammy",
-            "sku": "22_04-lts-gen2",
-            "version": "latest"
-          },
+          "imageReference": {{#if osImageReference}}{{{json osImageReference}}}{{else}}{{{vm-image "Canonical" "0001-com-ubuntu-server-jammy" "22_04-lts-gen2"}}}{{/if}},
           "osDisk": {
             "createOption": "FromImage",
             "managedDisk": {

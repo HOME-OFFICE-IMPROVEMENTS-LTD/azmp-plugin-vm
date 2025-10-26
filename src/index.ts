@@ -303,6 +303,13 @@ export class VmPlugin implements IPlugin {
        */
       'vm-resource-name': (baseName: string, suffix: string): string => {
         return `${baseName}-${suffix}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      },
+
+      /**
+       * Convert object to JSON string
+       */
+      'json': (obj: any): string => {
+        return JSON.stringify(obj);
       }
     };
 
@@ -353,7 +360,7 @@ export class VmPlugin implements IPlugin {
     // Import and register template commands
     if (this.context) {
       const { registerTemplateCommands } = require('./cli/template-commands');
-      registerTemplateCommands(vmCommand, { context: this.context });
+      registerTemplateCommands(vmCommand, { context: this.context, plugin: this });
     }
 
     vmCommand
