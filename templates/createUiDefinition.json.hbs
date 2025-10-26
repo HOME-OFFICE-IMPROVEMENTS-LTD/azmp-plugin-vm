@@ -1,0 +1,715 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "config": {
+      "isWizard": true,
+      "basics": {
+        "description": "Deploy a production-ready virtual machine with comprehensive monitoring, cost optimization, high availability, and disaster recovery features.",
+        "location": {
+          "label": "Region",
+          "toolTip": "Select the Azure region for deployment",
+          "resourceTypes": [
+            "Microsoft.Compute/virtualMachines"
+          ]
+        }
+      }
+    },
+    "basics": [
+      {
+        "name": "vmName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Virtual Machine Name",
+        "defaultValue": "",
+        "toolTip": "Provide a name for the virtual machine (3-64 characters, alphanumeric and hyphens)",
+        "constraints": {
+          "required": true,
+          "regex": "^[a-z0-9A-Z-]{3,64}$",
+          "validationMessage": "VM name must be 3-64 characters long and contain only alphanumeric characters and hyphens."
+        },
+        "visible": true
+      },
+      {
+        "name": "vmSize",
+        "type": "Microsoft.Compute.SizeSelector",
+        "label": "Virtual Machine Size",
+        "toolTip": "Select the size of the virtual machine",
+        "recommendedSizes": [
+          "Standard_D2s_v3",
+          "Standard_D4s_v3",
+          "Standard_D8s_v3"
+        ],
+        "constraints": {
+          "allowedSizes": [
+            "Standard_B2s",
+            "Standard_B2ms",
+            "Standard_D2s_v3",
+            "Standard_D4s_v3",
+            "Standard_D8s_v3",
+            "Standard_D16s_v3",
+            "Standard_E2s_v3",
+            "Standard_E4s_v3"
+          ]
+        },
+        "osPlatform": "Linux",
+        "imageReference": {
+          "publisher": "Canonical",
+          "offer": "UbuntuServer",
+          "sku": "22.04-LTS"
+        },
+        "count": 1,
+        "visible": true
+      },
+      {
+        "name": "adminUsername",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Admin Username",
+        "defaultValue": "azureuser",
+        "toolTip": "Administrator username for SSH access",
+        "constraints": {
+          "required": true,
+          "regex": "^[a-z][-a-z0-9]*$",
+          "validationMessage": "Username must start with a letter and contain only lowercase letters, numbers, and hyphens."
+        },
+        "visible": true
+      },
+      {
+        "name": "authenticationType",
+        "type": "Microsoft.Common.OptionsGroup",
+        "label": "Authentication Type",
+        "defaultValue": "SSH Public Key",
+        "toolTip": "Choose authentication method for VM access",
+        "constraints": {
+          "allowedValues": [
+            {
+              "label": "SSH Public Key",
+              "value": "sshPublicKey"
+            },
+            {
+              "label": "Password",
+              "value": "password"
+            }
+          ],
+          "required": true
+        },
+        "visible": true
+      },
+      {
+        "name": "adminPasswordOrKey",
+        "type": "Microsoft.Common.PasswordBox",
+        "label": {
+          "password": "Password",
+          "confirmPassword": "Confirm password"
+        },
+        "toolTip": "Administrator password (12-72 characters with complexity requirements)",
+        "constraints": {
+          "required": true,
+          "regex": "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,72}$",
+          "validationMessage": "Password must be 12-72 characters with uppercase, lowercase, digit, and special character."
+        },
+        "options": {
+          "hideConfirmation": false
+        },
+        "visible": "[equals(basics('authenticationType'), 'password')]"
+      },
+      {
+        "name": "sshPublicKey",
+        "type": "Microsoft.Compute.CredentialsCombo",
+        "label": {
+          "authenticationType": "Authentication type",
+          "password": "Password",
+          "confirmPassword": "Confirm password",
+          "sshPublicKey": "SSH public key"
+        },
+        "toolTip": {
+          "authenticationType": "SSH public key for authentication",
+          "sshPublicKey": "Paste your SSH public key (starts with ssh-rsa)"
+        },
+        "constraints": {
+          "required": true
+        },
+        "options": {
+          "hideConfirmation": false,
+          "hidePassword": true
+        },
+        "osPlatform": "Linux",
+        "visible": "[equals(basics('authenticationType'), 'sshPublicKey')]"
+      }
+    ],
+    "steps": [
+      {
+        "name": "monitoring",
+        "label": "Monitoring & Observability",
+        "elements": [
+          {
+            "name": "monitoringSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Azure Monitor Configuration",
+            "elements": [
+              {
+                "name": "enableMonitoring",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Azure Monitor Integration",
+                "toolTip": "Enable comprehensive monitoring with Log Analytics and Application Insights",
+                "defaultValue": true
+              },
+              {
+                "name": "logAnalyticsWorkspaceName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Log Analytics Workspace Name",
+                "defaultValue": "[concat(basics('vmName'), '-law')]",
+                "toolTip": "Name for the Log Analytics workspace",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[a-zA-Z0-9-]{4,63}$",
+                  "validationMessage": "Workspace name must be 4-63 characters."
+                },
+                "visible": "[steps('monitoring').monitoringSection.enableMonitoring]"
+              },
+              {
+                "name": "logAnalyticsRetentionDays",
+                "type": "Microsoft.Common.Slider",
+                "min": 30,
+                "max": 730,
+                "label": "Log Retention Days",
+                "subLabel": "days",
+                "defaultValue": 30,
+                "toolTip": "Number of days to retain logs (30-730 days)",
+                "visible": "[steps('monitoring').monitoringSection.enableMonitoring]"
+              },
+              {
+                "name": "enableApplicationInsights",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Application Insights",
+                "toolTip": "Advanced monitoring with application performance management",
+                "defaultValue": true,
+                "visible": "[steps('monitoring').monitoringSection.enableMonitoring]"
+              }
+            ],
+            "visible": true
+          },
+          {
+            "name": "alertsSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Metric Alerts Configuration",
+            "elements": [
+              {
+                "name": "enableMetricAlerts",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Metric-Based Alerts",
+                "toolTip": "Configure alerts for CPU, memory, and disk metrics",
+                "defaultValue": true,
+                "visible": "[steps('monitoring').monitoringSection.enableMonitoring]"
+              },
+              {
+                "name": "alertEmailRecipients",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Alert Email Recipients",
+                "defaultValue": "",
+                "toolTip": "Comma-separated email addresses for alert notifications (e.g., admin@example.com,ops@example.com)",
+                "multiLine": false,
+                "constraints": {
+                  "required": false
+                },
+                "visible": "[and(steps('monitoring').monitoringSection.enableMonitoring, steps('monitoring').alertsSection.enableMetricAlerts)]"
+              },
+              {
+                "name": "cpuAlertThreshold",
+                "type": "Microsoft.Common.Slider",
+                "min": 1,
+                "max": 100,
+                "label": "CPU Alert Threshold",
+                "subLabel": "%",
+                "defaultValue": 80,
+                "toolTip": "CPU percentage threshold for alerts (1-100%)",
+                "visible": "[and(steps('monitoring').monitoringSection.enableMonitoring, steps('monitoring').alertsSection.enableMetricAlerts)]"
+              },
+              {
+                "name": "memoryAlertThreshold",
+                "type": "Microsoft.Common.Slider",
+                "min": 1,
+                "max": 100,
+                "label": "Memory Alert Threshold",
+                "subLabel": "%",
+                "defaultValue": 80,
+                "toolTip": "Memory percentage threshold for alerts (1-100%)",
+                "visible": "[and(steps('monitoring').monitoringSection.enableMonitoring, steps('monitoring').alertsSection.enableMetricAlerts)]"
+              },
+              {
+                "name": "diskAlertThreshold",
+                "type": "Microsoft.Common.Slider",
+                "min": 1,
+                "max": 100,
+                "label": "Disk Usage Alert Threshold",
+                "subLabel": "%",
+                "defaultValue": 85,
+                "toolTip": "Disk usage percentage threshold for alerts (1-100%)",
+                "visible": "[and(steps('monitoring').monitoringSection.enableMonitoring, steps('monitoring').alertsSection.enableMetricAlerts)]"
+              }
+            ],
+            "visible": "[steps('monitoring').monitoringSection.enableMonitoring]"
+          },
+          {
+            "name": "workbooksSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Azure Monitor Workbooks",
+            "elements": [
+              {
+                "name": "enableWorkbooks",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Deploy Azure Monitor Workbooks",
+                "toolTip": "Pre-configured workbooks for performance, security, and availability analysis",
+                "defaultValue": true,
+                "visible": "[steps('monitoring').monitoringSection.enableMonitoring]"
+              },
+              {
+                "name": "workbookTypes",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Workbook Types",
+                "placeholder": "Select workbook types",
+                "toolTip": "Choose which workbooks to deploy",
+                "multiselect": true,
+                "defaultValue": ["Performance", "Security", "Availability"],
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "Performance",
+                      "value": "performance"
+                    },
+                    {
+                      "label": "Security",
+                      "value": "security"
+                    },
+                    {
+                      "label": "Availability",
+                      "value": "availability"
+                    },
+                    {
+                      "label": "Cost",
+                      "value": "cost"
+                    }
+                  ],
+                  "required": false
+                },
+                "visible": "[and(steps('monitoring').monitoringSection.enableMonitoring, steps('monitoring').workbooksSection.enableWorkbooks)]"
+              }
+            ],
+            "visible": "[steps('monitoring').monitoringSection.enableMonitoring]"
+          }
+        ]
+      },
+      {
+        "name": "costPerformance",
+        "label": "Cost & Performance",
+        "elements": [
+          {
+            "name": "costSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Cost Optimization",
+            "elements": [
+              {
+                "name": "enableCostOptimization",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Cost Optimization Features",
+                "toolTip": "Budget alerts, right-sizing recommendations, and cost allocation tags",
+                "defaultValue": true
+              },
+              {
+                "name": "monthlyBudgetLimit",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Monthly Budget Limit (USD)",
+                "defaultValue": "500",
+                "toolTip": "Monthly budget limit in USD (0 to disable budget alerts)",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[0-9]+$",
+                  "validationMessage": "Budget must be a positive number."
+                },
+                "visible": "[steps('costPerformance').costSection.enableCostOptimization]"
+              },
+              {
+                "name": "budgetAlertThreshold",
+                "type": "Microsoft.Common.Slider",
+                "min": 1,
+                "max": 100,
+                "label": "Budget Alert Threshold",
+                "subLabel": "%",
+                "defaultValue": 80,
+                "toolTip": "Percentage of budget to trigger alerts (1-100%)",
+                "visible": "[and(steps('costPerformance').costSection.enableCostOptimization, greater(int(steps('costPerformance').costSection.monthlyBudgetLimit), 0))]"
+              },
+              {
+                "name": "enableRightSizing",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Right-Sizing Recommendations",
+                "toolTip": "Automatic recommendations based on usage patterns",
+                "defaultValue": true,
+                "visible": "[steps('costPerformance').costSection.enableCostOptimization]"
+              }
+            ],
+            "visible": true
+          },
+          {
+            "name": "performanceSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Performance Optimization",
+            "elements": [
+              {
+                "name": "enablePerformanceOptimization",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Performance Optimization",
+                "toolTip": "Autoscale, performance baselines, and profile configurations",
+                "defaultValue": true
+              },
+              {
+                "name": "performanceProfile",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Performance Profile",
+                "placeholder": "Select a performance profile",
+                "toolTip": "Choose performance tier: LowCost (Standard_LRS), Balanced (StandardSSD_LRS), HighPerformance (Premium_LRS)",
+                "defaultValue": "Balanced",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "Low Cost (Standard_LRS, no accelerated networking)",
+                      "value": "LowCost"
+                    },
+                    {
+                      "label": "Balanced (StandardSSD_LRS, accelerated networking)",
+                      "value": "Balanced"
+                    },
+                    {
+                      "label": "High Performance (Premium_LRS, accelerated networking)",
+                      "value": "HighPerformance"
+                    }
+                  ],
+                  "required": true
+                },
+                "visible": "[steps('costPerformance').performanceSection.enablePerformanceOptimization]"
+              },
+              {
+                "name": "enableAutoscale",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Autoscaling",
+                "toolTip": "Automatic scaling based on CPU utilization (requires VMSS deployment)",
+                "defaultValue": false,
+                "visible": "[steps('costPerformance').performanceSection.enablePerformanceOptimization]"
+              },
+              {
+                "name": "autoscaleMinInstances",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Minimum Instances",
+                "defaultValue": "1",
+                "toolTip": "Minimum number of instances for autoscale (1-100)",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[1-9][0-9]?$|^100$",
+                  "validationMessage": "Must be between 1 and 100."
+                },
+                "visible": "[and(steps('costPerformance').performanceSection.enablePerformanceOptimization, steps('costPerformance').performanceSection.enableAutoscale)]"
+              },
+              {
+                "name": "autoscaleMaxInstances",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Maximum Instances",
+                "defaultValue": "10",
+                "toolTip": "Maximum number of instances for autoscale (1-1000)",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[1-9][0-9]{0,2}$|^1000$",
+                  "validationMessage": "Must be between 1 and 1000."
+                },
+                "visible": "[and(steps('costPerformance').performanceSection.enablePerformanceOptimization, steps('costPerformance').performanceSection.enableAutoscale)]"
+              },
+              {
+                "name": "autoscaleCpuThreshold",
+                "type": "Microsoft.Common.Slider",
+                "min": 1,
+                "max": 100,
+                "label": "CPU Scale-Out Threshold",
+                "subLabel": "%",
+                "defaultValue": 75,
+                "toolTip": "CPU percentage to trigger scale-out (1-100%)",
+                "visible": "[and(steps('costPerformance').performanceSection.enablePerformanceOptimization, steps('costPerformance').performanceSection.enableAutoscale)]"
+              }
+            ],
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "highAvailability",
+        "label": "High Availability",
+        "elements": [
+          {
+            "name": "haSection",
+            "type": "Microsoft.Common.Section",
+            "label": "High Availability Configuration",
+            "elements": [
+              {
+                "name": "enableHighAvailability",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable High Availability Features",
+                "toolTip": "Configure availability zones, availability sets, or VMSS for redundancy",
+                "defaultValue": false
+              },
+              {
+                "name": "availabilityOption",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Availability Option",
+                "placeholder": "Select availability configuration",
+                "toolTip": "Choose HA deployment model",
+                "defaultValue": "None",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "None (Single VM)",
+                      "value": "None"
+                    },
+                    {
+                      "label": "Availability Zones (Multi-zone redundancy)",
+                      "value": "AvailabilityZones"
+                    },
+                    {
+                      "label": "Availability Set (Fault domain redundancy)",
+                      "value": "AvailabilitySet"
+                    },
+                    {
+                      "label": "VMSS (Virtual Machine Scale Set)",
+                      "value": "VMSS"
+                    }
+                  ],
+                  "required": true
+                },
+                "visible": "[steps('highAvailability').haSection.enableHighAvailability]"
+              },
+              {
+                "name": "availabilityZones",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Availability Zones",
+                "placeholder": "Select zones",
+                "toolTip": "Choose zones for deployment (1, 2, 3)",
+                "multiselect": true,
+                "defaultValue": ["1", "2", "3"],
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "Zone 1",
+                      "value": "1"
+                    },
+                    {
+                      "label": "Zone 2",
+                      "value": "2"
+                    },
+                    {
+                      "label": "Zone 3",
+                      "value": "3"
+                    }
+                  ],
+                  "required": true
+                },
+                "visible": "[and(steps('highAvailability').haSection.enableHighAvailability, equals(steps('highAvailability').haSection.availabilityOption, 'AvailabilityZones'))]"
+              },
+              {
+                "name": "availabilitySetFaultDomains",
+                "type": "Microsoft.Common.Slider",
+                "min": 1,
+                "max": 3,
+                "label": "Fault Domains",
+                "defaultValue": 2,
+                "toolTip": "Number of fault domains for availability set (1-3)",
+                "visible": "[and(steps('highAvailability').haSection.enableHighAvailability, equals(steps('highAvailability').haSection.availabilityOption, 'AvailabilitySet'))]"
+              },
+              {
+                "name": "availabilitySetUpdateDomains",
+                "type": "Microsoft.Common.Slider",
+                "min": 1,
+                "max": 20,
+                "label": "Update Domains",
+                "defaultValue": 5,
+                "toolTip": "Number of update domains for availability set (1-20)",
+                "visible": "[and(steps('highAvailability').haSection.enableHighAvailability, equals(steps('highAvailability').haSection.availabilityOption, 'AvailabilitySet'))]"
+              },
+              {
+                "name": "vmssInstanceCount",
+                "type": "Microsoft.Common.TextBox",
+                "label": "VMSS Instance Count",
+                "defaultValue": "2",
+                "toolTip": "Number of VM instances in scale set (1-1000)",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[1-9][0-9]{0,2}$|^1000$",
+                  "validationMessage": "Must be between 1 and 1000."
+                },
+                "visible": "[and(steps('highAvailability').haSection.enableHighAvailability, equals(steps('highAvailability').haSection.availabilityOption, 'VMSS'))]"
+              }
+            ],
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "disasterRecovery",
+        "label": "Disaster Recovery",
+        "elements": [
+          {
+            "name": "drSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Disaster Recovery Configuration",
+            "elements": [
+              {
+                "name": "enableDisasterRecovery",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Disaster Recovery Features",
+                "toolTip": "Azure Backup and Site Recovery for business continuity",
+                "defaultValue": false
+              },
+              {
+                "name": "enableBackup",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Azure Backup",
+                "toolTip": "Automated VM backups with configurable retention",
+                "defaultValue": true,
+                "visible": "[steps('disasterRecovery').drSection.enableDisasterRecovery]"
+              },
+              {
+                "name": "backupPolicyType",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Backup Policy Type",
+                "placeholder": "Select backup policy",
+                "toolTip": "Standard (daily) or Enhanced (multiple backups per day)",
+                "defaultValue": "Standard",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "Standard (Daily backup)",
+                      "value": "Standard"
+                    },
+                    {
+                      "label": "Enhanced (Multiple backups per day)",
+                      "value": "Enhanced"
+                    }
+                  ],
+                  "required": true
+                },
+                "visible": "[and(steps('disasterRecovery').drSection.enableDisasterRecovery, steps('disasterRecovery').drSection.enableBackup)]"
+              },
+              {
+                "name": "backupRetentionDays",
+                "type": "Microsoft.Common.Slider",
+                "min": 7,
+                "max": 365,
+                "label": "Backup Retention Days",
+                "subLabel": "days",
+                "defaultValue": 30,
+                "toolTip": "Number of days to retain backups (7-9999 days)",
+                "visible": "[and(steps('disasterRecovery').drSection.enableDisasterRecovery, steps('disasterRecovery').drSection.enableBackup)]"
+              },
+              {
+                "name": "backupFrequency",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Backup Frequency",
+                "placeholder": "Select frequency",
+                "toolTip": "How often to perform backups",
+                "defaultValue": "Daily",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "Daily",
+                      "value": "Daily"
+                    },
+                    {
+                      "label": "Weekly",
+                      "value": "Weekly"
+                    }
+                  ],
+                  "required": true
+                },
+                "visible": "[and(steps('disasterRecovery').drSection.enableDisasterRecovery, steps('disasterRecovery').drSection.enableBackup)]"
+              },
+              {
+                "name": "backupTime",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Backup Time (UTC)",
+                "defaultValue": "02:00",
+                "toolTip": "Backup time in HH:MM format (24-hour clock, UTC)",
+                "constraints": {
+                  "required": true,
+                  "regex": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                  "validationMessage": "Time must be in HH:MM format (00:00 - 23:59)."
+                },
+                "visible": "[and(steps('disasterRecovery').drSection.enableDisasterRecovery, steps('disasterRecovery').drSection.enableBackup)]"
+              },
+              {
+                "name": "enableSiteRecovery",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Azure Site Recovery",
+                "toolTip": "Cross-region disaster recovery with automated failover",
+                "defaultValue": false,
+                "visible": "[steps('disasterRecovery').drSection.enableDisasterRecovery]"
+              },
+              {
+                "name": "recoveryRegion",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Recovery Region",
+                "defaultValue": "eastus2",
+                "toolTip": "Target Azure region for disaster recovery replication",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[a-z0-9]+$",
+                  "validationMessage": "Region must be lowercase alphanumeric."
+                },
+                "visible": "[and(steps('disasterRecovery').drSection.enableDisasterRecovery, steps('disasterRecovery').drSection.enableSiteRecovery)]"
+              }
+            ],
+            "visible": true
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "location": "[location()]",
+      "vmName": "[basics('vmName')]",
+      "vmSize": "[basics('vmSize')]",
+      "adminUsername": "[basics('adminUsername')]",
+      "authenticationType": "[basics('authenticationType')]",
+      "adminPasswordOrKey": "[if(equals(basics('authenticationType'), 'password'), basics('adminPasswordOrKey'), basics('sshPublicKey').sshPublicKey)]",
+      "enableMonitoring": "[steps('monitoring').monitoringSection.enableMonitoring]",
+      "logAnalyticsWorkspaceName": "[steps('monitoring').monitoringSection.logAnalyticsWorkspaceName]",
+      "logAnalyticsRetentionDays": "[steps('monitoring').monitoringSection.logAnalyticsRetentionDays]",
+      "enableApplicationInsights": "[steps('monitoring').monitoringSection.enableApplicationInsights]",
+      "alertEmailRecipients": "[if(empty(steps('monitoring').alertsSection.alertEmailRecipients), json('[]'), split(steps('monitoring').alertsSection.alertEmailRecipients, ','))]",
+      "enableMetricAlerts": "[steps('monitoring').alertsSection.enableMetricAlerts]",
+      "cpuAlertThreshold": "[steps('monitoring').alertsSection.cpuAlertThreshold]",
+      "memoryAlertThreshold": "[steps('monitoring').alertsSection.memoryAlertThreshold]",
+      "diskAlertThreshold": "[steps('monitoring').alertsSection.diskAlertThreshold]",
+      "enableWorkbooks": "[steps('monitoring').workbooksSection.enableWorkbooks]",
+      "workbookTypes": "[steps('monitoring').workbooksSection.workbookTypes]",
+      "enableCostOptimization": "[steps('costPerformance').costSection.enableCostOptimization]",
+      "monthlyBudgetLimit": "[int(steps('costPerformance').costSection.monthlyBudgetLimit)]",
+      "budgetAlertThreshold": "[steps('costPerformance').costSection.budgetAlertThreshold]",
+      "enableRightSizing": "[steps('costPerformance').costSection.enableRightSizing]",
+      "enablePerformanceOptimization": "[steps('costPerformance').performanceSection.enablePerformanceOptimization]",
+      "enableAutoscale": "[steps('costPerformance').performanceSection.enableAutoscale]",
+      "autoscaleMinInstances": "[int(steps('costPerformance').performanceSection.autoscaleMinInstances)]",
+      "autoscaleMaxInstances": "[int(steps('costPerformance').performanceSection.autoscaleMaxInstances)]",
+      "autoscaleCpuThreshold": "[steps('costPerformance').performanceSection.autoscaleCpuThreshold]",
+      "performanceProfile": "[steps('costPerformance').performanceSection.performanceProfile]",
+      "enableHighAvailability": "[steps('highAvailability').haSection.enableHighAvailability]",
+      "availabilityOption": "[steps('highAvailability').haSection.availabilityOption]",
+      "availabilityZones": "[steps('highAvailability').haSection.availabilityZones]",
+      "availabilitySetFaultDomains": "[steps('highAvailability').haSection.availabilitySetFaultDomains]",
+      "availabilitySetUpdateDomains": "[steps('highAvailability').haSection.availabilitySetUpdateDomains]",
+      "vmssInstanceCount": "[int(steps('highAvailability').haSection.vmssInstanceCount)]",
+      "enableDisasterRecovery": "[steps('disasterRecovery').drSection.enableDisasterRecovery]",
+      "enableBackup": "[steps('disasterRecovery').drSection.enableBackup]",
+      "backupPolicyType": "[steps('disasterRecovery').drSection.backupPolicyType]",
+      "backupRetentionDays": "[steps('disasterRecovery').drSection.backupRetentionDays]",
+      "backupFrequency": "[steps('disasterRecovery').drSection.backupFrequency]",
+      "backupTime": "[steps('disasterRecovery').drSection.backupTime]",
+      "enableSiteRecovery": "[steps('disasterRecovery').drSection.enableSiteRecovery]",
+      "recoveryRegion": "[steps('disasterRecovery').drSection.recoveryRegion]"
+    }
+  }
+}
