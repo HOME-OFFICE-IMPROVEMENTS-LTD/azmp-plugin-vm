@@ -1,0 +1,195 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "vmName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Virtual Machine Name",
+        "defaultValue": "",
+        "toolTip": "Name for the virtual machine",
+        "constraints": {
+          "required": true,
+          "regex": "^[a-z][a-z0-9-]{1,61}[a-z0-9]$",
+          "validationMessage": "Must be 3-63 characters, start with lowercase letter, contain only lowercase letters, numbers, and hyphens"
+        }
+      },
+      {
+        "name": "authenticationType",
+        "type": "Microsoft.Common.DropDown",
+        "label": "Authentication Type",
+        "defaultValue": "SSH Public Key",
+        "toolTip": "Choose authentication method",
+        "constraints": {
+          "required": true,
+          "allowedValues": [
+            {
+              "label": "SSH Public Key",
+              "value": "sshPublicKey"
+            },
+            {
+              "label": "Password",
+              "value": "password"
+            }
+          ]
+        }
+      },
+      {
+        "name": "adminUsername",
+        "type": "Microsoft.Compute.UserNameTextBox",
+        "label": "Admin Username",
+        "defaultValue": "azureuser",
+        "toolTip": "Administrator username for the virtual machine",
+        "osPlatform": "Linux",
+        "constraints": {
+          "required": true
+        }
+      },
+      {
+        "name": "adminPassword",
+        "type": "Microsoft.Common.PasswordBox",
+        "label": {
+          "password": "Password",
+          "confirmPassword": "Confirm password"
+        },
+        "toolTip": "Administrator password for the VM",
+        "visible": "[equals(basics('authenticationType'), 'password')]",
+        "constraints": {
+          "required": true,
+          "regex": "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{12,}$",
+          "validationMessage": "Password must be at least 12 characters with letters, numbers, and special characters"
+        },
+        "options": {
+          "hideConfirmation": false
+        }
+      },
+      {
+        "name": "adminSshKey",
+        "type": "Microsoft.Common.TextBox",
+        "label": "SSH Public Key",
+        "defaultValue": "",
+        "toolTip": "SSH public key for authentication",
+        "visible": "[equals(basics('authenticationType'), 'sshPublicKey')]",
+        "multiLine": true,
+        "constraints": {
+          "required": true,
+          "regex": "^ssh-rsa AAAA[0-9A-Za-z+/]+[=]{0,3}( [^@]+@[^@]+)?$",
+          "validationMessage": "Must be a valid SSH RSA public key"
+        }
+      },
+      {
+        "name": "vmSize",
+        "type": "Microsoft.Common.DropDown",
+        "label": "Virtual Machine Size",
+        "defaultValue": "Standard_D2s_v3 (2 vCPU, 8 GB RAM)",
+        "toolTip": "Size of the virtual machine",
+        "constraints": {
+          "required": true,
+          "allowedValues": [
+            {
+              "label": "Standard_B2s (2 vCPU, 4 GB RAM) - Burstable",
+              "value": "Standard_B2s"
+            },
+            {
+              "label": "Standard_D2s_v3 (2 vCPU, 8 GB RAM)",
+              "value": "Standard_D2s_v3"
+            },
+            {
+              "label": "Standard_D4s_v3 (4 vCPU, 16 GB RAM)",
+              "value": "Standard_D4s_v3"
+            }
+          ]
+        }
+      }
+    ],
+    "steps": [
+      {
+        "name": "networkingConfig",
+        "label": "Networking",
+        "elements": [
+          {
+            "name": "virtualNetwork",
+            "type": "Microsoft.Network.VirtualNetworkCombo",
+            "label": {
+              "virtualNetwork": "Virtual network",
+              "subnets": "Subnets"
+            },
+            "toolTip": {
+              "virtualNetwork": "Virtual network for the VM",
+              "subnets": "Subnets within the virtual network"
+            },
+            "defaultValue": {
+              "name": "[concat(basics('vmName'), '-vnet')]",
+              "addressPrefixSize": "/16"
+            },
+            "constraints": {
+              "minAddressPrefixSize": "/28"
+            },
+            "options": {
+              "hideExisting": false
+            },
+            "subnets": {
+              "subnet1": {
+                "label": "VM Subnet",
+                "defaultValue": {
+                  "name": "default",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/29",
+                  "minAddressCount": 8,
+                  "requireContiguousAddresses": false
+                }
+              }
+            }
+          },
+          {
+            "name": "publicIPAddress",
+            "type": "Microsoft.Network.PublicIpAddressCombo",
+            "label": {
+              "publicIpAddress": "Public IP address",
+              "domainNameLabel": "DNS name"
+            },
+            "toolTip": {
+              "publicIpAddress": "Public IP address for the VM",
+              "domainNameLabel": "DNS name label for the public IP"
+            },
+            "defaultValue": {
+              "publicIpAddressName": "[concat(basics('vmName'), '-pip')]"
+            },
+            "options": {
+              "hideNone": false,
+              "hideDomainNameLabel": false,
+              "hideExisting": false
+            },
+            "constraints": {
+              "required": {
+                "domainNameLabel": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "location": "[location()]",
+      "vmName": "[basics('vmName')]",
+      "authenticationType": "[basics('authenticationType')]",
+      "adminUsername": "[basics('adminUsername')]",
+      "adminPasswordOrKey": "[if(equals(basics('authenticationType'), 'password'), basics('adminPassword'), basics('adminSshKey'))]",
+      "vmSize": "[basics('vmSize')]",
+      "virtualNetworkName": "[steps('networkingConfig').virtualNetwork.name]",
+      "virtualNetworkNewOrExisting": "[steps('networkingConfig').virtualNetwork.newOrExisting]",
+      "virtualNetworkResourceGroup": "[steps('networkingConfig').virtualNetwork.resourceGroup]",
+      "virtualNetworkAddressPrefix": "[steps('networkingConfig').virtualNetwork.addressPrefix]",
+      "subnetName": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.name]",
+      "subnetAddressPrefix": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.addressPrefix]",
+      "publicIPAddressName": "[steps('networkingConfig').publicIPAddress.name]",
+      "publicIPAddressNewOrExisting": "[steps('networkingConfig').publicIPAddress.newOrExistingOrNone]",
+      "publicIPAddressResourceGroup": "[steps('networkingConfig').publicIPAddress.resourceGroup]",
+      "domainNameLabel": "[steps('networkingConfig').publicIPAddress.domainNameLabel]"
+    }
+  }
+}

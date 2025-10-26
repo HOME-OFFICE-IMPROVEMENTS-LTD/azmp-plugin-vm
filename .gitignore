@@ -46,3 +46,7 @@ logs/
 tmp/
 temp/
 *.tmp
+
+# Reference documentation (optional PDFs - download manually)
+docs/reference/*.pdf
+!docs/reference/README.md
