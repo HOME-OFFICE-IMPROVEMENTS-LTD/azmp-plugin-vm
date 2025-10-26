@@ -1,0 +1,202 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "value": "azmp-test-vm-01"
+    },
+    "adminUsername": {
+      "value": "azureadmin"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "vmSize": {
+      "value": "Standard_B2s"
+    },
+    "createLoadBalancer": {
+      "value": false
+    },
+    "createApplicationGateway": {
+      "value": false
+    },
+    "createBastion": {
+      "value": false
+    },
+    "bastionSubnetAddressPrefix": {
+      "value": "10.0.2.0/24"
+    },
+    "loadBalancingProtocol": {
+      "value": "Tcp"
+    },
+    "loadBalancingFrontendPort": {
+      "value": 80
+    },
+    "loadBalancingBackendPort": {
+      "value": 80
+    },
+    "healthProbeProtocol": {
+      "value": "Http"
+    },
+    "healthProbePort": {
+      "value": 80
+    },
+    "healthProbeInterval": {
+      "value": 15
+    },
+    "healthProbeRetries": {
+      "value": 3
+    },
+    "applicationGatewaySize": {
+      "value": "Standard_Small"
+    },
+    "applicationGatewayCapacity": {
+      "value": 2
+    },
+    "applicationGatewayPort": {
+      "value": 80
+    },
+    "applicationGatewayBackendPort": {
+      "value": 80
+    },
+    "applicationGatewayProtocol": {
+      "value": "Http"
+    },
+    "publicIPAllocationMethod": {
+      "value": "Static"
+    },
+    "publicIPSku": {
+      "value": "Standard"
+    },
+    "dnsLabelPrefix": {
+      "value": "azmp-test"
+    },
+    "virtualNetworkAddressPrefix": {
+      "value": "10.0.0.0/16"
+    },
+    "installExtensions": {
+      "value": false
+    },
+    "installCustomScriptExtension": {
+      "value": false
+    },
+    "customScriptUrl": {
+      "value": ""
+    },
+    "customScriptCommand": {
+      "value": ""
+    },
+    "installMonitoringExtension": {
+      "value": false
+    },
+    "workspaceId": {
+      "value": ""
+    },
+    "workspaceKey": {
+      "value": ""
+    },
+    "installSecurityExtension": {
+      "value": false
+    },
+    "installAntimalwareExtension": {
+      "value": false
+    },
+    "antimalwareExclusions": {
+      "value": {
+        "extensions": [],
+        "paths": [],
+        "processes": []
+      }
+    },
+    "enableManagedIdentity": {
+      "value": true
+    },
+    "userAssignedIdentities": {
+      "value": []
+    },
+    "createAvailabilitySet": {
+      "value": true
+    },
+    "availabilitySetName": {
+      "value": "azmp-avset-01"
+    },
+    "platformFaultDomainCount": {
+      "value": 2
+    },
+    "platformUpdateDomainCount": {
+      "value": 5
+    },
+    "useAvailabilityZones": {
+      "value": false
+    },
+    "availabilityZone": {
+      "value": "1"
+    },
+    "enableBackup": {
+      "value": true
+    },
+    "backupVaultName": {
+      "value": "azmp-vault-01"
+    },
+    "backupPolicyName": {
+      "value": "DefaultPolicy"
+    },
+    "dailyRetentionDays": {
+      "value": 30
+    },
+    "backupScheduleTime": {
+      "value": "02:00"
+    },
+    "enableSnapshot": {
+      "value": false
+    },
+    "snapshotRetentionDays": {
+      "value": 7
+    },
+    "createVmss": {
+      "value": false
+    },
+    "vmssName": {
+      "value": "azmp-vmss-01"
+    },
+    "vmssInstanceCount": {
+      "value": 2
+    },
+    "vmssOrchestrationMode": {
+      "value": "Uniform"
+    },
+    "vmssUpgradeMode": {
+      "value": "Automatic"
+    },
+    "enableAutoScaling": {
+      "value": false
+    },
+    "autoScaleMin": {
+      "value": 2
+    },
+    "autoScaleMax": {
+      "value": 10
+    },
+    "autoScaleDefault": {
+      "value": 2
+    },
+    "cpuScaleOutThreshold": {
+      "value": 75
+    },
+    "cpuScaleInThreshold": {
+      "value": 25
+    },
+    "enableMultiRegion": {
+      "value": false
+    },
+    "trafficManagerProfileName": {
+      "value": "azmp-tm-profile"
+    },
+    "trafficManagerDnsName": {
+      "value": "azmp-test"
+    },
+    "trafficRoutingMethod": {
+      "value": "Performance"
+    }
+  }
+}

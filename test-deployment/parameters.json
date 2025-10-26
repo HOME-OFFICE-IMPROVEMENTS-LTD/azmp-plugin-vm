@@ -1,0 +1,200 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "value": "azmp-test-vm-01"
+    },
+    "adminUsername": {
+      "value": "azureadmin"
+    },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "adminPasswordOrKey": {
+      "value": "REPLACE_WITH_YOUR_SSH_PUBLIC_KEY"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "vmSize": {
+      "value": "Standard_B2s"
+    },
+    "osType": {
+      "value": "Linux"
+    },
+    "osImageReference": {
+      "value": {
+        "publisher": "Canonical",
+        "offer": "0001-com-ubuntu-server-jammy",
+        "sku": "22_04-lts-gen2",
+        "version": "latest"
+      }
+    },
+    "storageAccountType": {
+      "value": "Premium_LRS"
+    },
+    "osDiskSizeGB": {
+      "value": 64
+    },
+    "vnetAddressSpace": {
+      "value": "10.0.0.0/16"
+    },
+    "subnetAddressPrefix": {
+      "value": "10.0.1.0/24"
+    },
+    "publicIPAllocationMethod": {
+      "value": "Static"
+    },
+    "enablePublicIP": {
+      "value": true
+    },
+    "enableAcceleratedNetworking": {
+      "value": false
+    },
+    "nsgSecurityRules": {
+      "value": [
+        {
+          "name": "SSH",
+          "properties": {
+            "priority": 1000,
+            "protocol": "Tcp",
+            "access": "Allow",
+            "direction": "Inbound",
+            "sourceAddressPrefix": "*",
+            "sourcePortRange": "*",
+            "destinationAddressPrefix": "*",
+            "destinationPortRange": "22"
+          }
+        }
+      ]
+    },
+    "enableMonitoring": {
+      "value": true
+    },
+    "logAnalyticsWorkspaceName": {
+      "value": "azmp-law-test-01"
+    },
+    "logAnalyticsSku": {
+      "value": "PerGB2018"
+    },
+    "logAnalyticsRetentionDays": {
+      "value": 30
+    },
+    "enableApplicationInsights": {
+      "value": true
+    },
+    "applicationInsightsName": {
+      "value": "azmp-appinsights-test-01"
+    },
+    "enableDiagnostics": {
+      "value": true
+    },
+    "enableMetricAlerts": {
+      "value": true
+    },
+    "metricAlertRules": {
+      "value": [
+        {
+          "name": "HighCPU",
+          "description": "Alert when CPU exceeds 80%",
+          "severity": 2,
+          "enabled": true,
+          "scopes": [],
+          "targetResourceType": "Microsoft.Compute/virtualMachines",
+          "criteria": {
+            "allOf": [
+              {
+                "metricName": "Percentage CPU",
+                "metricNamespace": "Microsoft.Compute/virtualMachines",
+                "operator": "GreaterThan",
+                "threshold": 80,
+                "timeAggregation": "Average"
+              }
+            ]
+          },
+          "actions": []
+        }
+      ]
+    },
+    "actionGroupName": {
+      "value": "azmp-actiongroup-test"
+    },
+    "actionGroupShortName": {
+      "value": "azmp-ag"
+    },
+    "emailReceivers": {
+      "value": [
+        {
+          "name": "DevOpsTeam",
+          "emailAddress": "devops@example.com"
+        }
+      ]
+    },
+    "enableCostOptimization": {
+      "value": true
+    },
+    "monthlyBudgetLimit": {
+      "value": 100
+    },
+    "budgetAlertThresholds": {
+      "value": [80, 90, 100]
+    },
+    "enablePerformanceOptimization": {
+      "value": true
+    },
+    "performanceProfile": {
+      "value": "Standard"
+    },
+    "enableAutoScaling": {
+      "value": false
+    },
+    "enableHighAvailability": {
+      "value": true
+    },
+    "availabilityOption": {
+      "value": "AvailabilitySet"
+    },
+    "availabilityZones": {
+      "value": []
+    },
+    "faultDomainCount": {
+      "value": 2
+    },
+    "updateDomainCount": {
+      "value": 5
+    },
+    "enableDisasterRecovery": {
+      "value": true
+    },
+    "enableBackup": {
+      "value": true
+    },
+    "backupScheduleTime": {
+      "value": "02:00"
+    },
+    "backupRetentionDays": {
+      "value": 30
+    },
+    "backupPolicyName": {
+      "value": "DefaultPolicy"
+    },
+    "recoveryRegion": {
+      "value": "westus2"
+    },
+    "enableManagedIdentity": {
+      "value": true
+    },
+    "userAssignedIdentities": {
+      "value": []
+    },
+    "tags": {
+      "value": {
+        "Environment": "Test",
+        "Project": "AZMP-Plugin-VM",
+        "Phase": "5-Validation",
+        "ManagedBy": "ARM-Template"
+      }
+    }
+  }
+}
