@@ -30,7 +30,7 @@ describe('VmPlugin', () => {
     test('should have correct metadata', () => {
       expect(plugin.metadata.id).toBe('vm');
       expect(plugin.metadata.name).toBe('Virtual Machine Plugin');
-      expect(plugin.metadata.version).toBe('1.6.0');
+      expect(plugin.metadata.version).toBe('1.8.2');
     });
   });
 
@@ -67,7 +67,7 @@ describe('VmPlugin', () => {
       expect(templates[0]).toMatchObject({
         type: 'vm',
         name: 'Virtual Machine',
-        version: '1.6.0'
+        version: '1.8.2'
       });
     });
 
