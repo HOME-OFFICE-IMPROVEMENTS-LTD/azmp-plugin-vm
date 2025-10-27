@@ -200,14 +200,36 @@ All existing functionality remains unchanged. New commands and features are addi
 
 ## 📦 Installation
 
-### NPM Installation
-```bash
-# Install globally
-npm install -g @hoiltd/azmp-plugin-vm@1.8.0
+### ⚠️ NPM Package Status
 
-# Or install in project
-npm install --save-dev @hoiltd/azmp-plugin-vm@1.8.0
+**GitHub Release:** ✅ Published and Available  
+**NPM Package:** ⏳ Deferred to v1.8.1
+
+Due to pre-existing test failures unrelated to Phase 2 features, the npm package publication has been intentionally deferred to v1.8.1 to maintain CI/CD integrity. See [docs/NPM_PUBLISH_DEFERRAL.md](./docs/NPM_PUBLISH_DEFERRAL.md) for complete details.
+
+### Install from GitHub (Current Method)
+```bash
+# Install v1.8.0 directly from GitHub
+npm install HOME-OFFICE-IMPROVEMENTS-LTD/azmp-plugin-vm#v1.8.0
+
+# Or add to package.json
+{
+  "dependencies": {
+    "@hoiltd/azmp-plugin-vm": "github:HOME-OFFICE-IMPROVEMENTS-LTD/azmp-plugin-vm#v1.8.0"
+  }
+}
 ```
+
+### NPM Installation (Available in v1.8.1)
+```bash
+# After v1.8.1 release (estimated early November 2025)
+npm install -g @hoiltd/azmp-plugin-vm@1.8.1
+
+# Or in project
+npm install --save-dev @hoiltd/azmp-plugin-vm@1.8.1
+```
+
+**Note:** All Phase 2 features work identically whether installed from GitHub or npm.
 
 ### Requirements
 - Node.js ≥ 14.0.0
