@@ -28,6 +28,8 @@ PowerShell Script
 
 Deletes an Azure Recovery Services Vault and all associated resources including backup items, ASR configurations, and private endpoints.
 
+> **🆕 Phase 2 Automation Hooks:** For CI/CD integration with approval-based execution, see the [`approve`](#azmp-vm-cleanup-approve) and [`check`](#azmp-vm-cleanup-check) commands below, or read the complete [Automation Hooks Guide](./AUTOMATION_HOOKS.md).
+
 #### Usage
 
 ```bash
@@ -43,6 +45,7 @@ azmp vm cleanup vault [options]
 | `-s, --subscription-name <name>` | Azure subscription name | No |
 | `--subscription-id <id>` | Azure subscription ID | No |
 | `--dry-run` | Preview operations without making changes | No |
+| `--json` | Output structured JSON for automation (use with `--dry-run`) | No |
 | `--confirm` | Enable confirmation prompts for destructive operations | No |
 | `--force` | Skip all safety confirmations (**DANGEROUS**) | No |
 | `--skip-module-updates` | Skip PowerShell module update checks | No |
@@ -100,6 +103,108 @@ azmp vm cleanup vault \
 - Automated CI/CD pipelines with proper controls
 - Emergency cleanup scenarios
 - After thoroughly testing with `--dry-run`
+
+---
+
+## Automation Commands (Phase 2)
+
+For CI/CD integration and automated workflows with approval-based execution, use these commands. See the complete [Automation Hooks Guide](./AUTOMATION_HOOKS.md) for detailed workflows, security features, and pipeline examples.
+
+### `azmp vm cleanup approve`
+
+Create an approval from a dry-run JSON file, enabling later force execution with approval validation.
+
+#### Usage
+
+```bash
+azmp vm cleanup approve <dry-run-file> [--ttl <hours>]
+```
+
+#### Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `<dry-run-file>` | Path to dry-run JSON file (required) | - |
+| `--ttl <hours>` | Time-to-live for approval in hours | 24 |
+
+#### Example
+
+```bash
+# Generate dry-run with JSON output
+azmp vm cleanup vault --vault-name "my-vault" --resource-group "my-rg" --dry-run --json > dry-run.json
+
+# Create approval (valid for 48 hours)
+azmp vm cleanup approve dry-run.json --ttl 48
+```
+
+**Output:**
+```
+✓ Approval created for vault: my-vault
+  Resource Group: my-rg
+  Operations: 24
+  Hash: 3ff9a076...
+  Approved by: user@example.com
+  Expires at: 2025-10-29T12:34:56.789Z
+```
+
+### `azmp vm cleanup check`
+
+Check if a vault has a valid approval.
+
+#### Usage
+
+```bash
+azmp vm cleanup check --vault-name <name> --resource-group <name>
+```
+
+#### Options
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `-n, --vault-name <name>` | Name of the Recovery Services Vault | Yes |
+| `-g, --resource-group <name>` | Resource group containing the vault | Yes |
+
+#### Example
+
+```bash
+# Check approval status
+azmp vm cleanup check --vault-name "my-vault" --resource-group "my-rg"
+```
+
+**Output (if approved):**
+```
+✓ Valid approval found for vault: my-vault
+  Resource Group: my-rg
+  Operations: 24
+  Hash: 3ff9a076...
+  Approved by: user@example.com
+  Approved at: 2025-10-27T12:34:56.789Z
+  Expires at: 2025-10-29T12:34:56.789Z
+  Time remaining: 47 hours 59 minutes
+```
+
+### Approval-Based Execution Workflow
+
+1. **Generate JSON dry-run**:
+   ```bash
+   azmp vm cleanup vault --dry-run --json > dry-run.json
+   ```
+
+2. **Review and approve**:
+   ```bash
+   azmp vm cleanup approve dry-run.json
+   ```
+
+3. **Execute with enforcement**:
+   ```bash
+   AZMP_ENFORCE_APPROVAL=true azmp vm cleanup vault --force
+   ```
+
+When `AZMP_ENFORCE_APPROVAL=true`, the `--force` flag requires a valid approval to proceed. This enables automated but controlled execution in CI/CD pipelines.
+
+**See also:** [Automation Hooks Guide](./AUTOMATION_HOOKS.md) for CI/CD integration examples.
+
+---
 
 ## Examples
 
@@ -360,7 +465,9 @@ azmp vm cleanup vault ... --skip-module-updates
 
 ## Integration with CI/CD
 
-### GitHub Actions Example
+> **💡 Phase 2 Automation:** For approval-based CI/CD workflows with manual gates and policy enforcement, see the complete [Automation Hooks Guide](./AUTOMATION_HOOKS.md) which includes multi-stage pipeline examples for GitHub Actions and Azure DevOps.
+
+### GitHub Actions Example (Basic)
 
 ```yaml
 name: Cleanup Test Vaults
@@ -431,6 +538,7 @@ steps:
 
 ## See Also
 
+- **[Automation Hooks Guide](./AUTOMATION_HOOKS.md)** - CI/CD integration with approval-based execution (Phase 2)
 - [PowerShell Script Documentation](../../scripts/cleanup/README.md)
 - [AZMP Plugin Development Guide](../docs/DEVELOPMENT_LOG.md)
 - [Safety Implementation Details](../../scripts/cleanup/Delete-RecoveryServicesVault.ps1)
