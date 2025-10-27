@@ -5,9 +5,56 @@ All notable changes to the Azure Marketplace Generator VM Plugin will be documen
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2025-10-27
+
+### Added
+
+- **Ephemeral OS Disks**: Cost-optimized storage with local VM cache
+  - New parameter: `useEphemeralOSDisk` (boolean, default: false)
+  - New parameter: `ephemeralDiskPlacement` (string, allowed: "CacheDisk", "ResourceDisk")
+  - Implemented via `diffDiskSettings` in OS disk configuration
+  - **Performance Benefits**: 30-40% faster VM provisioning (no remote disk writes during OS deployment)
+  - **Cost Benefits**: No persistent OS disk charges, eliminates Azure Storage costs for OS disk
+  - Uses local VM cache or temporary storage instead of remote managed disks
+  - Ideal use cases: Stateless workloads, CI/CD build agents, VM scale sets, ephemeral environments
+  - Requirements: Premium_LRS or StandardSSD_LRS storage account type, VM size must support ephemeral disks
+  - CacheDisk placement: Most common, uses VM cache for best performance (default)
+  - ResourceDisk placement: Uses temporary storage disk (for VMs with limited cache size)
+  - Note: OS disk data is lost on VM stop/deallocate - suitable only for stateless workloads
+
+- **Auto-Shutdown Schedules**: Automated cost savings for dev/test environments
+  - New parameter: `enableAutoShutdown` (boolean, default: false)
+  - New parameter: `autoShutdownTime` (string, 24-hour format, e.g., "1900" for 7:00 PM)
+  - New parameter: `autoShutdownTimeZone` (string, e.g., "Pacific Standard Time", "UTC")
+  - New parameter: `autoShutdownNotificationEmail` (string, optional)
+  - Implemented via `Microsoft.DevTestLab/schedules` resource
+  - **Cost Benefits**: Up to 70% savings on dev/test VMs by eliminating off-hours compute charges
+  - Automatic daily shutdown at configured time (zero compute charges when stopped)
+  - Email notifications sent 30 minutes before shutdown (configurable recipient)
+  - DevTest Labs integration - no custom scripts or runbooks required
+  - Still incurs storage charges when stopped (can combine with ephemeral disks for maximum savings)
+  - Ideal for: Development environments, test systems, training labs, demo environments
+  - Common time zones: UTC, Pacific Standard Time, Eastern Standard Time, GMT Standard Time
+
+### Changed
+
+- Added three example configurations demonstrating cost optimization:
+  - `examples/ephemeral-disk-config.json`: Fast-provisioning VM with ephemeral OS disk
+  - `examples/auto-shutdown-config.json`: Dev/test VM with automatic shutdown schedule
+  - `examples/full-cost-optimization-config.json`: Combined cost controls with v1.9.0 security features
+
+### Documentation
+
+- Added v1.10.0 cost optimization section to README with configuration examples
+- Updated Configuration Options table with 6 new parameters
+- Documented ephemeral disk placement strategies and VM size requirements
+- Included common time zone reference for auto-shutdown configuration
+- Added cost savings calculations and use case guidance
+
 ## [1.9.0] - 2025-10-27
 
 ### Added
+
 - **Accelerated Networking**: High-performance networking with SR-IOV support
   - New parameter: `enableAcceleratedNetworking` (boolean, default: true for supported VM sizes)
   - Enables up to 30 Gbps network throughput on supported VM sizes
@@ -37,9 +84,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Benefits: Faster troubleshooting, reduced downtime, supportability
 
 ### Changed
+
 - Template metadata version updated from 1.6.0 to 1.9.0
 
 ### Documentation
+
 - All three features documented with configuration examples
 - Included best practices for combining features (e.g., Trusted Launch + Accelerated Networking)
 - Added supportability guidance (Gen2 requirements for Trusted Launch)
@@ -47,11 +96,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.8.2] - 2025-10-27
 
 ### Fixed
+
 - **Metadata Version Sync**: Updated plugin metadata to correctly report version 1.8.2 (was incorrectly hardcoded as 1.6.0)
   - Fixed `getMetadata()` method in `src/index.ts` to use actual package version
   - Ensures consistency between package.json and runtime metadata
 
 ### Changed
+
 - **Documentation**: Enhanced README.md with comprehensive programmatic usage section
   - Added CommonJS import examples showing correct destructured pattern: `const { VmPlugin } = require('@hoiltd/azmp-plugin-vm')`
   - Added ESM import examples: `import { VmPlugin } from '@hoiltd/azmp-plugin-vm'`
@@ -63,11 +114,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added - Day 7: Monitoring, Alerts & Observability
 
 #### Overview
+
 Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers across 3 namespaces (monitor, alert, dashboard) and 8 CLI commands, enabling comprehensive Azure Monitor integration, intelligent alerting, and powerful visualization.
 
 #### Monitoring Helpers (6 helpers, monitor: namespace)
 
 **Log Analytics & Metrics:**
+
 - **monitor:logAnalyticsWorkspace** - Log Analytics workspace configuration
   - Centralized log collection and analysis
   - Pricing tiers: Free, PerGB2018, CapacityReservation
@@ -121,6 +174,7 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 #### Alert Helpers (6 helpers, alert: namespace)
 
 **Alerting & Notifications:**
+
 - **alert:metricAlert** - Static threshold metric alerts
   - Metric-based alerting with configurable thresholds
   - Severity levels: 0 (Critical) to 4 (Verbose)
@@ -178,6 +232,7 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 #### Dashboard & Workbook Helpers (8 helpers, dashboard/workbook: namespace)
 
 **Visualization & Analysis:**
+
 - **dashboard:vmHealth** - VM health monitoring dashboard
   - CPU usage trend (24h line chart)
   - Memory usage gauge
@@ -240,36 +295,34 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 #### CLI Commands (8 new commands, 52 total)
 
 **Monitoring Commands (3 commands):**
+
 - `azmp mon workspace` - Generate Log Analytics workspace configuration
   - Parameters: name, location, sku, retention
   - Output: Complete ARM template JSON
-  
 - `azmp mon diagnostics` - Generate diagnostic settings
   - Parameters: name, resource-id, workspace-id, logs, metrics
   - Output: Diagnostic settings ARM template
-  
 - `azmp mon metrics` - Generate metrics collection configuration
   - Parameters: resource-id, metrics, aggregation, frequency
   - Output: Metrics configuration JSON
 
 **Alert Commands (3 commands):**
+
 - `azmp alert metric` - Generate metric alert rule
   - Parameters: name, scopes, criteria, severity, action-groups
   - Output: Metric alert ARM template
-  
 - `azmp alert log` - Generate log query alert
   - Parameters: name, scopes, query, threshold
   - Output: Log alert ARM template
-  
 - `azmp alert action-group` - Generate action group
   - Parameters: name, short-name, email-receivers, sms-receivers
   - Output: Action group ARM template
 
 **Dashboard Commands (2 commands):**
+
 - `azmp dash vm-health` - Generate VM health dashboard
   - Parameters: name, location, vm-ids, widget flags
   - Output: Azure Portal dashboard JSON
-  
 - `azmp dash vmss-scaling` - Generate VMSS scaling dashboard
   - Parameters: name, location, vmss-id, widget flags
   - Output: VMSS dashboard JSON
@@ -277,6 +330,7 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 #### Integration Tests (8 new tests, 327 total)
 
 **Monitoring Integration (8 tests):**
+
 - Complete monitoring stack (workspace + diagnostics + metrics)
 - VMSS monitoring with auto-scale alerts
 - Multi-region health monitoring
@@ -287,12 +341,14 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 - Security posture workbook
 
 **All Tests Passing:** ✅ 338/338 (100% success rate)
+
 - 327 existing tests (Days 1-6)
 - 11 CLI command tests (monitor, alert, dashboard commands)
 
 #### Handlebars Helpers (20 new helpers, 197 total)
 
 **Monitoring Helpers (monitor: namespace):**
+
 - `monitor:logAnalyticsWorkspace` - Log Analytics workspace
 - `monitor:diagnosticSettings` - Diagnostic settings
 - `monitor:metrics` - Metrics collection
@@ -301,6 +357,7 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 - `monitor:customMetric` - Custom metrics
 
 **Alert Helpers (alert: namespace):**
+
 - `alert:metricAlert` - Metric-based alerts
 - `alert:dynamicMetricAlert` - Dynamic threshold alerts
 - `alert:logAlert` - Log query alerts
@@ -309,6 +366,7 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 - `alert:smartGroup` - Smart grouping
 
 **Dashboard Helpers (dashboard: namespace):**
+
 - `dashboard:vmHealth` - VM health dashboard
 - `dashboard:vmssScaling` - VMSS scaling dashboard
 - `dashboard:multiRegionHealth` - Multi-region dashboard
@@ -321,6 +379,7 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 #### Documentation (1,564 lines)
 
 **New Documentation:**
+
 - `docs/MONITORING.md` - Comprehensive monitoring documentation (1,564 lines)
   - Overview with helper counts
   - Complete helper reference (20 helpers)
@@ -332,6 +391,7 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
   - Version history and next steps
 
 **Documentation Structure:**
+
 - Table of contents with deep linking
 - Syntax and parameters for each helper
 - Output examples (JSON/ARM templates)
@@ -343,15 +403,17 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 ### Code Statistics
 
 **Lines Added:** ~2,650 lines
+
 - **Monitoring Module:** 634 lines (src/monitoring/index.ts)
 - **Alert Module:** 402 lines (src/alerts/index.ts)
 - **Dashboard Module:** 612 lines (src/dashboards/index.ts)
-- **Integration Tests:** 606 lines (src/__tests__/monitoring-integration.test.ts)
+- **Integration Tests:** 606 lines (src/**tests**/monitoring-integration.test.ts)
 - **CLI Commands:** 265 lines (src/index.ts additions)
-- **CLI Tests:** 77 lines (src/__tests__/cli-commands.test.ts additions)
+- **CLI Tests:** 77 lines (src/**tests**/cli-commands.test.ts additions)
 - **Documentation:** 1,564 lines (docs/MONITORING.md)
 
 **Total Plugin Size:**
+
 - Source Code: ~17,000 lines
 - Test Code: ~7,100 lines
 - Documentation: ~9,500 lines
@@ -371,36 +433,43 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 ### KQL Query Library
 
 **VM Performance:**
+
 - CPU usage over time with 5-minute bins
 - Memory usage trends
 - Disk I/O throughput analysis
 
 **Security:**
+
 - Failed SSH login attempts detection
 - NSG rule hit analysis
 
 **Application Insights:**
+
 - Request duration percentiles (P95, P99)
 - Exception analysis
 - Custom metric aggregation
 
 **Alerting:**
+
 - VMs with sustained high CPU
 - VMs with low disk space
 
 ### Best Practices Included
 
 **Workspace Organization:**
+
 - Separate workspaces by environment (prod, staging, dev)
 - Regional workspaces for global deployments
 - Retention policies by environment
 
 **Metric Collection:**
+
 - Appropriate frequency selection (1m real-time, 5m standard, 15m cost-sensitive)
 - Essential metrics only
 - Aggregation strategy (Average for CPU/memory, Total for counts)
 
 **Alert Configuration:**
+
 - Severity levels (Sev 0-4)
 - Alert naming convention
 - Evaluation windows (15-30 minutes)
@@ -408,18 +477,21 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 - Alert fatigue prevention
 
 **Dashboard Design:**
+
 - Purpose-driven dashboards (ops, performance, cost, security)
 - 10-15 widgets per dashboard
 - Consistent time ranges
 - Color coding for visual identification
 
 **Cost Optimization:**
+
 - Monitor Log Analytics ingestion costs
 - Use sampling for high-volume telemetry
 - Filter unnecessary data
 - Archive to cheaper storage
 
 **Security:**
+
 - RBAC for workspace access
 - Data privacy with masking
 - Customer-managed keys
@@ -428,6 +500,7 @@ Day 7 delivers enterprise-grade monitoring and observability with 20 new helpers
 ### Troubleshooting
 
 Common issues covered:
+
 - Metrics not appearing (diagnostic settings, agent status, firewall)
 - Log queries returning no results (DCR config, ingestion delay)
 - Alerts not firing (rule enabled, evaluation settings, action group)
@@ -437,21 +510,25 @@ Common issues covered:
 ### Performance Characteristics
 
 **Metrics Collection:**
+
 - Collection frequency: 1-15 minutes
 - Data ingestion delay: 1-5 minutes
 - Retention: 93 days (platform metrics), configurable (custom metrics)
 
 **Log Analytics:**
+
 - Query performance: <5 seconds (optimized queries)
 - Data ingestion: 3-10 minutes
 - Retention: 30-730 days
 
 **Alerts:**
+
 - Evaluation frequency: 1 minute to 1 hour
 - Alert triggering: <1 minute after condition met
 - Action group latency: <2 minutes (email/SMS)
 
 **Dashboards:**
+
 - Refresh rate: 5 minutes to 1 hour (configurable)
 - Query timeout: 30 seconds
 - Widget count: Recommended 10-15 per dashboard
@@ -465,6 +542,7 @@ None. All changes are backward compatible with v1.6.0.
 Direct upgrade from v1.6.0 is supported. No migration required.
 
 **New Capabilities:**
+
 1. Use `monitor:logAnalyticsWorkspace` to create centralized logging
 2. Configure `monitor:diagnosticSettings` for all critical resources
 3. Set up essential alerts with `alert:metricAlert` for CPU/memory/disk
@@ -477,16 +555,19 @@ All v1.6.0 helpers (177 total) and CLI commands (44 total) continue to work unch
 ### SLA & Reliability
 
 **Azure Monitor:**
+
 - Log Analytics: 99.9% availability
 - Metrics: 99.9% availability
 - Alerts: 99.9% reliability
 
 **Data Retention:**
+
 - Platform metrics: 93 days (free)
 - Log Analytics: Configurable 30-730 days
 - Application Insights: Configurable 30-730 days
 
 **Query Limits:**
+
 - Log Analytics: 10,000 results per query
 - Metrics: 1,440 data points per metric
 - Alert evaluation: No hard limits
@@ -502,9 +583,11 @@ All v1.6.0 helpers (177 total) and CLI commands (44 total) continue to work unch
 ### Compliance Support
 
 Day 7 monitoring features maintain support for all 6 compliance frameworks from v1.3.0:
+
 - SOC 2, PCI-DSS, HIPAA, ISO 27001, NIST 800-53, FedRAMP
 
 Additional compliance considerations:
+
 - Audit logging for all monitoring configuration changes
 - Data retention policies for regulatory compliance
 - Secure credential management with Key Vault integration
@@ -521,6 +604,7 @@ Additional compliance considerations:
 ### Future Enhancements
 
 Planned for future releases:
+
 - Azure Monitor Workbooks integration
 - Prometheus metrics support
 - Grafana dashboard templates
@@ -536,11 +620,13 @@ Planned for future releases:
 ### Added - Day 6: Enterprise Scaling Stack
 
 #### Overview
+
 Day 6 delivers comprehensive enterprise scaling capabilities with 14 new helpers across 4 modules, enabling VM Scale Sets (VMSS), auto-scaling, multi-region deployments, and advanced load balancing.
 
 #### Virtual Machine Scale Sets (4 helpers, scale: namespace)
 
 **VMSS Orchestration:**
+
 - **scale:vmssUniform** - Uniform orchestration mode VMSS configuration
   - Identical VM instances with centralized management
   - Automatic load balancer integration
@@ -576,6 +662,7 @@ Day 6 delivers comprehensive enterprise scaling capabilities with 14 new helpers
 #### Auto-Scaling (4 helpers, scale: namespace)
 
 **Auto-Scale Configuration:**
+
 - **scale:autoScaleMetric** - Metric-based auto-scaling rules
   - Built-in metrics: Percentage CPU, Memory, Network In/Out, Disk Operations
   - Custom metrics from Application Insights or Azure Monitor
@@ -613,6 +700,7 @@ Day 6 delivers comprehensive enterprise scaling capabilities with 14 new helpers
 #### Multi-Region (3 helpers, scale: namespace)
 
 **Multi-Region Deployment:**
+
 - **scale:multiRegionTrafficManager** - Azure Traffic Manager configuration
   - Routing methods: Performance, Priority, Weighted, Geographic, MultiValue, Subnet
   - DNS-based traffic distribution
@@ -644,6 +732,7 @@ Day 6 delivers comprehensive enterprise scaling capabilities with 14 new helpers
 #### Load Balancing (3 helpers, scale: namespace)
 
 **Advanced Load Balancing:**
+
 - **scale:loadBalancingStandard** - Standard Load Balancer configuration
   - Zone-redundant frontend IPs
   - Cross-zone load balancing
@@ -677,31 +766,37 @@ Day 6 delivers comprehensive enterprise scaling capabilities with 14 new helpers
 #### Integration Tests (13 new tests)
 
 **VMSS Integration (3 tests):**
+
 - VMSS Uniform mode template validation
 - VMSS Flexible mode template validation
 - VMSS with VMs reference validation
 
 **Auto-Scaling Integration (3 tests):**
+
 - Metric-based auto-scaling rules
 - Schedule-based auto-scaling profiles
 - Predictive auto-scaling configuration
 
 **Multi-Region Integration (3 tests):**
+
 - Traffic Manager multi-region deployment
 - Azure Front Door multi-region deployment
 - Paired regions deployment
 
 **Load Balancing Integration (2 tests):**
+
 - Standard Load Balancer with VMSS
 - Application Gateway with VMSS backend
 
 **Complete Workflow Integration (2 tests):**
+
 - Complete VMSS deployment with auto-scaling and load balancing
 - Complete multi-region deployment with all scaling features
 
 #### Handlebars Helpers (14 new helpers, 177 total)
 
 **Scaling Helpers (scale: namespace):**
+
 - `scale:vmssUniform` - Uniform VMSS configuration
 - `scale:vmssFlexible` - Flexible VMSS configuration
 - `scale:vmssOrchestration` - Orchestration mode comparison
@@ -720,6 +815,7 @@ Day 6 delivers comprehensive enterprise scaling capabilities with 14 new helpers
 #### CLI Commands (44 total, unchanged from v1.5.0)
 
 All existing CLI commands remain functional:
+
 - **Core VM:** 2 commands (list-sizes, list-images)
 - **High Availability:** 4 commands (zones, zone-check, sla, ha-config)
 - **Recovery:** 6 commands (backup-size, region-pairs, rto, backup-presets, snapshot-policies, snapshot-schedule)
@@ -733,6 +829,7 @@ All existing CLI commands remain functional:
 #### Tests (13 new tests, 279 total)
 
 **Test Count by Category:**
+
 - Core VM: 24 tests
 - Networking: 77 tests
 - Extensions: 43 tests
@@ -748,6 +845,7 @@ All existing CLI commands remain functional:
 #### Documentation (3 new docs, 800+ lines)
 
 **New Documentation:**
+
 - `docs/SCALING.md` - Comprehensive scaling documentation (800+ lines)
   - Helper reference with examples
   - Orchestration mode comparison
@@ -756,7 +854,6 @@ All existing CLI commands remain functional:
   - Load balancing configurations
   - Best practices and troubleshooting
   - Integration examples
-  
 - `docs/DAY6_SUMMARY.md` - Day 6 achievement summary (350+ lines)
   - Objectives achieved
   - Technical achievements
@@ -773,6 +870,7 @@ All existing CLI commands remain functional:
   - Certification: production-ready
 
 **Updated Documentation:**
+
 - `README.md` - Updated with scaling features section (170+ lines)
   - 6 new usage examples (VMSS Uniform, VMSS Flexible, auto-scaling, multi-region, load balancing)
   - Feature list updated with "Enterprise Scaling" section
@@ -782,12 +880,14 @@ All existing CLI commands remain functional:
 ### Code Statistics
 
 **Lines Added:** ~1,800 lines
+
 - **Scaling Module:** 634 lines (src/scaling/index.ts)
-- **Integration Tests:** 950 lines (src/__tests__/integration.test.ts)
+- **Integration Tests:** 950 lines (src/**tests**/integration.test.ts)
 - **Documentation:** ~1,000 lines across 3 new docs
 - **README Updates:** 170+ lines
 
 **Total Plugin Size:**
+
 - Source Code: ~15,000 lines
 - Test Code: ~6,500 lines
 - Documentation: ~8,000 lines
@@ -803,12 +903,14 @@ All existing CLI commands remain functional:
 ### Template Enhancements
 
 **mainTemplate.json.hbs:**
+
 - VMSS resource type support
 - Auto-scale settings integration
 - Multi-region deployment patterns
 - Advanced load balancer configurations
 
 **createUiDefinition.json.hbs:**
+
 - Scaling configuration step (new)
 - VMSS orchestration mode selector
 - Auto-scaling policy configuration
@@ -818,23 +920,27 @@ All existing CLI commands remain functional:
 ### Performance Characteristics
 
 **VMSS Performance:**
+
 - Uniform mode: Up to 1,000 instances per scale set
 - Flexible mode: Up to 1,000 VMs per scale set
 - Scale-up time: ~30-60 seconds per instance
 - Scale-down time: ~15-30 seconds per instance
 
 **Auto-Scaling:**
+
 - Metric evaluation: Every 1 minute (configurable)
 - Scale action execution: 30-90 seconds
 - Cooldown periods: Configurable (1-60 minutes)
 - Predictive forecasts: 5 minutes to 2 hours ahead
 
 **Multi-Region:**
+
 - Traffic Manager DNS TTL: 30-300 seconds (configurable)
 - Front Door propagation: ~10 minutes globally
 - Failover time: 30-60 seconds (Traffic Manager), <30 seconds (Front Door)
 
 **Load Balancing:**
+
 - Standard LB throughput: Up to 1 Tbps
 - Application Gateway throughput: Up to 10 Gbps with autoscale
 - Health probe interval: 5-60 seconds (configurable)
@@ -849,6 +955,7 @@ None. All changes are backward compatible with v1.5.0.
 Direct upgrade from v1.5.0 is supported. No migration required.
 
 **New Capabilities:**
+
 1. Use `scale:vmssUniform` or `scale:vmssFlexible` for VMSS deployments
 2. Configure auto-scaling with `scale:autoScaleMetric` or `scale:autoScaleSchedule`
 3. Deploy multi-region with `scale:multiRegionTrafficManager` or `scale:multiRegionFrontDoor`
@@ -860,16 +967,19 @@ All v1.5.0 helpers and CLI commands continue to work unchanged.
 ### SLA & Reliability
 
 **VMSS SLA:**
+
 - Uniform mode (2+ instances): 99.95%
 - Flexible mode (2+ zones): 99.99%
 - Single instance (Premium SSD): 99.9%
 
 **Multi-Region SLA:**
+
 - Traffic Manager: 99.99%
 - Front Door: 99.99%
 - Paired regions: Enhanced disaster recovery
 
 **Load Balancer SLA:**
+
 - Standard LB: 99.99%
 - Application Gateway v2: 99.95%
 - Cross-region LB: 99.99%
@@ -877,12 +987,14 @@ All v1.5.0 helpers and CLI commands continue to work unchanged.
 ### Best Practices
 
 **VMSS Orchestration:**
+
 - Use Uniform for stateless workloads (web servers)
 - Use Flexible for stateful workloads (databases)
 - Enable zone distribution for maximum availability
 - Configure scale-in policies to protect critical instances
 
 **Auto-Scaling:**
+
 - Start with metric-based scaling for dynamic workloads
 - Add schedule-based profiles for predictable patterns
 - Use predictive scaling for proactive capacity planning
@@ -890,6 +1002,7 @@ All v1.5.0 helpers and CLI commands continue to work unchanged.
 - Monitor auto-scale activities with Azure Monitor
 
 **Multi-Region:**
+
 - Choose Traffic Manager for DNS-based routing
 - Choose Front Door for HTTP acceleration and WAF
 - Use paired regions for disaster recovery
@@ -897,6 +1010,7 @@ All v1.5.0 helpers and CLI commands continue to work unchanged.
 - Test failover procedures regularly
 
 **Load Balancing:**
+
 - Use Standard LB for general TCP/UDP workloads
 - Use Application Gateway for HTTP/HTTPS workloads
 - Enable zone-redundancy for maximum availability
@@ -914,9 +1028,11 @@ All v1.5.0 helpers and CLI commands continue to work unchanged.
 ### Compliance Support
 
 Day 6 scaling features maintain support for all 6 compliance frameworks from v1.3.0:
+
 - SOC 2, PCI-DSS, HIPAA, ISO 27001, NIST 800-53, FedRAMP
 
 Additional compliance considerations:
+
 - Data residency with paired regions (same geography)
 - Geo-redundant deployments with Traffic Manager
 - Audit logs for all scaling operations
@@ -932,6 +1048,7 @@ Additional compliance considerations:
 ### Future Enhancements
 
 Planned for future releases:
+
 - CLI commands for scaling operations (e.g., `azmp scale vmss`, `azmp scale auto-scale`)
 - Azure Container Instances integration
 - Kubernetes (AKS) scaling patterns
@@ -947,6 +1064,7 @@ Planned for future releases:
 #### High Availability (25 helpers, 5 CLI commands)
 
 **Availability Sets:**
+
 - **availabilitySet** - Generate availability set configuration
   - Fault domain and update domain configuration (2-3 fault domains, 2-20 update domains)
   - Platform update and fault protection
@@ -960,6 +1078,7 @@ Planned for future releases:
 - **proximityPlacementGroup** - Create proximity placement groups for low network latency
 
 **Availability Zones:**
+
 - **getAvailableZones** - Get list of availability zones for a region (26+ supported regions)
 - **supportsAvailabilityZones** - Check if region supports availability zones
 - **zonalVM** - Create VM in specific availability zone
@@ -971,6 +1090,7 @@ Planned for future releases:
 - **getZoneSupportedRegions** - List all regions supporting availability zones
 
 **Virtual Machine Scale Sets (VMSS):**
+
 - **vmssFlexible** - Create VMSS with Flexible orchestration mode
   - Zone distribution support
   - Fault domain spreading
@@ -988,6 +1108,7 @@ Planned for future releases:
 - **validateVMSSConfig** - Validate VMSS configuration
 
 **CLI Commands (5 commands):**
+
 - `availability list-zones` - List availability zones for a region
 - `availability check-zone-support` - Check if region supports zones
 - `availability calculate-sla` - Calculate SLA for HA configuration
@@ -996,6 +1117,7 @@ Planned for future releases:
 #### Disaster Recovery (19 helpers, 7 CLI commands)
 
 **Azure Backup:**
+
 - **recoveryServicesVault** - Create Recovery Services vault for backup and site recovery
   - Standard or GRS redundancy
   - Soft delete and security features
@@ -1015,6 +1137,7 @@ Planned for future releases:
 - **validateBackupPolicy** - Validate backup policy configuration
 
 **Azure Site Recovery:**
+
 - **replicationPolicy** - Create ASR replication policy
   - Recovery point retention (1-72 hours)
   - App-consistent snapshot frequency
@@ -1031,6 +1154,7 @@ Planned for future releases:
 - **failoverConfig** - Configure failover settings
 
 **Snapshots:**
+
 - **diskSnapshot** - Create VM disk snapshots
   - Incremental or full snapshots
   - Network access policies
@@ -1045,6 +1169,7 @@ Planned for future releases:
   - Monthly: 12 snapshots (1 year retention)
 
 **CLI Commands (7 commands):**
+
 - `recovery estimate-backup` - Estimate backup storage requirements
 - `recovery list-region-pairs` - List Azure region pairs for DR
 - `recovery estimate-rto` - Estimate Recovery Time Objective
@@ -1053,17 +1178,20 @@ Planned for future releases:
 - `recovery recommend-snapshot-schedule` - Recommend snapshot schedule
 
 #### Test Coverage
+
 - **63 new tests added** (39 availability + 24 recovery = 63 tests)
 - **224 total tests** (161 Phase 3 + 63 Phase 4 = 224 tests)
 - **100% test pass rate**
 - Comprehensive coverage of all HA/DR modules
 
 ### Changed
+
 - Updated plugin version to 1.4.0
 - Enhanced feature summary: 164+ Handlebars helpers (120 Phase 3 + 44 Phase 4)
 - Enhanced CLI: 44 commands (32 Phase 3 + 12 Phase 4)
 
 ### Technical Details
+
 - **Total Phase 4 code:** 3,267 lines across 8 files
 - **Availability module:** 1,443 lines, 25 helpers
 - **Recovery module:** 1,824 lines, 19 helpers
@@ -1078,6 +1206,7 @@ Planned for future releases:
 #### VM Extensions (20 extensions across 3 platforms)
 
 **Windows Extensions (8 extensions):**
+
 - **CustomScript Extension** - Run PowerShell scripts during or after VM deployment
   - Script execution from Azure Storage or GitHub
   - Protected settings for sensitive data
@@ -1112,6 +1241,7 @@ Planned for future releases:
   - Cookbook execution
 
 **Linux Extensions (7 extensions):**
+
 - **CustomScript Extension** - Run bash scripts during or after VM deployment
   - Script execution from Azure Storage or GitHub
   - Environment variable support
@@ -1142,6 +1272,7 @@ Planned for future releases:
   - Recovery point management
 
 **Cross-Platform Extensions (5 extensions):**
+
 - **Azure Monitor Agent** - Unified monitoring and logging
   - Metrics collection for both platforms
   - Log Analytics integration
@@ -1166,6 +1297,7 @@ Planned for future releases:
 #### Security Features (8 security capabilities)
 
 **Disk Encryption (3 types):**
+
 - **Azure Disk Encryption (ADE)** - Full disk encryption with Key Vault
   - OS and data disk encryption
   - Key Vault key management
@@ -1183,6 +1315,7 @@ Planned for future releases:
   - DC size support validation
 
 **Trusted Launch (5 features):**
+
 - **Secure Boot** - Protects against rootkits and boot malware
   - UEFI boot chain validation
   - Signed bootloader verification
@@ -1205,6 +1338,7 @@ Planned for future releases:
   - Threat detection
 
 **Security Templates (12 templates):**
+
 - Basic security (single encryption method)
 - Enhanced security (ADE + SSE-CMK)
 - Maximum security (all encryption + Trusted Launch)
@@ -1212,6 +1346,7 @@ Planned for future releases:
 - Platform-specific templates (Windows/Linux)
 
 **Compliance Frameworks (6 frameworks):**
+
 - SOC 2 (Service Organization Control 2)
 - PCI-DSS (Payment Card Industry Data Security Standard)
 - HIPAA (Health Insurance Portability and Accountability Act)
@@ -1222,6 +1357,7 @@ Planned for future releases:
 #### Identity & Access Management (3 modules)
 
 **Managed Identity Module:**
+
 - **System-Assigned Identity** - Automatic identity tied to VM lifecycle
   - Azure AD identity creation
   - Automatic lifecycle management
@@ -1250,6 +1386,7 @@ Planned for future releases:
 - **Validation** - Configuration validation with errors and warnings
 
 **Azure AD Integration Module:**
+
 - **AAD SSH Login (Linux)** - Azure AD authentication for SSH
   - Passwordless SSH with Azure AD credentials
   - MFA support
@@ -1284,6 +1421,7 @@ Planned for future releases:
 - **Validation** - AAD configuration validation
 
 **Role-Based Access Control (RBAC) Module:**
+
 - **Built-in Role Assignment** - Assign Azure built-in roles
   - 20+ built-in roles (Contributor, Reader, Owner, Key Vault, Storage, Network, Security, etc.)
   - 4 scope types (resource, resourceGroup, subscription, managementGroup)
@@ -1324,6 +1462,7 @@ Planned for future releases:
 #### Handlebars Helpers (85 new helpers, 189 total)
 
 **Extension Helpers (26 helpers, ext: namespace):**
+
 - `ext:windows` - Get Windows extension configuration
 - `ext:linux` - Get Linux extension configuration
 - `ext:crossplatform` - Get cross-platform extension configuration
@@ -1341,6 +1480,7 @@ Planned for future releases:
 - And 12 more helpers for specific extensions...
 
 **Security Helpers (26 helpers, security: namespace):**
+
 - `security:ade` - Azure Disk Encryption configuration
 - `security:sse-pmk` - Server-Side Encryption with PMK
 - `security:sse-cmk` - Server-Side Encryption with CMK
@@ -1360,6 +1500,7 @@ Planned for future releases:
 - And 10 more helpers for encryption and Trusted Launch...
 
 **Identity Helpers (33 helpers, identity: namespace):**
+
 - **Managed Identity (7 helpers):**
   - `identity:managedidentity.systemAssigned` - System-assigned identity
   - `identity:managedidentity.userAssigned` - User-assigned identity
@@ -1401,18 +1542,21 @@ Planned for future releases:
 #### CLI Commands (12 new commands, 32 total)
 
 **Extension Commands (4 commands):**
+
 - `vm ext` - List all available VM extensions
 - `vm ext list-windows` - List Windows-specific extensions
 - `vm ext list-linux` - List Linux-specific extensions
 - `vm ext list-crossplatform` - List cross-platform extensions
 
 **Security Commands (4 commands):**
+
 - `vm security list` - List all security features
 - `vm security list-encryption` - List encryption types
 - `vm security list-trusted-launch` - List Trusted Launch features
 - `vm security list-compliance` - List compliance frameworks
 
 **Identity Commands (4 commands):**
+
 - `vm identity list` - List all identity features
 - `vm identity list-managed-identity` - List managed identity types
 - `vm identity list-aad-features` - List Azure AD features
@@ -1421,6 +1565,7 @@ Planned for future releases:
 #### Tests (97 new tests, 161 total)
 
 **Extension Tests (43 tests):**
+
 - Windows extension tests (8 tests)
 - Linux extension tests (7 tests)
 - Cross-platform extension tests (5 tests)
@@ -1430,6 +1575,7 @@ Planned for future releases:
 - Handlebars helper tests (4 tests)
 
 **Identity Tests (54 tests):**
+
 - **Managed Identity (13 tests):**
   - System/user/multiple identity creation tests
   - Identity recommendations tests (6 use cases)
@@ -1458,13 +1604,13 @@ Planned for future releases:
   - Specific template retrieval tests
   - Compliance template tests
 - **Handlebars Helpers (7 tests):**
-
   - Helper creation tests
   - 33 helper verification tests (7 managed identity + 8 AAD + 13 RBAC + 5 utility)
 
 **All Tests Passing:** ✅ 161/161 (100% success rate)
 
 #### Documentation
+
 - `PHASE3_PROPOSAL.md` - Complete Phase 3 proposal with implementation roadmap
 - Extension module documentation in code comments
 - Security module documentation in code comments
@@ -1473,6 +1619,7 @@ Planned for future releases:
 - CLI command help text
 
 ### Code Statistics
+
 - **Total Lines Added:** ~3,900 lines
 - **Extension Code:** ~1,280 lines (src/extensions/)
 - **Security Code:** ~890 lines (src/security/)
@@ -1480,23 +1627,28 @@ Planned for future releases:
 - **Test Code:** ~1,080 lines (97 new tests)
 
 ### Module Breakdown
-- **Extensions**::** 20 extensions (8 Windows + 7 Linux + 5 cross-platform)
+
+- **Extensions**::\*\* 20 extensions (8 Windows + 7 Linux + 5 cross-platform)
 - **Security:** 3 encryption types + 5 Trusted Launch features + 12 templates + 6 compliance frameworks
 - **Identity:** 3 modules (Managed Identity + Azure AD + RBAC) + 12 templates
 
 ### Changed
+
 - Updated `src/index.ts` - Integrated 85 new helpers (26 extensions + 26 security + 33 identity)
 - Updated `src/__tests__/index.test.ts` - Updated version test to 1.3.0
 - Updated `package.json` - Version bumped from 1.2.0 to 1.3.0
 - Enhanced description: "with Extensions, Security, and Identity features"
 
 ### Breaking Changes
+
 None. All changes are backward compatible with v1.2.0.
 
 ### Upgrade Notes
+
 Direct upgrade from v1.2.0 is supported. No migration required.
 
 ### Security Notes
+
 - All encryption features integrate with Azure Key Vault
 - Trusted Launch requires Gen 2 VMs
 - Managed Identity enables secure, credential-free authentication
@@ -1504,7 +1656,9 @@ Direct upgrade from v1.2.0 is supported. No migration required.
 - RBAC enables least-privilege access control
 
 ### Compliance Support
+
 Phase 3 adds support for 6 compliance frameworks:
+
 - SOC 2 (Service Organization Control 2)
 - PCI-DSS (Payment Card Industry Data Security Standard)
 - HIPAA (Health Insurance Portability and Accountability Act)
@@ -1519,6 +1673,7 @@ Phase 3 adds support for 6 compliance frameworks:
 ### Added - Phase 2: Advanced Networking Features
 
 #### Networking Modules (7 new modules)
+
 - **Virtual Networks (VNets)** - Complete VNet configuration and management
   - 5 VNet templates (hub, spoke, isolated, shared, workload)
   - CIDR validation and IP address calculations
@@ -1573,6 +1728,7 @@ Phase 3 adds support for 6 compliance frameworks:
 #### Handlebars Helpers (82 new helpers, 104 total)
 
 **VNet & Subnet Helpers (23 helpers):**
+
 - `vnet-template` - Get VNet configuration template
 - `vnet-address-space` - Get VNet address space
 - `vnet-service-endpoints` - Get service endpoints
@@ -1585,6 +1741,7 @@ Phase 3 adds support for 6 compliance frameworks:
 - And 14 more helpers...
 
 **NSG Helpers (14 helpers):**
+
 - `nsg-rule` - Get security rule configuration
 - `nsg-template` - Get NSG template
 - `nsg-validate-priority` - Validate rule priority
@@ -1594,6 +1751,7 @@ Phase 3 adds support for 6 compliance frameworks:
 - And 8 more helpers...
 
 **Load Balancer Helpers (17 helpers):**
+
 - `lb-template` - Get load balancer template
 - `lb-health-probe` - Get health probe configuration
 - `lb-rule` - Get load balancing rule
@@ -1603,6 +1761,7 @@ Phase 3 adds support for 6 compliance frameworks:
 - And 11 more helpers...
 
 **Application Gateway Helpers (10 helpers):**
+
 - `appgw-template` - Get Application Gateway template
 - `appgw-http-settings` - Get HTTP settings
 - `appgw-listener` - Get listener configuration
@@ -1611,6 +1770,7 @@ Phase 3 adds support for 6 compliance frameworks:
 - And 5 more helpers...
 
 **Bastion Helpers (9 helpers):**
+
 - `bastion-template` - Get Bastion template
 - `bastion-feature` - Get feature configuration
 - `bastion-feature-available` - Check feature availability
@@ -1618,6 +1778,7 @@ Phase 3 adds support for 6 compliance frameworks:
 - And 5 more helpers...
 
 **VNet Peering Helpers (9 helpers):**
+
 - `peering-template` - Get peering template
 - `peering-hub-spoke` - Get hub-and-spoke topology
 - `peering-scenario` - Get peering scenario
@@ -1627,24 +1788,29 @@ Phase 3 adds support for 6 compliance frameworks:
 #### CLI Commands (10 new commands, 16 total)
 
 **VNet & Subnet Commands:**
+
 - `vm network list-vnet-templates` - List VNet templates with filtering
 - `vm network list-subnet-patterns` - List subnet patterns with search
 - `vm network list-service-endpoints` - List available service endpoints
 
 **NSG Commands:**
+
 - `vm network list-nsg-rules` - List security rules with filtering
 - `vm network list-nsg-templates` - List NSG templates
 
 **Load Balancer Commands:**
+
 - `vm network list-lb-templates` - List load balancer templates
 - `vm network list-health-probes` - List health probe configurations
 
 **Advanced Networking Commands:**
+
 - `vm network list-appgw-templates` - List Application Gateway templates
 - `vm network list-bastion-templates` - List Bastion templates
 - `vm network list-peering-templates` - List VNet peering templates
 
 #### Tests (77 new tests, 101 total)
+
 - VNet & Subnet tests: 16 tests
 - NSG tests: 14 tests
 - Load Balancer tests: 19 tests
@@ -1654,6 +1820,7 @@ Phase 3 adds support for 6 compliance frameworks:
 - All tests passing with 100% success rate
 
 #### Documentation
+
 - `PHASE2_PROPOSAL.md` - Complete Phase 2 proposal (501 lines)
 - `PHASE2_DAYS1-2_SUMMARY.md` - VNet & Subnets milestone summary (306 lines)
 - `PHASE2_DAYS3-4_SUMMARY.md` - NSG features milestone summary (311 lines)
@@ -1661,20 +1828,24 @@ Phase 3 adds support for 6 compliance frameworks:
 - `PHASE2_DAYS7-8_SUMMARY.md` - Advanced features milestone summary (595 lines)
 
 ### Code Statistics
+
 - **Total Lines Added:** 6,593 lines
 - **Networking Code:** 4,586 lines across 7 modules
 - **Test Code:** 537 new test lines
 - **Documentation:** 2,306 documentation lines
 
 ### Changed
+
 - Updated `src/index.ts` - Integrated all 82 networking helpers
 - Updated `src/__tests__/index.test.ts` - Added comprehensive test coverage
 - Version bumped from 1.1.0 to 1.2.0
 
 ### Breaking Changes
+
 None. All changes are backward compatible with v1.1.0.
 
 ### Upgrade Notes
+
 Direct upgrade from v1.1.0 is supported. No migration required.
 
 ---
@@ -1684,6 +1855,7 @@ Direct upgrade from v1.1.0 is supported. No migration required.
 ### Added - Phase 1: Core VM Functionality
 
 #### VM Configuration
+
 - **VM Sizes** - 40+ Azure VM size configurations
   - General Purpose (B, D series)
   - Compute Optimized (F series)
@@ -1710,12 +1882,14 @@ Direct upgrade from v1.1.0 is supported. No migration required.
   - Basic NSG association
 
 #### Handlebars Helpers (22 helpers)
+
 - VM size helpers (list, get, filter by family)
 - OS image helpers (list, get, filter by OS type)
 - Storage helpers (disk configuration, caching)
 - Basic networking helpers
 
 #### CLI Commands (6 commands)
+
 - `vm list-sizes` - List available VM sizes
 - `vm list-images` - List available OS images
 - `vm list-families` - List VM size families
@@ -1724,17 +1898,20 @@ Direct upgrade from v1.1.0 is supported. No migration required.
 - `vm filter-sizes` - Filter VM sizes by family
 
 #### Tests (24 tests)
+
 - VM size tests
 - OS image tests
 - Storage configuration tests
 - Basic networking tests
 
 #### Documentation
+
 - README.md with usage examples
 - API documentation for all helpers
 - CLI command reference
 
 ### Initial Release Features
+
 - TypeScript implementation
 - Jest testing framework
 - ESLint and Prettier configuration

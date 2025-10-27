@@ -508,9 +508,7 @@ export function getAllHealthProbes(): Array<{
 /**
  * Get health probes by protocol
  */
-export function getHealthProbesByProtocol(
-  protocol: ProbeProtocol,
-): Array<{
+export function getHealthProbesByProtocol(protocol: ProbeProtocol): Array<{
   key: HealthProbeKey;
   probe: (typeof HEALTH_PROBES)[HealthProbeKey];
 }> {
