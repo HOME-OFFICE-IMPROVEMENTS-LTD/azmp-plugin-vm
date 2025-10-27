@@ -1,303 +1,77 @@
-# Azure Marketplace Generator VM Plugin - Project Roadmap
+# Azure Marketplace Generator VM Plugin – Project Roadmap
 
 **Repository:** azmp-plugin-vm  
-**Current Version:** v1.4.0  
-**Current Branch:** develop  
-**Status:** 🟢 Phase 4 Complete, Phase 5 Proposed  
-**Completion:** ~80% (Phase 5 will complete to 100%)
+**Current Version:** v1.10.0 (`main`)  
+**Status:** ✅ Cost optimization release shipped · 📝 Planning v1.11.0 High Availability Cluster  
+**Next Milestone:** v1.11.0 (High Availability Cluster)
 
 ---
 
-## 📈 Project Journey
+## 📈 Release Journey
 
-```
-✅ Phase 1: Core VM (v1.1.0) - COMPLETE
-✅ Phase 2: Networking (v1.2.0) - COMPLETE  
-✅ Phase 3: Extensions/Security/Identity (v1.3.0) - COMPLETE
-✅ Phase 4: HA/DR (v1.4.0) - COMPLETE [Just merged!]
-🎯 Phase 5: ARM Templates (v1.5.0) - PROPOSED [Next!]
-🔵 Phase 6: DevOps (v1.6.0) - OPTIONAL
-🔵 Phase 7: Advanced Features (v1.7.0) - OPTIONAL
-```
+| Version | Theme | Highlights | Status |
+|---------|-------|------------|--------|
+| **v1.6.x – v1.7.x** | Marketplace Foundations | ARM templates, UI definition, validation tooling | ✅ Complete |
+| **v1.8.x** | Security & Governance | Trusted launch, encryption patterns, compliance docs | ✅ Complete |
+| **v1.9.0** (2025-10-27) | Performance & Security | Accelerated networking, trusted launch defaults, boot diagnostics | ✅ Released |
+| **v1.10.0** (2025-10-27) | Cost Optimization | Ephemeral OS disks, auto-shutdown schedules, cost examples | ✅ Released |
+| **v1.11.0** (TBD) | High Availability Cluster | PPGs, multi-zone VMSS, load balancer + health probes | 🟡 In design |
 
----
-
-## ✅ Completed Phases (v1.1.0 - v1.4.0)
-
-### Phase 1: Core VM (v1.1.0)
-**Duration:** 8 days  
-**Delivered:**
-- 40+ VM sizes, 20+ OS images
-- Storage configuration
-- 77 helpers, 12 CLI commands
-- 77 tests
-
-### Phase 2: Advanced Networking (v1.2.0)
-**Duration:** 8 days  
-**Delivered:**
-- VNets, NSGs, Load Balancers
-- Application Gateway, Bastion, VNet peering
-- 77 helpers, 14 CLI commands
-- 70 tests
-
-### Phase 3: Extensions, Security, Identity (v1.3.0)
-**Duration:** 8 days  
-**Delivered:**
-- 20 VM extensions
-- Disk encryption, Trusted Launch
-- Managed Identity, RBAC
-- 89 helpers, 12 CLI commands
-- 77 tests
-
-### Phase 4: High Availability & Disaster Recovery (v1.4.0)
-**Duration:** 8 days  
-**Delivered:**
-- Availability Sets/Zones, VMSS
-- Azure Backup, Site Recovery, Snapshots
-- 44 helpers, 10 CLI commands
-- 63 tests
-
-### Current Totals (v1.4.0):
-- **233 helpers** - All VM capabilities covered
-- **38 CLI commands** - Rich command-line interface
-- **224 tests** - 100% passing
-- **~15,000 lines** of TypeScript
-- **Completion:** ~80%
+> **Quality snapshot:** 538 tests (494 executed, 44 skipped) all passing · 40+ CLI commands live · Templates validated with ARM-TTK suite.
 
 ---
 
-## 🎯 Phase 5: ARM Template Files (v1.5.0) - NEXT!
+## ✅ Recent Release Highlights
 
-**Status:** 📋 Proposed  
-**Priority:** 🔴 CRITICAL  
-**Timeline:** 5-7 days  
-**Why Critical:** Validates all 233 helpers, delivers actual user value
+### v1.9.0 – Performance & Security
+- Accelerated networking with automatic eligibility checks.
+- Trusted Launch defaults (Secure Boot + vTPM) for Gen2 images.
+- Boot diagnostics configuration with managed storage fallback.
+- Documentation refresh covering upgrade guidance and compliance posture.
 
-### The Gap:
-**We have 233 helpers but NO templates using them!**
-
-Phase 5 creates the actual Handlebars template files (.hbs) that generate complete, deployable Azure Marketplace offerings.
-
-### Deliverables:
-
-1. **mainTemplate.json.hbs** (~800-1,200 lines)
-   - Main ARM template using all 233 helpers
-   - VM, networking, extensions, security, HA, DR
-   - Generates valid ARM JSON
-
-2. **createUiDefinition.json.hbs** (~400-600 lines)
-   - Azure Portal UI definition
-   - Interactive wizard
-   - Validation rules
-
-3. **viewDefinition.json.hbs** (~100-200 lines)
-   - Marketplace offering view
-   - Feature highlights
-
-4. **Validation System** (~500-700 lines TypeScript)
-   - ARM schema validation
-   - Helper usage validation
-
-5. **CLI Commands** (3-4 new commands)
-   - Template generation
-   - Validation
-   - Testing
-
-6. **Tests** (~40 new tests, 264 total)
-   - Template generation tests
-   - Validation tests
-   - Integration tests
-
-7. **Documentation**
-   - Template generation guide
-   - Deployment guide
-   - Updated README
-
-### Success Criteria:
-- [ ] All 233 helpers used in templates
-- [ ] Valid ARM JSON generated
-- [ ] Portal UI definition works
-- [ ] Validation system functional
-- [ ] Test deployment to Azure successful
-- [ ] 264 tests passing (100%)
-- [ ] Documentation complete
-
-### Timeline:
-
-```
-Day 1-2: mainTemplate.json.hbs Foundation
-Day 3-4: mainTemplate.json.hbs Advanced (all helpers)
-Day 5:   createUiDefinition.json.hbs
-Day 6:   viewDefinition & Validation System
-Day 7:   CLI, Testing, Documentation
-```
-
-### After Phase 5:
-**Project will be 100% complete and production-ready! ✅**
+### v1.10.0 – Cost Optimization
+- Ephemeral OS disks (cache vs. resource disk placement).
+- Auto-shutdown schedules via DevTest Labs integration with notifications.
+- Three new cost-focused example configs and README walkthrough.
+- Published to npm (`@hoiltd/azmp-plugin-vm@1.10.0`) and tagged on GitHub.
 
 ---
 
-## 🔵 Optional Future Phases
+## 🎯 Upcoming Milestone: v1.11.0 High Availability Cluster
 
-### Phase 6: DevOps & Automation (v1.6.0)
-**Priority:** Medium  
-**Timeline:** 4-6 days  
-**Scope:**
-- CI/CD pipelines (GitHub Actions)
-- Automated testing
-- Release automation
-- Marketplace submission automation
+**Goal:** Ship end-to-end cluster capabilities that let marketplace offers deploy resilient, low-latency application tiers out-of-the-box.
 
-### Phase 7: Advanced Features (v1.7.0)
-**Priority:** Low  
-**Timeline:** 5-7 days  
-**Scope:**
-- Confidential computing
-- GPU optimization
-- HPC configurations
-- Cost optimization
+**Scope Pillars**
+- Proximity Placement Groups (PPGs) with region validation helpers.
+- Load balancer wiring (public/internal) including backend pools, NAT rules, and health probes.
+- Health extensions/recipes to expose HTTP/TCP probe endpoints.
+- Multi-zone VM scale sets with autoscale profiles and PPG affinity.
+- Config schema updates, CLI surface, example configs, and full documentation.
 
-**Note:** Phases 6-7 are enhancements, not requirements. Phase 5 completes the core vision.
+**Artifacts**
+- `V1.11.0_PLANNING.md` – detailed architecture, work breakdown, test strategy (✅ drafted).
+- Roadmap/status refresh (this document + `PROJECT_STATUS.md`).
+
+**Target Timeline:** 5–6 focused implementation days plus validation buffer once approved.
 
 ---
 
-## 📊 Current Project Status (v1.4.0)
+## 🧭 Supporting Docs & Checklists
 
-### Repository Status:
-- **Branch:** develop
-- **Version:** v1.4.0
-- **Git Status:** Clean, pushed to remote
-- **Tests:** 224/224 passing (100%)
-- **Build:** Passing
-
-### Recent Milestones:
-- ✅ Phase 4 merged to develop (2024-12-19)
-- ✅ Tagged v1.4.0
-- ✅ Documentation reorganized
-- ✅ Phase 5 proposal created
-- ✅ All changes pushed to remote
-
-### File Structure:
-```
-Root Documentation (6 files):
-├── README.md                      (Features, installation)
-├── CHANGELOG.md                   (Version history)
-├── PROJECT_STATUS.md              (Comprehensive status)
-├── GETTING_STARTED.md             (Quick start)
-├── CODEX_QUESTIONS.md             (FAQ)
-└── AZURE_VM_OPTIONS_RESEARCH.md   (Research)
-
-Historical Documentation:
-└── docs/history/ (11 phase documents)
-
-Proposals:
-└── PHASE5_PROPOSAL.md (Next phase plan)
-```
-
-### Code Structure:
-```
-src/
-├── core/           (Core VM - Phase 1)
-├── networking/     (Networking - Phase 2)
-├── extensions/     (Extensions - Phase 3)
-├── security/       (Security - Phase 3)
-├── identity/       (Identity - Phase 3)
-├── availability/   (HA - Phase 4)
-├── recovery/       (DR - Phase 4)
-├── cli/            (CLI commands)
-├── __tests__/      (224 tests)
-└── index.ts        (233 helpers exported)
-```
+- `V1.11.0_PLANNING.md` – detailed sprint plan.
+- `PROJECT_STATUS.md` – operational snapshot (updated alongside this roadmap).
+- `CHANGELOG.md` – authoritative release history.
+- `POST_RELEASE_TASKS.md` – checklist for publishing and follow-up.
+- `docs/` – in-depth design notes and historical context.
 
 ---
 
-## 🎯 Immediate Next Steps
+## 🔭 Backlog (Post v1.11.0 Considerations)
 
-1. **Review Phase 5 Proposal** (PHASE5_PROPOSAL.md)
-   - Comprehensive plan for template files
-   - 5-7 day timeline
-   - Clear deliverables and success criteria
+- Global routing: Azure Traffic Manager / Front Door integration.
+- Application Gateway WAF presets for layered security.
+- DevOps automation: CI/CD, release orchestration, marketplace submission tooling.
+- Observability packs: Azure Monitor workbooks, alert rules, log analytics baselines.
 
-2. **Approve Phase 5**
-   - This is the critical final piece
-   - Validates all previous work
-   - Delivers actual user value
+These initiatives remain candidates for v1.12.0+ after HA cluster delivery.
 
-3. **Begin Phase 5 Development**
-   - Create feature branch
-   - Start with mainTemplate.json.hbs foundation
-   - Follow 7-day plan
-
-4. **Test & Deploy**
-   - Generate templates
-   - Validate ARM JSON
-   - Deploy to Azure
-   - Verify marketplace readiness
-
-5. **Release v1.5.0**
-   - Merge to develop
-   - Tag release
-   - Update documentation
-   - **PROJECT COMPLETE!** 🎉
-
----
-
-## 📚 Key Documents
-
-### Planning & Status:
-- `PROJECT_STATUS.md` - Comprehensive project status
-- `PROJECT_ROADMAP.md` - This file (high-level roadmap)
-- `PHASE5_PROPOSAL.md` - Detailed Phase 5 plan
-- `CHANGELOG.md` - Complete version history
-
-### Getting Started:
-- `README.md` - Overview and features
-- `GETTING_STARTED.md` - Quick start guide
-- `CODEX_QUESTIONS.md` - FAQ
-
-### Historical:
-- `docs/history/PHASE1_SUMMARY.md` - Phase 1 details
-- `docs/history/PHASE2_*.md` - Phase 2 details (6 files)
-- `docs/history/PHASE3_*.md` - Phase 3 details (5 files)
-
----
-
-## 🚀 The Vision
-
-**Original Goal:**
-Build a comprehensive Azure Marketplace Generator VM plugin with all VM capabilities.
-
-**Progress:**
-- ✅ 233 helpers covering all VM features
-- ✅ 38 CLI commands for testing
-- ✅ 224 tests (100% passing)
-- ⚠️ Missing: Actual ARM template files
-
-**Phase 5 Completes the Vision:**
-- ✅ ARM template files using all helpers
-- ✅ Portal UI definition
-- ✅ Marketplace view
-- ✅ End-to-end generation working
-- ✅ Azure deployment successful
-- ✅ Production-ready plugin
-
-**After Phase 5:** 100% complete, ready for marketplace submission!
-
----
-
-## 📞 Contact & Resources
-
-**Repository:** https://github.com/HOME-OFFICE-IMPROVEMENTS-LTD/azmp-plugin-vm  
-**Branch:** develop  
-**Version:** v1.4.0  
-**Next Version:** v1.5.0 (Phase 5)
-
-**Key Files:**
-- Proposal: `PHASE5_PROPOSAL.md`
-- Status: `PROJECT_STATUS.md`
-- Roadmap: `PROJECT_ROADMAP.md` (this file)
-
----
-
-**Last Updated:** 2024-12-19  
-**Status:** Ready for Phase 5! 🚀
