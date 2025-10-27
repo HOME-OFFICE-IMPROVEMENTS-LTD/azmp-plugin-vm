@@ -1,0 +1,14 @@
+{
+  "vmName": "trusted-launch-test-vm",
+  "adminUsername": "azureuser", 
+  "location": "eastus",
+  "vmSize": "Standard_D2s_v3",
+  "enableMonitoring": true,
+  "enableHighAvailability": false,
+  "enableDisasterRecovery": false,
+  "enableBackup": false,
+  "performanceProfile": "Balanced",
+  "monthlyBudgetLimit": 200,
+  "logAnalyticsRetentionDays": 30,
+  "defaultVmSize": "Standard_D2s_v3"
+}

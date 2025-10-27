@@ -38,6 +38,21 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Security - SSH keys and secrets
+*.pub
+*.pem
+*.key
+*ssh-key*
+*private-key*
+deployment-key*
+
+# Testing artifacts and deployment outputs
+deployment-*.json
+arm-ttk-results*.txt
+test-deployment-*backup*/
+test-deployment-regenerated/
+test-deployment-old*/
+
 # Logs
 logs/
 *.log
@@ -46,3 +61,7 @@ logs/
 tmp/
 temp/
 *.tmp
+
+# Reference documentation (optional PDFs - download manually)
+docs/reference/*.pdf
+!docs/reference/README.md

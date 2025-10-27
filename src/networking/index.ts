@@ -4,26 +4,26 @@
  */
 
 // Import all networking modules
-import { 
-  VNET_TEMPLATES, 
-  VNetTemplateKey, 
-  getVNetTemplate, 
+import {
+  VNET_TEMPLATES,
+  VNetTemplateKey,
+  getVNetTemplate,
   getAllVNetTemplates,
   calculateUsableIPs,
   validateCIDR,
-  isIPInCIDR 
-} from './vnets';
+  isIPInCIDR,
+} from "./vnets";
 
-import { 
-  SUBNET_PATTERNS, 
+import {
+  SUBNET_PATTERNS,
   SubnetPatternKey,
   getSubnetPattern,
   getAllSubnetPatterns,
-  subnetsOverlap
-} from './subnets';
+  subnetsOverlap,
+} from "./subnets";
 
-import { 
-  NSG_RULES, 
+import {
+  NSG_RULES,
   NSG_TEMPLATES,
   NsgRuleKey,
   NsgTemplateKey,
@@ -32,8 +32,8 @@ import {
   getAllNsgRules,
   getAllNsgTemplates,
   getNsgRulesByDirection,
-  getNsgRulesByProtocol
-} from './nsg';
+  getNsgRulesByProtocol,
+} from "./nsg";
 
 import {
   LOAD_BALANCER_TEMPLATES,
@@ -51,15 +51,15 @@ import {
   getAllLoadBalancerTemplates,
   getAllHealthProbes,
   getHealthProbesByProtocol,
-  calculateHealthCheckDuration
-} from './loadbalancer';
+  calculateHealthCheckDuration,
+} from "./loadbalancer";
 
 import {
   APP_GATEWAY_TEMPLATES,
   AppGatewayTemplateKey,
   getAppGatewayTemplate,
-  getAllAppGatewayTemplates
-} from './appgateway';
+  getAllAppGatewayTemplates,
+} from "./appgateway";
 
 import {
   BASTION_TEMPLATES,
@@ -70,8 +70,8 @@ import {
   getBastionFeature,
   getAllBastionTemplates,
   isFeatureAvailable,
-  getRecommendedScaleUnits
-} from './bastion';
+  getRecommendedScaleUnits,
+} from "./bastion";
 
 import {
   VNET_PEERING_TEMPLATES,
@@ -85,14 +85,17 @@ import {
   getPeeringScenario,
   getAllVNetPeeringTemplates,
   calculateMeshPeeringCount,
-  calculateHubSpokePeeringCount
-} from './peering';
+  calculateHubSpokePeeringCount,
+} from "./peering";
 
 /**
  * Networking Handlebars Helpers Registry
  * All helpers use the 'net:' namespace prefix
  */
-export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> {
+export function getNetworkingHelpers(): Record<
+  string,
+  (...args: any[]) => any
+> {
   return {
     // ========================================
     // VNet Helpers (net:vnet.*)
@@ -101,15 +104,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get VNet template configuration
      */
-    'net:vnet.template': (key: string): string => {
+    "net:vnet.template": (key: string): string => {
       const template = getVNetTemplate(key as VNetTemplateKey);
-      return template ? JSON.stringify(template, null, 2) : '{}';
+      return template ? JSON.stringify(template, null, 2) : "{}";
     },
 
     /**
      * Get VNet template name
      */
-    'net:vnet.name': (key: string): string => {
+    "net:vnet.name": (key: string): string => {
       const template = getVNetTemplate(key as VNetTemplateKey);
       return template?.name || key;
     },
@@ -117,31 +120,31 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get VNet template description
      */
-    'net:vnet.description': (key: string): string => {
+    "net:vnet.description": (key: string): string => {
       const template = getVNetTemplate(key as VNetTemplateKey);
-      return template?.description || '';
+      return template?.description || "";
     },
 
     /**
      * Get VNet address space (first CIDR)
      */
-    'net:vnet.addressSpace': (key: string): string => {
+    "net:vnet.addressSpace": (key: string): string => {
       const template = getVNetTemplate(key as VNetTemplateKey);
-      return template?.addressSpace[0] || '';
+      return template?.addressSpace[0] || "";
     },
 
     /**
      * Get all VNet address spaces
      */
-    'net:vnet.addressSpaces': (key: string): string => {
+    "net:vnet.addressSpaces": (key: string): string => {
       const template = getVNetTemplate(key as VNetTemplateKey);
-      return template ? JSON.stringify(template.addressSpace) : '[]';
+      return template ? JSON.stringify(template.addressSpace) : "[]";
     },
 
     /**
      * Get VNet subnets count
      */
-    'net:vnet.subnetCount': (key: string): number => {
+    "net:vnet.subnetCount": (key: string): number => {
       const template = getVNetTemplate(key as VNetTemplateKey);
       return template?.subnets.length || 0;
     },
@@ -149,29 +152,29 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get VNet subnets configuration
      */
-    'net:vnet.subnets': (key: string): string => {
+    "net:vnet.subnets": (key: string): string => {
       const template = getVNetTemplate(key as VNetTemplateKey);
-      return template ? JSON.stringify(template.subnets, null, 2) : '[]';
+      return template ? JSON.stringify(template.subnets, null, 2) : "[]";
     },
 
     /**
      * Calculate usable IPs in a CIDR block
      */
-    'net:vnet.usableIPs': (cidr: string): number => {
+    "net:vnet.usableIPs": (cidr: string): number => {
       return calculateUsableIPs(cidr);
     },
 
     /**
      * Validate CIDR notation
      */
-    'net:vnet.validateCIDR': (cidr: string): boolean => {
+    "net:vnet.validateCIDR": (cidr: string): boolean => {
       return validateCIDR(cidr);
     },
 
     /**
      * Check if IP is in CIDR range
      */
-    'net:vnet.ipInRange': (ip: string, cidr: string): boolean => {
+    "net:vnet.ipInRange": (ip: string, cidr: string): boolean => {
       return isIPInCIDR(ip, cidr);
     },
 
@@ -182,15 +185,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get subnet pattern configuration
      */
-    'net:subnet.pattern': (key: string): string => {
+    "net:subnet.pattern": (key: string): string => {
       const pattern = getSubnetPattern(key as SubnetPatternKey);
-      return pattern ? JSON.stringify(pattern, null, 2) : '{}';
+      return pattern ? JSON.stringify(pattern, null, 2) : "{}";
     },
 
     /**
      * Get subnet pattern name
      */
-    'net:subnet.name': (key: string): string => {
+    "net:subnet.name": (key: string): string => {
       const pattern = getSubnetPattern(key as SubnetPatternKey);
       return pattern?.name || key;
     },
@@ -198,31 +201,31 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get subnet pattern description
      */
-    'net:subnet.description': (key: string): string => {
+    "net:subnet.description": (key: string): string => {
       const pattern = getSubnetPattern(key as SubnetPatternKey);
-      return pattern?.description || '';
+      return pattern?.description || "";
     },
 
     /**
      * Get subnet address prefix
      */
-    'net:subnet.addressPrefix': (key: string): string => {
+    "net:subnet.addressPrefix": (key: string): string => {
       const pattern = getSubnetPattern(key as SubnetPatternKey);
-      return pattern?.addressPrefix || '';
+      return pattern?.addressPrefix || "";
     },
 
     /**
      * Get subnet service endpoints
      */
-    'net:subnet.serviceEndpoints': (key: string): string => {
+    "net:subnet.serviceEndpoints": (key: string): string => {
       const pattern = getSubnetPattern(key as SubnetPatternKey);
-      return pattern ? JSON.stringify(pattern.serviceEndpoints || []) : '[]';
+      return pattern ? JSON.stringify(pattern.serviceEndpoints || []) : "[]";
     },
 
     /**
      * Check if subnets overlap
      */
-    'net:subnet.overlap': (cidr1: string, cidr2: string): boolean => {
+    "net:subnet.overlap": (cidr1: string, cidr2: string): boolean => {
       return subnetsOverlap(cidr1, cidr2);
     },
 
@@ -233,15 +236,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get NSG rule configuration
      */
-    'net:nsg.rule': (key: string): string => {
+    "net:nsg.rule": (key: string): string => {
       const rule = getNsgRule(key as NsgRuleKey);
-      return rule ? JSON.stringify(rule, null, 2) : '{}';
+      return rule ? JSON.stringify(rule, null, 2) : "{}";
     },
 
     /**
      * Get NSG rule name
      */
-    'net:nsg.ruleName': (key: string): string => {
+    "net:nsg.ruleName": (key: string): string => {
       const rule = getNsgRule(key as NsgRuleKey);
       return rule?.name || key;
     },
@@ -249,7 +252,7 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get NSG rule priority
      */
-    'net:nsg.rulePriority': (key: string): number => {
+    "net:nsg.rulePriority": (key: string): number => {
       const rule = getNsgRule(key as NsgRuleKey);
       return rule?.priority || 1000;
     },
@@ -257,15 +260,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get NSG template configuration
      */
-    'net:nsg.template': (key: string): string => {
+    "net:nsg.template": (key: string): string => {
       const template = getNsgTemplate(key as NsgTemplateKey);
-      return template ? JSON.stringify(template, null, 2) : '{}';
+      return template ? JSON.stringify(template, null, 2) : "{}";
     },
 
     /**
      * Get NSG template name
      */
-    'net:nsg.templateName': (key: string): string => {
+    "net:nsg.templateName": (key: string): string => {
       const template = getNsgTemplate(key as NsgTemplateKey);
       return template?.name || key;
     },
@@ -273,7 +276,7 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get NSG template rules count
      */
-    'net:nsg.rulesCount': (key: string): number => {
+    "net:nsg.rulesCount": (key: string): number => {
       const template = getNsgTemplate(key as NsgTemplateKey);
       return template?.rules.length || 0;
     },
@@ -285,15 +288,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get Load Balancer template configuration
      */
-    'net:lb.template': (key: string): string => {
+    "net:lb.template": (key: string): string => {
       const template = getLoadBalancerTemplate(key as LoadBalancerTemplateKey);
-      return template ? JSON.stringify(template, null, 2) : '{}';
+      return template ? JSON.stringify(template, null, 2) : "{}";
     },
 
     /**
      * Get Load Balancer template name
      */
-    'net:lb.name': (key: string): string => {
+    "net:lb.name": (key: string): string => {
       const template = getLoadBalancerTemplate(key as LoadBalancerTemplateKey);
       return template?.name || key;
     },
@@ -301,15 +304,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get Load Balancer SKU
      */
-    'net:lb.sku': (key: string): string => {
+    "net:lb.sku": (key: string): string => {
       const template = getLoadBalancerTemplate(key as LoadBalancerTemplateKey);
-      return template?.sku || 'Standard';
+      return template?.sku || "Standard";
     },
 
     /**
      * Check if Load Balancer is public
      */
-    'net:lb.isPublic': (key: string): boolean => {
+    "net:lb.isPublic": (key: string): boolean => {
       const template = getLoadBalancerTemplate(key as LoadBalancerTemplateKey);
       return template?.isPublic || false;
     },
@@ -317,15 +320,18 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get health probe configuration
      */
-    'net:lb.healthProbe': (key: string): string => {
+    "net:lb.healthProbe": (key: string): string => {
       const probe = getHealthProbe(key as HealthProbeKey);
-      return probe ? JSON.stringify(probe, null, 2) : '{}';
+      return probe ? JSON.stringify(probe, null, 2) : "{}";
     },
 
     /**
      * Calculate health check duration
      */
-    'net:lb.healthCheckDuration': (intervalSeconds: number, probeCount: number): number => {
+    "net:lb.healthCheckDuration": (
+      intervalSeconds: number,
+      probeCount: number,
+    ): number => {
       return calculateHealthCheckDuration(intervalSeconds, probeCount);
     },
 
@@ -336,15 +342,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get Application Gateway template configuration
      */
-    'net:appgw.template': (key: string): string => {
+    "net:appgw.template": (key: string): string => {
       const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
-      return template ? JSON.stringify(template, null, 2) : '{}';
+      return template ? JSON.stringify(template, null, 2) : "{}";
     },
 
     /**
      * Get Application Gateway template name
      */
-    'net:appgw.name': (key: string): string => {
+    "net:appgw.name": (key: string): string => {
       const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
       return template?.name || key;
     },
@@ -352,15 +358,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get Application Gateway SKU
      */
-    'net:appgw.sku': (key: string): string => {
+    "net:appgw.sku": (key: string): string => {
       const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
-      return template?.sku || 'Standard_v2';
+      return template?.sku || "Standard_v2";
     },
 
     /**
      * Check if WAF is enabled
      */
-    'net:appgw.wafEnabled': (key: string): boolean => {
+    "net:appgw.wafEnabled": (key: string): boolean => {
       const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
       return template?.enableWaf || false;
     },
@@ -368,7 +374,7 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get Application Gateway capacity
      */
-    'net:appgw.capacity': (key: string): number => {
+    "net:appgw.capacity": (key: string): number => {
       const template = getAppGatewayTemplate(key as AppGatewayTemplateKey);
       return template?.capacity || 2;
     },
@@ -380,15 +386,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get Bastion template configuration
      */
-    'net:bastion.template': (key: string): string => {
+    "net:bastion.template": (key: string): string => {
       const template = getBastionTemplate(key as BastionTemplateKey);
-      return template ? JSON.stringify(template, null, 2) : '{}';
+      return template ? JSON.stringify(template, null, 2) : "{}";
     },
 
     /**
      * Get Bastion template name
      */
-    'net:bastion.name': (key: string): string => {
+    "net:bastion.name": (key: string): string => {
       const template = getBastionTemplate(key as BastionTemplateKey);
       return template?.name || key;
     },
@@ -396,15 +402,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get Bastion SKU
      */
-    'net:bastion.sku': (key: string): string => {
+    "net:bastion.sku": (key: string): string => {
       const template = getBastionTemplate(key as BastionTemplateKey);
-      return template?.sku || 'Standard';
+      return template?.sku || "Standard";
     },
 
     /**
      * Get Bastion scale units
      */
-    'net:bastion.scaleUnits': (key: string): number => {
+    "net:bastion.scaleUnits": (key: string): number => {
       const template = getBastionTemplate(key as BastionTemplateKey);
       return template?.scaleUnits || 2;
     },
@@ -412,18 +418,21 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Check if Bastion feature is enabled
      */
-    'net:bastion.featureEnabled': (templateKey: string, feature: string): boolean => {
+    "net:bastion.featureEnabled": (
+      templateKey: string,
+      feature: string,
+    ): boolean => {
       const template = getBastionTemplate(templateKey as BastionTemplateKey);
       if (!template) return false;
-      
+
       switch (feature) {
-        case 'tunneling':
+        case "tunneling":
           return template.enableTunneling;
-        case 'ipConnect':
+        case "ipConnect":
           return template.enableIpConnect;
-        case 'shareableLink':
+        case "shareableLink":
           return template.enableShareableLink;
-        case 'fileCopy':
+        case "fileCopy":
           return template.enableFileCopy;
         default:
           return false;
@@ -433,22 +442,25 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get Bastion feature configuration
      */
-    'net:bastion.feature': (key: string): string => {
+    "net:bastion.feature": (key: string): string => {
       const feature = getBastionFeature(key as BastionFeatureKey);
-      return feature ? JSON.stringify(feature, null, 2) : '{}';
+      return feature ? JSON.stringify(feature, null, 2) : "{}";
     },
 
     /**
      * Check if feature is available for SKU
      */
-    'net:bastion.featureAvailable': (feature: string, sku: string): boolean => {
-      return isFeatureAvailable(feature as BastionFeatureKey, sku as 'Basic' | 'Standard' | 'Premium');
+    "net:bastion.featureAvailable": (feature: string, sku: string): boolean => {
+      return isFeatureAvailable(
+        feature as BastionFeatureKey,
+        sku as "Basic" | "Standard" | "Premium",
+      );
     },
 
     /**
      * Get recommended scale units
      */
-    'net:bastion.recommendedScale': (sessions: number): number => {
+    "net:bastion.recommendedScale": (sessions: number): number => {
       return getRecommendedScaleUnits(sessions);
     },
 
@@ -459,15 +471,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get VNet peering template configuration
      */
-    'net:peering.template': (key: string): string => {
+    "net:peering.template": (key: string): string => {
       const template = getVNetPeeringTemplate(key as VNetPeeringTemplateKey);
-      return template ? JSON.stringify(template, null, 2) : '{}';
+      return template ? JSON.stringify(template, null, 2) : "{}";
     },
 
     /**
      * Get VNet peering template name
      */
-    'net:peering.name': (key: string): string => {
+    "net:peering.name": (key: string): string => {
       const template = getVNetPeeringTemplate(key as VNetPeeringTemplateKey);
       return template?.name || key;
     },
@@ -475,15 +487,15 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get peering topology type
      */
-    'net:peering.topology': (key: string): string => {
+    "net:peering.topology": (key: string): string => {
       const template = getVNetPeeringTemplate(key as VNetPeeringTemplateKey);
-      return template?.topology || 'point-to-point';
+      return template?.topology || "point-to-point";
     },
 
     /**
      * Check if gateway transit is enabled
      */
-    'net:peering.gatewayTransit': (key: string): boolean => {
+    "net:peering.gatewayTransit": (key: string): boolean => {
       const template = getVNetPeeringTemplate(key as VNetPeeringTemplateKey);
       return template?.allowGatewayTransit || false;
     },
@@ -491,30 +503,30 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Get hub-and-spoke topology
      */
-    'net:peering.hubSpoke': (key: string): string => {
+    "net:peering.hubSpoke": (key: string): string => {
       const topology = getHubSpokeTopology(key as HubSpokeTopologyKey);
-      return topology ? JSON.stringify(topology, null, 2) : '{}';
+      return topology ? JSON.stringify(topology, null, 2) : "{}";
     },
 
     /**
      * Get peering scenario
      */
-    'net:peering.scenario': (key: string): string => {
+    "net:peering.scenario": (key: string): string => {
       const scenario = getPeeringScenario(key as PeeringScenarioKey);
-      return scenario ? JSON.stringify(scenario, null, 2) : '{}';
+      return scenario ? JSON.stringify(scenario, null, 2) : "{}";
     },
 
     /**
      * Calculate mesh peering count
      */
-    'net:peering.meshCount': (vnetCount: number): number => {
+    "net:peering.meshCount": (vnetCount: number): number => {
       return calculateMeshPeeringCount(vnetCount);
     },
 
     /**
      * Calculate hub-spoke peering count
      */
-    'net:peering.hubSpokeCount': (spokeCount: number): number => {
+    "net:peering.hubSpokeCount": (spokeCount: number): number => {
       return calculateHubSpokePeeringCount(spokeCount);
     },
 
@@ -525,69 +537,81 @@ export function getNetworkingHelpers(): Record<string, (...args: any[]) => any> 
     /**
      * Generate networking resource name
      */
-    'net:common.resourceName': (baseName: string, resourceType: string, suffix?: string): string => {
-      const cleanBase = baseName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-      const cleanType = resourceType.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    "net:common.resourceName": (
+      baseName: string,
+      resourceType: string,
+      suffix?: string,
+    ): string => {
+      const cleanBase = baseName.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      const cleanType = resourceType.toLowerCase().replace(/[^a-z0-9-]/g, "-");
       const parts = [cleanBase, cleanType];
-      
+
       if (suffix) {
-        const cleanSuffix = suffix.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        const cleanSuffix = suffix.toLowerCase().replace(/[^a-z0-9-]/g, "-");
         parts.push(cleanSuffix);
       }
-      
-      return parts.join('-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+      return parts.join("-").replace(/-+/g, "-").replace(/^-|-$/g, "");
     },
 
     /**
      * Generate VNet resource name
      */
-    'net:common.vnetName': (baseName: string): string => {
-      return `vnet-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    "net:common.vnetName": (baseName: string): string => {
+      return `vnet-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     },
 
     /**
      * Generate subnet resource name
      */
-    'net:common.subnetName': (baseName: string, tier?: string): string => {
-      const parts = ['subnet', baseName];
+    "net:common.subnetName": (baseName: string, tier?: string): string => {
+      const parts = ["subnet", baseName];
       if (tier) parts.push(tier);
-      return parts.join('-').toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      return parts
+        .join("-")
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-");
     },
 
     /**
      * Generate NSG resource name
      */
-    'net:common.nsgName': (baseName: string): string => {
-      return `nsg-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    "net:common.nsgName": (baseName: string): string => {
+      return `nsg-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     },
 
     /**
      * Generate Load Balancer resource name
      */
-    'net:common.lbName': (baseName: string): string => {
-      return `lb-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    "net:common.lbName": (baseName: string): string => {
+      return `lb-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     },
 
     /**
      * Generate Application Gateway resource name
      */
-    'net:common.appgwName': (baseName: string): string => {
-      return `appgw-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    "net:common.appgwName": (baseName: string): string => {
+      return `appgw-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     },
 
     /**
      * Generate Bastion resource name
      */
-    'net:common.bastionName': (baseName: string): string => {
-      return `bastion-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    "net:common.bastionName": (baseName: string): string => {
+      return `bastion-${baseName}`.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     },
 
     /**
      * Generate peering resource name
      */
-    'net:common.peeringName': (sourceVNet: string, targetVNet: string): string => {
-      return `peer-${sourceVNet}-to-${targetVNet}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-    }
+    "net:common.peeringName": (
+      sourceVNet: string,
+      targetVNet: string,
+    ): string => {
+      return `peer-${sourceVNet}-to-${targetVNet}`
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-");
+    },
   };
 }
 
@@ -677,5 +701,5 @@ export {
   getPeeringScenario,
   getAllVNetPeeringTemplates,
   calculateMeshPeeringCount,
-  calculateHubSpokePeeringCount
+  calculateHubSpokePeeringCount,
 };

@@ -5,6 +5,59 @@ All notable changes to the Azure Marketplace Generator VM Plugin will be documen
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2025-10-27
+
+### Added
+- **Accelerated Networking**: High-performance networking with SR-IOV support
+  - New parameter: `enableAcceleratedNetworking` (boolean, default: true for supported VM sizes)
+  - Enables up to 30 Gbps network throughput on supported VM sizes
+  - Significantly reduces network latency and jitter
+  - Applied to network interface resource
+  - Benefits: HPC workloads, low-latency applications, high-throughput scenarios
+  - Note: Requires VM sizes that support accelerated networking (most modern sizes)
+
+- **Trusted Launch**: Gen2 VM security baseline with UEFI firmware
+  - New parameter: `securityType` (string, allowed: "TrustedLaunch", "Standard")
+  - New parameter: `secureBootEnabled` (boolean, default: true)
+  - New parameter: `vTpmEnabled` (boolean, default: true)
+  - Provides protection against boot kits, rootkits, and kernel-level malware
+  - Secure Boot validates boot chain integrity
+  - vTPM enables attestation and BitLocker disk encryption
+  - Requirements: Gen2 VM images only
+  - Applied via `securityProfile` in VM properties
+  - Benefits: Industry security baseline, compliance requirements, zero-trust architecture
+
+- **Boot Diagnostics**: Enhanced VM troubleshooting and monitoring
+  - New parameter: `bootDiagnosticsEnabled` (boolean, default: true)
+  - New parameter: `bootDiagnosticsStorageUri` (string, optional - leave empty for managed storage)
+  - Captures serial console output and screenshot during boot
+  - Essential for diagnosing boot failures and kernel panics
+  - Managed storage option (no storage URI needed) or custom storage account
+  - Applied via `diagnosticsProfile` in VM properties
+  - Benefits: Faster troubleshooting, reduced downtime, supportability
+
+### Changed
+- Template metadata version updated from 1.6.0 to 1.9.0
+
+### Documentation
+- All three features documented with configuration examples
+- Included best practices for combining features (e.g., Trusted Launch + Accelerated Networking)
+- Added supportability guidance (Gen2 requirements for Trusted Launch)
+
+## [1.8.2] - 2025-10-27
+
+### Fixed
+- **Metadata Version Sync**: Updated plugin metadata to correctly report version 1.8.2 (was incorrectly hardcoded as 1.6.0)
+  - Fixed `getMetadata()` method in `src/index.ts` to use actual package version
+  - Ensures consistency between package.json and runtime metadata
+
+### Changed
+- **Documentation**: Enhanced README.md with comprehensive programmatic usage section
+  - Added CommonJS import examples showing correct destructured pattern: `const { VmPlugin } = require('@hoiltd/azmp-plugin-vm')`
+  - Added ESM import examples: `import { VmPlugin } from '@hoiltd/azmp-plugin-vm'`
+  - Included plugin initialization code samples
+  - Clarified dual export pattern (named `VmPlugin` + default export)
+
 ## [1.7.0] - 2025-10-25
 
 ### Added - Day 7: Monitoring, Alerts & Observability

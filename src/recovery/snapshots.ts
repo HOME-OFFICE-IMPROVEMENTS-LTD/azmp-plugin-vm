@@ -1,9 +1,9 @@
 /**
  * Disk Snapshots Module
- * 
+ *
  * Provides helpers for Azure disk snapshots and restore points.
  * Enables point-in-time backup and fast recovery for VM disks.
- * 
+ *
  * @module recovery/snapshots
  */
 
@@ -25,7 +25,7 @@ export interface RestorePointCollectionConfig {
   name: string;
   vmName: string;
   location?: string;
-  source?: 'Manual' | 'Schedule';
+  source?: "Manual" | "Schedule";
 }
 
 /**
@@ -36,15 +36,18 @@ export interface RestorePointConfig {
   collectionName: string;
   vmName: string;
   excludeDisks?: string[];
-  consistencyMode?: 'ApplicationConsistent' | 'CrashConsistent' | 'FileSystemConsistent';
+  consistencyMode?:
+    | "ApplicationConsistent"
+    | "CrashConsistent"
+    | "FileSystemConsistent";
 }
 
 /**
  * Generate disk snapshot
- * 
+ *
  * @param config - Snapshot configuration
  * @returns Snapshot template
- * 
+ *
  * @example
  * ```handlebars
  * {{recovery:snapshot name="mySnapshot" diskName="myDisk" incremental=true}}
@@ -52,57 +55,59 @@ export interface RestorePointConfig {
  */
 export function diskSnapshot(config: SnapshotConfig): any {
   return {
-    type: 'Microsoft.Compute/snapshots',
-    apiVersion: '2023-04-02',
+    type: "Microsoft.Compute/snapshots",
+    apiVersion: "2023-04-02",
     name: config.name,
-    location: config.location || '[resourceGroup().location]',
+    location: config.location || "[resourceGroup().location]",
     sku: {
-      name: config.incremental ? 'Standard_LRS' : 'Standard_LRS'
+      name: config.incremental ? "Standard_LRS" : "Standard_LRS",
     },
     properties: {
       creationData: {
-        createOption: 'Copy',
-        sourceResourceId: `[resourceId('Microsoft.Compute/disks', '${config.diskName}')]`
+        createOption: "Copy",
+        sourceResourceId: `[resourceId('Microsoft.Compute/disks', '${config.diskName}')]`,
       },
       incremental: config.incremental ?? false,
-      networkAccessPolicy: 'AllowAll',
-      publicNetworkAccess: 'Enabled'
+      networkAccessPolicy: "AllowAll",
+      publicNetworkAccess: "Enabled",
     },
-    tags: config.tags || {}
+    tags: config.tags || {},
   };
 }
 
 /**
  * Generate restore point collection
- * 
+ *
  * @param config - Restore point collection configuration
  * @returns Restore point collection template
- * 
+ *
  * @example
  * ```handlebars
  * {{recovery:restorePointCollection name="myCollection" vmName="myVM"}}
  * ```
  */
-export function restorePointCollection(config: RestorePointCollectionConfig): any {
+export function restorePointCollection(
+  config: RestorePointCollectionConfig,
+): any {
   return {
-    type: 'Microsoft.Compute/restorePointCollections',
-    apiVersion: '2023-09-01',
+    type: "Microsoft.Compute/restorePointCollections",
+    apiVersion: "2023-09-01",
     name: config.name,
-    location: config.location || '[resourceGroup().location]',
+    location: config.location || "[resourceGroup().location]",
     properties: {
       source: {
-        id: `[resourceId('Microsoft.Compute/virtualMachines', '${config.vmName}')]`
-      }
-    }
+        id: `[resourceId('Microsoft.Compute/virtualMachines', '${config.vmName}')]`,
+      },
+    },
   };
 }
 
 /**
  * Generate restore point for VM
- * 
+ *
  * @param config - Restore point configuration
  * @returns Restore point template
- * 
+ *
  * @example
  * ```handlebars
  * {{recovery:restorePoint name="rp-20241022" collectionName="myCollection" vmName="myVM"}}
@@ -110,19 +115,21 @@ export function restorePointCollection(config: RestorePointCollectionConfig): an
  */
 export function vmRestorePoint(config: RestorePointConfig): any {
   const restorePoint: any = {
-    type: 'Microsoft.Compute/restorePointCollections/restorePoints',
-    apiVersion: '2023-09-01',
+    type: "Microsoft.Compute/restorePointCollections/restorePoints",
+    apiVersion: "2023-09-01",
     name: `${config.collectionName}/${config.name}`,
     properties: {
-      consistencyMode: config.consistencyMode || 'CrashConsistent'
-    }
+      consistencyMode: config.consistencyMode || "CrashConsistent",
+    },
   };
 
   // Exclude specific disks if specified
   if (config.excludeDisks && config.excludeDisks.length > 0) {
-    restorePoint.properties.excludeDisks = config.excludeDisks.map(diskName => ({
-      id: `[resourceId('Microsoft.Compute/disks', '${diskName}')]`
-    }));
+    restorePoint.properties.excludeDisks = config.excludeDisks.map(
+      (diskName) => ({
+        id: `[resourceId('Microsoft.Compute/disks', '${diskName}')]`,
+      }),
+    );
   }
 
   return restorePoint;
@@ -130,12 +137,12 @@ export function vmRestorePoint(config: RestorePointConfig): any {
 
 /**
  * Generate disk from snapshot
- * 
+ *
  * @param diskName - New disk name
  * @param snapshotName - Source snapshot name
  * @param location - Azure region
  * @returns Disk creation template
- * 
+ *
  * @example
  * ```handlebars
  * {{recovery:diskFromSnapshot diskName="restoredDisk" snapshotName="mySnapshot"}}
@@ -144,25 +151,25 @@ export function vmRestorePoint(config: RestorePointConfig): any {
 export function diskFromSnapshot(
   diskName: string,
   snapshotName: string,
-  location?: string
+  location?: string,
 ): any {
   return {
-    type: 'Microsoft.Compute/disks',
-    apiVersion: '2023-04-02',
+    type: "Microsoft.Compute/disks",
+    apiVersion: "2023-04-02",
     name: diskName,
-    location: location || '[resourceGroup().location]',
+    location: location || "[resourceGroup().location]",
     sku: {
-      name: 'Premium_LRS' // Can be changed to Standard_LRS, StandardSSD_LRS, etc.
+      name: "Premium_LRS", // Can be changed to Standard_LRS, StandardSSD_LRS, etc.
     },
     properties: {
       creationData: {
-        createOption: 'Copy',
-        sourceResourceId: `[resourceId('Microsoft.Compute/snapshots', '${snapshotName}')]`
+        createOption: "Copy",
+        sourceResourceId: `[resourceId('Microsoft.Compute/snapshots', '${snapshotName}')]`,
       },
       diskSizeGB: null, // Will be inherited from snapshot
       diskIOPSReadWrite: null,
-      diskMBpsReadWrite: null
-    }
+      diskMBpsReadWrite: null,
+    },
   };
 }
 
@@ -174,42 +181,42 @@ export const SnapshotRetentionPolicies = {
    * Hourly snapshots for 24 hours
    */
   hourly: {
-    frequency: 'Hourly',
+    frequency: "Hourly",
     retention: 24,
-    description: 'Keep 24 hourly snapshots'
+    description: "Keep 24 hourly snapshots",
   },
-  
+
   /**
    * Daily snapshots for 7 days
    */
   daily: {
-    frequency: 'Daily',
+    frequency: "Daily",
     retention: 7,
-    description: 'Keep 7 daily snapshots'
+    description: "Keep 7 daily snapshots",
   },
-  
+
   /**
    * Weekly snapshots for 4 weeks
    */
   weekly: {
-    frequency: 'Weekly',
+    frequency: "Weekly",
     retention: 4,
-    description: 'Keep 4 weekly snapshots'
+    description: "Keep 4 weekly snapshots",
   },
-  
+
   /**
    * Monthly snapshots for 12 months
    */
   monthly: {
-    frequency: 'Monthly',
+    frequency: "Monthly",
     retention: 12,
-    description: 'Keep 12 monthly snapshots'
-  }
+    description: "Keep 12 monthly snapshots",
+  },
 };
 
 /**
  * Calculate snapshot storage cost
- * 
+ *
  * @param diskSizeGB - Disk size in GB
  * @param isIncremental - Whether using incremental snapshots
  * @param snapshotCount - Number of snapshots to retain
@@ -220,15 +227,16 @@ export function estimateSnapshotCost(
   diskSizeGB: number,
   isIncremental: boolean,
   snapshotCount: number = 7,
-  changeRate: number = 0.1
+  changeRate: number = 0.1,
 ): number {
   const pricePerGBMonth = 0.05; // $0.05/GB per month for snapshot storage
-  
+
   if (isIncremental) {
     // First snapshot: full size
     // Subsequent snapshots: incremental based on change rate
     const firstSnapshotGB = diskSizeGB;
-    const incrementalSnapshotsGB = diskSizeGB * changeRate * (snapshotCount - 1);
+    const incrementalSnapshotsGB =
+      diskSizeGB * changeRate * (snapshotCount - 1);
     const totalGB = firstSnapshotGB + incrementalSnapshotsGB;
     return Math.round(totalGB * pricePerGBMonth * 100) / 100;
   } else {
@@ -240,18 +248,18 @@ export function estimateSnapshotCost(
 
 /**
  * Calculate restore time estimate
- * 
+ *
  * @param diskSizeGB - Disk size in GB
  * @param isIncremental - Whether using incremental snapshot
  * @returns Estimated restore time in minutes
  */
 export function estimateRestoreTime(
   diskSizeGB: number,
-  isIncremental: boolean
+  isIncremental: boolean,
 ): number {
   // Base time for disk creation
   const baseTime = 5;
-  
+
   if (isIncremental) {
     // Incremental snapshots restore faster
     const dataTime = (diskSizeGB / 100) * 2; // 2 min per 100GB
@@ -265,12 +273,12 @@ export function estimateRestoreTime(
 
 /**
  * Get recommended snapshot schedule based on workload type
- * 
+ *
  * @param workloadType - Type of workload
  * @returns Snapshot schedule recommendation
  */
 export function getRecommendedSnapshotSchedule(
-  workloadType: 'development' | 'production' | 'critical'
+  workloadType: "development" | "production" | "critical",
 ): {
   frequency: string;
   retention: number;
@@ -278,43 +286,44 @@ export function getRecommendedSnapshotSchedule(
   description: string;
 } {
   switch (workloadType) {
-    case 'development':
+    case "development":
       return {
-        frequency: 'Daily',
+        frequency: "Daily",
         retention: 3,
         incremental: true,
-        description: 'Daily snapshots, 3-day retention for quick rollback'
+        description: "Daily snapshots, 3-day retention for quick rollback",
       };
-    
-    case 'production':
+
+    case "production":
       return {
-        frequency: 'Daily',
+        frequency: "Daily",
         retention: 7,
         incremental: true,
-        description: 'Daily snapshots, 7-day retention for week-long recovery'
+        description: "Daily snapshots, 7-day retention for week-long recovery",
       };
-    
-    case 'critical':
+
+    case "critical":
       return {
-        frequency: 'Hourly',
+        frequency: "Hourly",
         retention: 24,
         incremental: true,
-        description: 'Hourly snapshots, 24-hour retention for minimal data loss'
+        description:
+          "Hourly snapshots, 24-hour retention for minimal data loss",
       };
-    
+
     default:
       return {
-        frequency: 'Daily',
+        frequency: "Daily",
         retention: 7,
         incremental: true,
-        description: 'Default: Daily snapshots, 7-day retention'
+        description: "Default: Daily snapshots, 7-day retention",
       };
   }
 }
 
 /**
  * Validate snapshot configuration
- * 
+ *
  * @param config - Snapshot configuration
  * @returns Validation result
  */
@@ -328,38 +337,42 @@ export function validateSnapshotConfig(config: SnapshotConfig): {
 
   // Validate name
   if (!config.name || config.name.length === 0) {
-    errors.push('Snapshot name is required');
+    errors.push("Snapshot name is required");
   }
 
   // Validate name length and characters
   if (config.name.length > 80) {
-    errors.push('Snapshot name must be 80 characters or less');
+    errors.push("Snapshot name must be 80 characters or less");
   }
 
   if (!/^[a-zA-Z0-9_-]+$/.test(config.name)) {
-    errors.push('Snapshot name can only contain letters, numbers, underscores, and hyphens');
+    errors.push(
+      "Snapshot name can only contain letters, numbers, underscores, and hyphens",
+    );
   }
 
   // Validate disk name
   if (!config.diskName || config.diskName.length === 0) {
-    errors.push('Disk name is required');
+    errors.push("Disk name is required");
   }
 
   // Recommendations
   if (!config.incremental) {
-    warnings.push('Consider using incremental snapshots to reduce storage costs');
+    warnings.push(
+      "Consider using incremental snapshots to reduce storage costs",
+    );
   }
 
   return {
     valid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
 /**
  * Snapshots best practices documentation
- * 
+ *
  * @returns Best practices as markdown string
  */
 export function snapshotsBestPractices(): string {
@@ -560,5 +573,5 @@ export const snapshots = {
   estimateRestoreTime,
   getRecommendedSnapshotSchedule,
   validateSnapshotConfig,
-  snapshotsBestPractices
+  snapshotsBestPractices,
 };

@@ -1,4 +1,4 @@
-import Handlebars from 'handlebars';
+import Handlebars from "handlebars";
 
 /**
  * Options for alert:dynamicMetricAlert helper
@@ -17,16 +17,16 @@ export interface DynamicMetricAlertOptions {
   criteria: {
     metricName: string;
     metricNamespace?: string;
-    operator: 'GreaterThan' | 'LessThan' | 'GreaterOrLessThan';
-    alertSensitivity: 'Low' | 'Medium' | 'High';
+    operator: "GreaterThan" | "LessThan" | "GreaterOrLessThan";
+    alertSensitivity: "Low" | "Medium" | "High";
     failingPeriods: {
       numberOfEvaluationPeriods: number;
       minFailingPeriodsToAlert: number;
     };
-    timeAggregation: 'Average' | 'Minimum' | 'Maximum' | 'Total' | 'Count';
+    timeAggregation: "Average" | "Minimum" | "Maximum" | "Total" | "Count";
     dimensions?: Array<{
       name: string;
-      operator: 'Include' | 'Exclude';
+      operator: "Include" | "Exclude";
       values: string[];
     }>;
     ignoreDataBefore?: string; // ISO 8601 date
@@ -38,7 +38,7 @@ export interface DynamicMetricAlertOptions {
 
 /**
  * Handlebars helper to create dynamic threshold metric alert using ML
- * 
+ *
  * @example
  * ```handlebars
  * {{{alert:dynamicMetricAlert
@@ -50,30 +50,35 @@ export interface DynamicMetricAlertOptions {
  * }}}
  * ```
  */
-export function alertDynamicMetricAlert(this: unknown, hash: DynamicMetricAlertOptions): string {
+export function alertDynamicMetricAlert(
+  this: unknown,
+  hash: DynamicMetricAlertOptions,
+): string {
   if (!hash || !hash.name) {
-    throw new Error('alert:dynamicMetricAlert requires name parameter');
+    throw new Error("alert:dynamicMetricAlert requires name parameter");
   }
   if (!hash.scopes) {
-    throw new Error('alert:dynamicMetricAlert requires scopes parameter');
+    throw new Error("alert:dynamicMetricAlert requires scopes parameter");
   }
   if (!hash.criteria) {
-    throw new Error('alert:dynamicMetricAlert requires criteria parameter');
+    throw new Error("alert:dynamicMetricAlert requires criteria parameter");
   }
 
   // Parse criteria if it's a JSON string
   let criteriaArray = hash.criteria;
-  if (typeof hash.criteria === 'string') {
+  if (typeof hash.criteria === "string") {
     try {
       criteriaArray = JSON.parse(hash.criteria);
     } catch (e) {
-      throw new Error(`alert:dynamicMetricAlert criteria must be valid JSON array: ${e}`);
+      throw new Error(
+        `alert:dynamicMetricAlert criteria must be valid JSON array: ${e}`,
+      );
     }
   }
 
   // Parse scopes
   let scopesArray: string[];
-  if (typeof hash.scopes === 'string') {
+  if (typeof hash.scopes === "string") {
     try {
       scopesArray = JSON.parse(hash.scopes);
     } catch (e) {
@@ -86,7 +91,7 @@ export function alertDynamicMetricAlert(this: unknown, hash: DynamicMetricAlertO
   // Parse action groups if provided
   let actionGroupsArray: string[] | undefined;
   if (hash.actionGroups) {
-    if (typeof hash.actionGroups === 'string') {
+    if (typeof hash.actionGroups === "string") {
       try {
         actionGroupsArray = JSON.parse(hash.actionGroups);
       } catch (e) {
@@ -98,34 +103,43 @@ export function alertDynamicMetricAlert(this: unknown, hash: DynamicMetricAlertO
   }
 
   const result = {
-    type: 'Microsoft.Insights/metricAlerts',
-    apiVersion: '2018-03-01',
+    type: "Microsoft.Insights/metricAlerts",
+    apiVersion: "2018-03-01",
     name: hash.name,
-    location: 'global',
+    location: "global",
     ...(hash.tags && { tags: hash.tags }),
     properties: {
       description: hash.description || `Dynamic metric alert for ${hash.name}`,
       severity: hash.severity,
       enabled: hash.enabled !== undefined ? hash.enabled : true,
       scopes: scopesArray,
-      evaluationFrequency: hash.evaluationFrequency || 'PT1M',
-      windowSize: hash.windowSize || 'PT5M',
-      ...(hash.targetResourceType && { targetResourceType: hash.targetResourceType }),
-      ...(hash.targetResourceRegion && { targetResourceRegion: hash.targetResourceRegion }),
+      evaluationFrequency: hash.evaluationFrequency || "PT1M",
+      windowSize: hash.windowSize || "PT5M",
+      ...(hash.targetResourceType && {
+        targetResourceType: hash.targetResourceType,
+      }),
+      ...(hash.targetResourceRegion && {
+        targetResourceRegion: hash.targetResourceRegion,
+      }),
       criteria: {
-        'odata.type': 'Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria',
-        allOf: criteriaArray
+        "odata.type":
+          "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria",
+        allOf: criteriaArray,
       },
       autoMitigate: hash.autoMitigate !== undefined ? hash.autoMitigate : true,
-      ...(actionGroupsArray && actionGroupsArray.length > 0 && {
-        actions: actionGroupsArray.map(id => ({ actionGroupId: id }))
-      })
-    }
+      ...(actionGroupsArray &&
+        actionGroupsArray.length > 0 && {
+          actions: actionGroupsArray.map((id) => ({ actionGroupId: id })),
+        }),
+    },
   };
 
   return JSON.stringify(result, null, 2);
 }
 
 export function registerDynamicMetricAlertHelpers(): void {
-  Handlebars.registerHelper('alert:dynamicMetricAlert', alertDynamicMetricAlert);
+  Handlebars.registerHelper(
+    "alert:dynamicMetricAlert",
+    alertDynamicMetricAlert,
+  );
 }

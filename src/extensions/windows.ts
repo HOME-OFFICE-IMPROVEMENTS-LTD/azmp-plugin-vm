@@ -1,9 +1,9 @@
 /**
  * Windows VM Extensions Module
- * 
+ *
  * Provides Handlebars helpers for Windows-specific VM extensions
  * Supporting 8 essential Windows extensions for Azure VMs
- * 
+ *
  * @module extensions/windows
  */
 
@@ -35,11 +35,13 @@ export interface CustomScriptExtensionConfig {
 /**
  * 1. Microsoft.Compute.CustomScriptExtension
  * Execute PowerShell scripts for VM configuration and deployment
- * 
+ *
  * @param config - Script configuration
  * @returns Extension JSON object
  */
-export function customScriptExtension(config: CustomScriptExtensionConfig): WindowsExtension {
+export function customScriptExtension(
+  config: CustomScriptExtensionConfig,
+): WindowsExtension {
   const settings: Record<string, any> = {};
   const protectedSettings: Record<string, any> = {};
 
@@ -56,44 +58,48 @@ export function customScriptExtension(config: CustomScriptExtensionConfig): Wind
   }
 
   return {
-    name: 'CustomScriptExtension',
-    publisher: 'Microsoft.Compute',
-    type: 'CustomScriptExtension',
-    typeHandlerVersion: '1.10',
+    name: "CustomScriptExtension",
+    publisher: "Microsoft.Compute",
+    type: "CustomScriptExtension",
+    typeHandlerVersion: "1.10",
     autoUpgradeMinorVersion: true,
     settings: Object.keys(settings).length > 0 ? settings : undefined,
-    protectedSettings: Object.keys(protectedSettings).length > 0 ? protectedSettings : undefined
+    protectedSettings:
+      Object.keys(protectedSettings).length > 0 ? protectedSettings : undefined,
   };
 }
 
 /**
  * 2. Microsoft.EnterpriseCloud.Monitoring.MicrosoftMonitoringAgent
  * Azure Monitor and Log Analytics integration
- * 
+ *
  * @param workspaceId - Log Analytics workspace ID
  * @param workspaceKey - Log Analytics workspace key
  * @returns Extension JSON object
  */
-export function monitoringAgentExtension(workspaceId: string, workspaceKey: string): WindowsExtension {
+export function monitoringAgentExtension(
+  workspaceId: string,
+  workspaceKey: string,
+): WindowsExtension {
   return {
-    name: 'MicrosoftMonitoringAgent',
-    publisher: 'Microsoft.EnterpriseCloud.Monitoring',
-    type: 'MicrosoftMonitoringAgent',
-    typeHandlerVersion: '1.0',
+    name: "MicrosoftMonitoringAgent",
+    publisher: "Microsoft.EnterpriseCloud.Monitoring",
+    type: "MicrosoftMonitoringAgent",
+    typeHandlerVersion: "1.0",
     autoUpgradeMinorVersion: true,
     settings: {
-      workspaceId: workspaceId
+      workspaceId: workspaceId,
     },
     protectedSettings: {
-      workspaceKey: workspaceKey
-    }
+      workspaceKey: workspaceKey,
+    },
   };
 }
 
 /**
  * 3. Microsoft.Azure.Security.IaaSAntimalware
  * Windows Defender Antimalware configuration
- * 
+ *
  * @param config - Antimalware configuration
  * @returns Extension JSON object
  */
@@ -101,7 +107,7 @@ export interface AntimalwareConfig {
   realtimeProtection?: boolean;
   scheduledScanDay?: number; // 0-8: 0=Everyday, 1-7=Days, 8=Disabled
   scheduledScanTime?: number; // 0-1380 minutes from midnight
-  scheduledScanType?: 'Quick' | 'Full';
+  scheduledScanType?: "Quick" | "Full";
   exclusions?: {
     paths?: string[];
     extensions?: string[];
@@ -109,7 +115,9 @@ export interface AntimalwareConfig {
   };
 }
 
-export function antimalwareExtension(config: AntimalwareConfig = {}): WindowsExtension {
+export function antimalwareExtension(
+  config: AntimalwareConfig = {},
+): WindowsExtension {
   const settings = {
     AntimalwareEnabled: true,
     RealtimeProtectionEnabled: config.realtimeProtection ?? true,
@@ -117,29 +125,29 @@ export function antimalwareExtension(config: AntimalwareConfig = {}): WindowsExt
       isEnabled: config.scheduledScanDay !== 8,
       day: config.scheduledScanDay ?? 7, // Sunday by default
       time: config.scheduledScanTime ?? 120, // 2 AM by default
-      scanType: config.scheduledScanType ?? 'Quick'
+      scanType: config.scheduledScanType ?? "Quick",
     },
     Exclusions: config.exclusions ?? {
-      Paths: '',
-      Extensions: '',
-      Processes: ''
-    }
+      Paths: "",
+      Extensions: "",
+      Processes: "",
+    },
   };
 
   return {
-    name: 'IaaSAntimalware',
-    publisher: 'Microsoft.Azure.Security',
-    type: 'IaaSAntimalware',
-    typeHandlerVersion: '1.3',
+    name: "IaaSAntimalware",
+    publisher: "Microsoft.Azure.Security",
+    type: "IaaSAntimalware",
+    typeHandlerVersion: "1.3",
     autoUpgradeMinorVersion: true,
-    settings
+    settings,
   };
 }
 
 /**
  * 4. Microsoft.Powershell.DSC
  * PowerShell Desired State Configuration
- * 
+ *
  * @param config - DSC configuration
  * @returns Extension JSON object
  */
@@ -149,14 +157,14 @@ export interface DSCConfig {
   properties?: Record<string, any>;
   wmfVersion?: string;
   privacy?: {
-    dataCollection?: 'enable' | 'disable';
+    dataCollection?: "enable" | "disable";
   };
 }
 
 export function dscExtension(config: DSCConfig): WindowsExtension {
   const settings: Record<string, any> = {
     modulesUrl: config.modulesUrl,
-    configurationFunction: config.configurationFunction
+    configurationFunction: config.configurationFunction,
   };
 
   if (config.wmfVersion) {
@@ -167,23 +175,25 @@ export function dscExtension(config: DSCConfig): WindowsExtension {
     settings.privacy = config.privacy;
   }
 
-  const protectedSettings = config.properties ? { properties: config.properties } : undefined;
+  const protectedSettings = config.properties
+    ? { properties: config.properties }
+    : undefined;
 
   return {
-    name: 'DSC',
-    publisher: 'Microsoft.Powershell',
-    type: 'DSC',
-    typeHandlerVersion: '2.77',
+    name: "DSC",
+    publisher: "Microsoft.Powershell",
+    type: "DSC",
+    typeHandlerVersion: "2.77",
     autoUpgradeMinorVersion: true,
     settings,
-    protectedSettings
+    protectedSettings,
   };
 }
 
 /**
  * 5. Microsoft.Compute.JsonADDomainExtension
  * Active Directory domain join
- * 
+ *
  * @param config - Domain join configuration
  * @returns Extension JSON object
  */
@@ -196,30 +206,32 @@ export interface DomainJoinConfig {
   options?: number; // 0x00000001 = NETSETUP_JOIN_DOMAIN, 0x00000003 = with restart
 }
 
-export function domainJoinExtension(config: DomainJoinConfig): WindowsExtension {
+export function domainJoinExtension(
+  config: DomainJoinConfig,
+): WindowsExtension {
   return {
-    name: 'JsonADDomainExtension',
-    publisher: 'Microsoft.Compute',
-    type: 'JsonADDomainExtension',
-    typeHandlerVersion: '1.3',
+    name: "JsonADDomainExtension",
+    publisher: "Microsoft.Compute",
+    type: "JsonADDomainExtension",
+    typeHandlerVersion: "1.3",
     autoUpgradeMinorVersion: true,
     settings: {
       Name: config.domain,
-      OUPath: config.ouPath ?? '',
+      OUPath: config.ouPath ?? "",
       User: config.user,
       Restart: config.restart ?? true,
-      Options: config.options ?? 3
+      Options: config.options ?? 3,
     },
     protectedSettings: {
-      Password: config.password
-    }
+      Password: config.password,
+    },
   };
 }
 
 /**
  * 6. Microsoft.Azure.Diagnostics.IaaSDiagnostics
  * Diagnostic data collection and export
- * 
+ *
  * @param config - Diagnostics configuration
  * @returns Extension JSON object
  */
@@ -230,45 +242,48 @@ export interface DiagnosticsConfig {
   xmlConfig?: string;
 }
 
-export function diagnosticsExtension(config: DiagnosticsConfig): WindowsExtension {
+export function diagnosticsExtension(
+  config: DiagnosticsConfig,
+): WindowsExtension {
   return {
-    name: 'IaaSDiagnostics',
-    publisher: 'Microsoft.Azure.Diagnostics',
-    type: 'IaaSDiagnostics',
-    typeHandlerVersion: '1.5',
+    name: "IaaSDiagnostics",
+    publisher: "Microsoft.Azure.Diagnostics",
+    type: "IaaSDiagnostics",
+    typeHandlerVersion: "1.5",
     autoUpgradeMinorVersion: true,
     settings: {
       storageAccount: config.storageAccount,
-      xmlCfg: config.xmlConfig
+      xmlCfg: config.xmlConfig,
     },
     protectedSettings: {
       storageAccountName: config.storageAccount,
       storageAccountKey: config.storageAccountKey,
-      storageAccountEndPoint: config.storageAccountEndpoint ?? 'https://core.windows.net'
-    }
+      storageAccountEndPoint:
+        config.storageAccountEndpoint ?? "https://core.windows.net",
+    },
   };
 }
 
 /**
  * 7. Microsoft.HpcCompute.NvidiaGpuDriverWindows
  * NVIDIA GPU driver installation
- * 
+ *
  * @returns Extension JSON object
  */
 export function gpuDriverExtension(): WindowsExtension {
   return {
-    name: 'NvidiaGpuDriverWindows',
-    publisher: 'Microsoft.HpcCompute',
-    type: 'NvidiaGpuDriverWindows',
-    typeHandlerVersion: '1.3',
-    autoUpgradeMinorVersion: true
+    name: "NvidiaGpuDriverWindows",
+    publisher: "Microsoft.HpcCompute",
+    type: "NvidiaGpuDriverWindows",
+    typeHandlerVersion: "1.3",
+    autoUpgradeMinorVersion: true,
   };
 }
 
 /**
  * 8. Microsoft.Azure.RecoveryServices.VMSnapshot
  * Azure Backup integration
- * 
+ *
  * @param config - Backup configuration
  * @returns Extension JSON object
  */
@@ -283,19 +298,19 @@ export interface BackupConfig {
 
 export function backupExtension(config: BackupConfig = {}): WindowsExtension {
   return {
-    name: 'VMSnapshot',
-    publisher: 'Microsoft.Azure.RecoveryServices',
-    type: 'VMSnapshot',
-    typeHandlerVersion: '1.10',
+    name: "VMSnapshot",
+    publisher: "Microsoft.Azure.RecoveryServices",
+    type: "VMSnapshot",
+    typeHandlerVersion: "1.10",
     autoUpgradeMinorVersion: true,
     settings: {
-      locale: config.locale ?? 'en-US',
+      locale: config.locale ?? "en-US",
       taskId: config.taskId,
       commandToExecute: config.commandToExecute,
       objectStr: config.objectStr,
       logsBlobUri: config.logsBlobUri,
-      statusBlobUri: config.statusBlobUri
-    }
+      statusBlobUri: config.statusBlobUri,
+    },
   };
 }
 
@@ -310,5 +325,5 @@ export const windowsExtensions = {
   domainJoinExtension,
   diagnosticsExtension,
   gpuDriverExtension,
-  backupExtension
+  backupExtension,
 };

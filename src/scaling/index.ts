@@ -7,11 +7,11 @@
  * @module scaling
  */
 
-import Handlebars from 'handlebars';
-import { vmssHelpers } from './vmss';
-import { autoscaleHelpers } from './autoscale';
-import { multiregionHelpers } from './multiregion';
-import { loadBalancingHelpers } from './loadbalancing';
+import Handlebars from "handlebars";
+import { vmssHelpers } from "./vmss";
+import { autoscaleHelpers } from "./autoscale";
+import { multiregionHelpers } from "./multiregion";
+import { loadBalancingHelpers } from "./loadbalancing";
 
 type HelperFunction = (...args: any[]) => unknown;
 
@@ -22,7 +22,7 @@ export const scalingHelpers = {
   ...vmssHelpers,
   ...autoscaleHelpers,
   ...multiregionHelpers,
-  ...loadBalancingHelpers
+  ...loadBalancingHelpers,
 };
 
 /**
@@ -33,7 +33,7 @@ export function registerScalingHelpers(): void {
     Handlebars.registerHelper(name, function (...args: unknown[]) {
       const result = (helper as HelperFunction)(...args);
       // Return JSON for objects to keep consistent helper behavior.
-      if (typeof result === 'object' && result !== null) {
+      if (typeof result === "object" && result !== null) {
         return JSON.stringify(result, null, 2);
       }
       return result;
@@ -46,8 +46,8 @@ export {
   createVmssDefinition,
   type VmssDefinitionOptions,
   type VmssOrchestrationMode,
-  type VmssUpgradeMode
-} from './vmss';
+  type VmssUpgradeMode,
+} from "./vmss";
 
 export {
   autoscaleHelpers,
@@ -63,8 +63,8 @@ export {
   type MetricName,
   type ScaleDirection,
   type TimeAggregationType,
-  type ComparisonOperator
-} from './autoscale';
+  type ComparisonOperator,
+} from "./autoscale";
 
 export {
   multiregionHelpers,
@@ -79,8 +79,8 @@ export {
   type MultiRegionDeploymentPlan,
   type RegionDeployment,
   type FailoverPlanOptions,
-  type FailoverStep
-} from './multiregion';
+  type FailoverStep,
+} from "./multiregion";
 
 export {
   loadBalancingHelpers,
@@ -117,5 +117,5 @@ export {
   type AppGatewayListenerConfig,
   type AppGatewayRoutingRuleConfig,
   type ApplicationGatewaySkuName,
-  type ApplicationGatewayTier
-} from './loadbalancing';
+  type ApplicationGatewayTier,
+} from "./loadbalancing";

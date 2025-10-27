@@ -8,18 +8,24 @@
  * @module scaling/multiregion
  */
 
-export type TrafficRoutingMethod = 'Priority' | 'Performance' | 'Weighted' | 'Geographic' | 'MultiValue' | 'Subnet';
-export type TrafficManagerMonitorProtocol = 'HTTP' | 'HTTPS' | 'TCP';
+export type TrafficRoutingMethod =
+  | "Priority"
+  | "Performance"
+  | "Weighted"
+  | "Geographic"
+  | "MultiValue"
+  | "Subnet";
+export type TrafficManagerMonitorProtocol = "HTTP" | "HTTPS" | "TCP";
 
 /**
  * Traffic Manager endpoint configuration
  */
 export interface TrafficManagerEndpointOptions {
   name: string;
-  type: 'AzureEndpoint' | 'ExternalEndpoint' | 'NestedEndpoints';
+  type: "AzureEndpoint" | "ExternalEndpoint" | "NestedEndpoints";
   targetResourceId?: string;
   target?: string;
-  endpointStatus?: 'Enabled' | 'Disabled';
+  endpointStatus?: "Enabled" | "Disabled";
   priority?: number;
   weight?: number;
   location?: string;
@@ -46,7 +52,7 @@ export interface TrafficManagerProfileOptions {
   };
   endpoints?: TrafficManagerEndpointOptions[];
   trafficViewEnabled?: boolean;
-  profileStatus?: 'Enabled' | 'Disabled';
+  profileStatus?: "Enabled" | "Disabled";
   tags?: Record<string, string>;
 }
 
@@ -55,7 +61,7 @@ export interface TrafficManagerProfileOptions {
  */
 export interface RegionDeployment {
   region: string;
-  role: 'Primary' | 'Secondary' | 'Tertiary';
+  role: "Primary" | "Secondary" | "Tertiary";
   vmssName?: string;
   trafficManagerEndpointName?: string;
   baselineCapacity?: number;
@@ -102,42 +108,48 @@ export interface FailoverPlanOptions {
 /**
  * Create Traffic Manager profile resource definition
  */
-export function createTrafficManagerProfile(options: TrafficManagerProfileOptions): Record<string, unknown> {
+export function createTrafficManagerProfile(
+  options: TrafficManagerProfileOptions,
+): Record<string, unknown> {
   if (!options.name) {
-    throw new Error('Traffic Manager profile requires a name');
+    throw new Error("Traffic Manager profile requires a name");
   }
 
   if (!options.dnsName) {
-    throw new Error('Traffic Manager profile requires a dnsName');
+    throw new Error("Traffic Manager profile requires a dnsName");
   }
 
-  const routingMethod = options.routingMethod ?? 'Priority';
+  const routingMethod = options.routingMethod ?? "Priority";
 
   const monitorConfig = {
-    protocol: options.monitor?.protocol ?? 'HTTPS',
+    protocol: options.monitor?.protocol ?? "HTTPS",
     port: options.monitor?.port ?? 443,
-    path: options.monitor?.path ?? '/',
+    path: options.monitor?.path ?? "/",
     intervalInSeconds: options.monitor?.intervalInSeconds ?? 30,
     timeoutInSeconds: options.monitor?.timeoutInSeconds ?? 10,
-    toleratedNumberOfFailures: options.monitor?.toleratedNumberOfFailures ?? 3
+    toleratedNumberOfFailures: options.monitor?.toleratedNumberOfFailures ?? 3,
   };
 
   const profile: Record<string, any> = {
-    type: 'Microsoft.Network/trafficManagerProfiles',
-    apiVersion: '2018-04-01',
+    type: "Microsoft.Network/trafficManagerProfiles",
+    apiVersion: "2018-04-01",
     name: options.name,
-    location: 'global',
+    location: "global",
     properties: {
-      profileStatus: options.profileStatus ?? 'Enabled',
+      profileStatus: options.profileStatus ?? "Enabled",
       trafficRoutingMethod: routingMethod,
-      trafficViewEnrollmentStatus: options.trafficViewEnabled ? 'Enabled' : 'Disabled',
+      trafficViewEnrollmentStatus: options.trafficViewEnabled
+        ? "Enabled"
+        : "Disabled",
       dnsConfig: {
         relativeName: options.dnsName,
-        ttl: options.ttl ?? 30
+        ttl: options.ttl ?? 30,
       },
       monitorConfig,
-      endpoints: (options.endpoints ?? []).map(createTrafficManagerEndpointConfig)
-    }
+      endpoints: (options.endpoints ?? []).map(
+        createTrafficManagerEndpointConfig,
+      ),
+    },
   };
 
   if (options.tags) {
@@ -150,24 +162,26 @@ export function createTrafficManagerProfile(options: TrafficManagerProfileOption
 /**
  * Create Traffic Manager endpoint object used inside profile definitions
  */
-export function createTrafficManagerEndpointConfig(options: TrafficManagerEndpointOptions): Record<string, unknown> {
+export function createTrafficManagerEndpointConfig(
+  options: TrafficManagerEndpointOptions,
+): Record<string, unknown> {
   if (!options.name) {
-    throw new Error('Traffic Manager endpoint requires a name');
+    throw new Error("Traffic Manager endpoint requires a name");
   }
 
   const endpoint: Record<string, any> = {
     name: options.name,
     type: `Microsoft.Network/trafficManagerProfiles/${options.type}`,
     properties: {
-      endpointStatus: options.endpointStatus ?? 'Enabled',
+      endpointStatus: options.endpointStatus ?? "Enabled",
       priority: options.priority ?? 1,
-      weight: options.weight ?? 1
-    }
+      weight: options.weight ?? 1,
+    },
   };
 
-  if (options.type === 'AzureEndpoint') {
+  if (options.type === "AzureEndpoint") {
     if (!options.targetResourceId) {
-      throw new Error('Azure endpoints require a targetResourceId');
+      throw new Error("Azure endpoints require a targetResourceId");
     }
     endpoint.properties.targetResourceId = options.targetResourceId;
   } else if (options.target) {
@@ -184,7 +198,7 @@ export function createTrafficManagerEndpointConfig(options: TrafficManagerEndpoi
     endpoint.properties.geoMapping = options.geoMapping;
   }
 
-  if (typeof options.minChildEndpoints === 'number') {
+  if (typeof options.minChildEndpoints === "number") {
     endpoint.properties.minChildEndpoints = options.minChildEndpoints;
   }
 
@@ -194,60 +208,74 @@ export function createTrafficManagerEndpointConfig(options: TrafficManagerEndpoi
 /**
  * Create a high-level multi-region deployment plan
  */
-export function createMultiRegionDeploymentPlan(plan: MultiRegionDeploymentPlan): Record<string, unknown> {
+export function createMultiRegionDeploymentPlan(
+  plan: MultiRegionDeploymentPlan,
+): Record<string, unknown> {
   if (!plan.applicationName) {
-    throw new Error('Multi-region deployment plan requires an applicationName');
+    throw new Error("Multi-region deployment plan requires an applicationName");
   }
 
   if (!plan.trafficManagerProfile) {
-    throw new Error('Multi-region deployment plan requires a trafficManagerProfile');
+    throw new Error(
+      "Multi-region deployment plan requires a trafficManagerProfile",
+    );
   }
 
   if (!plan.regions || plan.regions.length < 2) {
-    throw new Error('Multi-region deployment plan requires at least two regions');
+    throw new Error(
+      "Multi-region deployment plan requires at least two regions",
+    );
   }
 
-  const primaryRegions = plan.regions.filter(region => region.role === 'Primary');
+  const primaryRegions = plan.regions.filter(
+    (region) => region.role === "Primary",
+  );
   if (primaryRegions.length !== 1) {
-    throw new Error('Multi-region deployment plan must have exactly one primary region');
+    throw new Error(
+      "Multi-region deployment plan must have exactly one primary region",
+    );
   }
 
   return {
     applicationName: plan.applicationName,
     trafficManagerProfile: plan.trafficManagerProfile,
-    regions: plan.regions.map(region => ({
+    regions: plan.regions.map((region) => ({
       region: region.region,
       role: region.role,
       vmssName: region.vmssName,
       trafficManagerEndpointName: region.trafficManagerEndpointName,
       baselineCapacity: region.baselineCapacity ?? 2,
       maxCapacity: region.maxCapacity ?? region.baselineCapacity ?? 2,
-      failoverPriority: region.failoverPriority ?? (region.role === 'Primary' ? 1 : 100)
+      failoverPriority:
+        region.failoverPriority ?? (region.role === "Primary" ? 1 : 100),
     })),
     replication: {
       enabled: plan.replication.enabled,
       recoveryVaultName: plan.replication.recoveryVaultName,
-      replicationPolicyName: plan.replication.replicationPolicyName
+      replicationPolicyName: plan.replication.replicationPolicyName,
     },
     monitoring: {
-      applicationInsightsResourceId: plan.monitoring.applicationInsightsResourceId,
-      actionGroupIds: plan.monitoring.actionGroupIds ?? []
-    }
+      applicationInsightsResourceId:
+        plan.monitoring.applicationInsightsResourceId,
+      actionGroupIds: plan.monitoring.actionGroupIds ?? [],
+    },
   };
 }
 
 /**
  * Create a structured failover plan including operational steps
  */
-export function createFailoverPlan(options: FailoverPlanOptions): Record<string, unknown> {
+export function createFailoverPlan(
+  options: FailoverPlanOptions,
+): Record<string, unknown> {
   if (!options.name) {
-    throw new Error('Failover plan requires a name');
+    throw new Error("Failover plan requires a name");
   }
   if (!options.primaryRegion || !options.secondaryRegion) {
-    throw new Error('Failover plan requires primaryRegion and secondaryRegion');
+    throw new Error("Failover plan requires primaryRegion and secondaryRegion");
   }
   if (!options.steps || options.steps.length === 0) {
-    throw new Error('Failover plan requires one or more steps');
+    throw new Error("Failover plan requires one or more steps");
   }
 
   return {
@@ -255,12 +283,12 @@ export function createFailoverPlan(options: FailoverPlanOptions): Record<string,
     detectionThresholdMinutes: options.detectionThresholdMinutes ?? 5,
     primaryRegion: options.primaryRegion,
     secondaryRegion: options.secondaryRegion,
-    steps: options.steps.map(step => ({
+    steps: options.steps.map((step) => ({
       name: step.name,
       description: step.description,
       automation: step.automation,
-      validation: step.validation ?? []
-    }))
+      validation: step.validation ?? [],
+    })),
   };
 }
 
@@ -268,8 +296,8 @@ export function createFailoverPlan(options: FailoverPlanOptions): Record<string,
  * Exported helper map for registration
  */
 export const multiregionHelpers = {
-  'scale:multiregion.profile': createTrafficManagerProfile,
-  'scale:multiregion.endpoint': createTrafficManagerEndpointConfig,
-  'scale:multiregion.deployment': createMultiRegionDeploymentPlan,
-  'scale:multiregion.failover': createFailoverPlan
+  "scale:multiregion.profile": createTrafficManagerProfile,
+  "scale:multiregion.endpoint": createTrafficManagerEndpointConfig,
+  "scale:multiregion.deployment": createMultiRegionDeploymentPlan,
+  "scale:multiregion.failover": createFailoverPlan,
 };
