@@ -6,8 +6,8 @@ export {
   AdvancedWorkbookGenerator,
   advancedWorkbookTemplates,
   type AdvancedWorkbookTemplate,
-  type WorkbookDefinition
-} from './workbooks';
+  type WorkbookDefinition,
+} from "./workbooks";
 
 export {
   MonitoringAlertEngine,
@@ -15,7 +15,7 @@ export {
   type CpuAlertOptions,
   type MemoryAlertOptions,
   type CostAnomalyAlertOptions,
-  type ScalingHealthAlertOptions
-} from './alerts';
+  type ScalingHealthAlertOptions,
+} from "./alerts";
 
-export { registerEnhancedMonitoringHelpers } from './helpers';
+export { registerEnhancedMonitoringHelpers } from "./helpers";

@@ -6,22 +6,22 @@
 /**
  * Load Balancer SKU types
  */
-export type LoadBalancerSku = 'Basic' | 'Standard' | 'Gateway';
+export type LoadBalancerSku = "Basic" | "Standard" | "Gateway";
 
 /**
  * Load Balancer tier
  */
-export type LoadBalancerTier = 'Regional' | 'Global';
+export type LoadBalancerTier = "Regional" | "Global";
 
 /**
  * Health Probe Protocol
  */
-export type ProbeProtocol = 'Http' | 'Https' | 'Tcp';
+export type ProbeProtocol = "Http" | "Https" | "Tcp";
 
 /**
  * Load Balancing Rule Protocol
  */
-export type LoadBalancingProtocol = 'Tcp' | 'Udp' | 'All';
+export type LoadBalancingProtocol = "Tcp" | "Udp" | "All";
 
 /**
  * Health Probe Configuration
@@ -64,7 +64,7 @@ export interface LoadBalancingRuleConfig {
 export interface InboundNatRuleConfig {
   readonly name: string;
   readonly description: string;
-  readonly protocol: 'Tcp' | 'Udp';
+  readonly protocol: "Tcp" | "Udp";
   readonly frontendPort: number;
   readonly backendPort: number;
   readonly enableFloatingIP: boolean;
@@ -93,12 +93,12 @@ export const HEALTH_PROBES = {
   /**
    * HTTP probe on port 80
    */
-  'http-80': {
-    name: 'http-probe-80',
-    description: 'HTTP health probe on port 80',
-    protocol: 'Http',
+  "http-80": {
+    name: "http-probe-80",
+    description: "HTTP health probe on port 80",
+    protocol: "Http",
     port: 80,
-    requestPath: '/',
+    requestPath: "/",
     intervalInSeconds: 15,
     numberOfProbes: 2,
   },
@@ -106,12 +106,12 @@ export const HEALTH_PROBES = {
   /**
    * HTTPS probe on port 443
    */
-  'https-443': {
-    name: 'https-probe-443',
-    description: 'HTTPS health probe on port 443',
-    protocol: 'Https',
+  "https-443": {
+    name: "https-probe-443",
+    description: "HTTPS health probe on port 443",
+    protocol: "Https",
     port: 443,
-    requestPath: '/',
+    requestPath: "/",
     intervalInSeconds: 15,
     numberOfProbes: 2,
   },
@@ -119,12 +119,12 @@ export const HEALTH_PROBES = {
   /**
    * HTTP probe on port 8080
    */
-  'http-8080': {
-    name: 'http-probe-8080',
-    description: 'HTTP health probe on port 8080',
-    protocol: 'Http',
+  "http-8080": {
+    name: "http-probe-8080",
+    description: "HTTP health probe on port 8080",
+    protocol: "Http",
     port: 8080,
-    requestPath: '/health',
+    requestPath: "/health",
     intervalInSeconds: 15,
     numberOfProbes: 2,
   },
@@ -132,10 +132,10 @@ export const HEALTH_PROBES = {
   /**
    * TCP probe on port 80
    */
-  'tcp-80': {
-    name: 'tcp-probe-80',
-    description: 'TCP health probe on port 80',
-    protocol: 'Tcp',
+  "tcp-80": {
+    name: "tcp-probe-80",
+    description: "TCP health probe on port 80",
+    protocol: "Tcp",
     port: 80,
     intervalInSeconds: 15,
     numberOfProbes: 2,
@@ -144,10 +144,10 @@ export const HEALTH_PROBES = {
   /**
    * TCP probe on port 443
    */
-  'tcp-443': {
-    name: 'tcp-probe-443',
-    description: 'TCP health probe on port 443',
-    protocol: 'Tcp',
+  "tcp-443": {
+    name: "tcp-probe-443",
+    description: "TCP health probe on port 443",
+    protocol: "Tcp",
     port: 443,
     intervalInSeconds: 15,
     numberOfProbes: 2,
@@ -156,10 +156,10 @@ export const HEALTH_PROBES = {
   /**
    * TCP probe on port 22 (SSH)
    */
-  'tcp-22': {
-    name: 'tcp-probe-22',
-    description: 'TCP health probe on port 22 (SSH)',
-    protocol: 'Tcp',
+  "tcp-22": {
+    name: "tcp-probe-22",
+    description: "TCP health probe on port 22 (SSH)",
+    protocol: "Tcp",
     port: 22,
     intervalInSeconds: 15,
     numberOfProbes: 2,
@@ -168,10 +168,10 @@ export const HEALTH_PROBES = {
   /**
    * TCP probe on port 3389 (RDP)
    */
-  'tcp-3389': {
-    name: 'tcp-probe-3389',
-    description: 'TCP health probe on port 3389 (RDP)',
-    protocol: 'Tcp',
+  "tcp-3389": {
+    name: "tcp-probe-3389",
+    description: "TCP health probe on port 3389 (RDP)",
+    protocol: "Tcp",
     port: 3389,
     intervalInSeconds: 15,
     numberOfProbes: 2,
@@ -180,12 +180,12 @@ export const HEALTH_PROBES = {
   /**
    * HTTP health endpoint probe
    */
-  'http-health': {
-    name: 'http-probe-health',
-    description: 'HTTP health endpoint probe',
-    protocol: 'Http',
+  "http-health": {
+    name: "http-probe-health",
+    description: "HTTP health endpoint probe",
+    protocol: "Http",
     port: 80,
-    requestPath: '/health',
+    requestPath: "/health",
     intervalInSeconds: 10,
     numberOfProbes: 2,
   },
@@ -193,12 +193,12 @@ export const HEALTH_PROBES = {
   /**
    * HTTPS health endpoint probe
    */
-  'https-health': {
-    name: 'https-probe-health',
-    description: 'HTTPS health endpoint probe',
-    protocol: 'Https',
+  "https-health": {
+    name: "https-probe-health",
+    description: "HTTPS health endpoint probe",
+    protocol: "Https",
     port: 443,
-    requestPath: '/health',
+    requestPath: "/health",
     intervalInSeconds: 10,
     numberOfProbes: 2,
   },
@@ -206,12 +206,12 @@ export const HEALTH_PROBES = {
   /**
    * Custom application probe
    */
-  'http-api': {
-    name: 'http-probe-api',
-    description: 'HTTP API health probe',
-    protocol: 'Http',
+  "http-api": {
+    name: "http-probe-api",
+    description: "HTTP API health probe",
+    protocol: "Http",
     port: 8080,
-    requestPath: '/api/health',
+    requestPath: "/api/health",
     intervalInSeconds: 15,
     numberOfProbes: 2,
   },
@@ -226,41 +226,41 @@ export const BACKEND_POOLS = {
   /**
    * Web tier backend pool
    */
-  'web-pool': {
-    name: 'web-backend-pool',
-    description: 'Backend pool for web tier VMs',
+  "web-pool": {
+    name: "web-backend-pool",
+    description: "Backend pool for web tier VMs",
   },
 
   /**
    * App tier backend pool
    */
-  'app-pool': {
-    name: 'app-backend-pool',
-    description: 'Backend pool for application tier VMs',
+  "app-pool": {
+    name: "app-backend-pool",
+    description: "Backend pool for application tier VMs",
   },
 
   /**
    * API tier backend pool
    */
-  'api-pool': {
-    name: 'api-backend-pool',
-    description: 'Backend pool for API tier VMs',
+  "api-pool": {
+    name: "api-backend-pool",
+    description: "Backend pool for API tier VMs",
   },
 
   /**
    * Database tier backend pool
    */
-  'data-pool': {
-    name: 'data-backend-pool',
-    description: 'Backend pool for database tier VMs',
+  "data-pool": {
+    name: "data-backend-pool",
+    description: "Backend pool for database tier VMs",
   },
 
   /**
    * Default backend pool
    */
-  'default-pool': {
-    name: 'default-backend-pool',
-    description: 'Default backend pool',
+  "default-pool": {
+    name: "default-backend-pool",
+    description: "Default backend pool",
   },
 } as const;
 
@@ -273,10 +273,10 @@ export const LOAD_BALANCING_RULES = {
   /**
    * HTTP load balancing rule
    */
-  'http-rule': {
-    name: 'http-lb-rule',
-    description: 'Load balancing rule for HTTP traffic',
-    protocol: 'Tcp',
+  "http-rule": {
+    name: "http-lb-rule",
+    description: "Load balancing rule for HTTP traffic",
+    protocol: "Tcp",
     frontendPort: 80,
     backendPort: 80,
     enableFloatingIP: false,
@@ -287,10 +287,10 @@ export const LOAD_BALANCING_RULES = {
   /**
    * HTTPS load balancing rule
    */
-  'https-rule': {
-    name: 'https-lb-rule',
-    description: 'Load balancing rule for HTTPS traffic',
-    protocol: 'Tcp',
+  "https-rule": {
+    name: "https-lb-rule",
+    description: "Load balancing rule for HTTPS traffic",
+    protocol: "Tcp",
     frontendPort: 443,
     backendPort: 443,
     enableFloatingIP: false,
@@ -301,10 +301,10 @@ export const LOAD_BALANCING_RULES = {
   /**
    * Custom app port 8080
    */
-  'app-8080-rule': {
-    name: 'app-8080-lb-rule',
-    description: 'Load balancing rule for app port 8080',
-    protocol: 'Tcp',
+  "app-8080-rule": {
+    name: "app-8080-lb-rule",
+    description: "Load balancing rule for app port 8080",
+    protocol: "Tcp",
     frontendPort: 8080,
     backendPort: 8080,
     enableFloatingIP: false,
@@ -315,10 +315,10 @@ export const LOAD_BALANCING_RULES = {
   /**
    * SQL Server load balancing
    */
-  'sql-rule': {
-    name: 'sql-lb-rule',
-    description: 'Load balancing rule for SQL Server',
-    protocol: 'Tcp',
+  "sql-rule": {
+    name: "sql-lb-rule",
+    description: "Load balancing rule for SQL Server",
+    protocol: "Tcp",
     frontendPort: 1433,
     backendPort: 1433,
     enableFloatingIP: true, // Required for SQL AlwaysOn
@@ -329,10 +329,10 @@ export const LOAD_BALANCING_RULES = {
   /**
    * PostgreSQL load balancing
    */
-  'postgresql-rule': {
-    name: 'postgresql-lb-rule',
-    description: 'Load balancing rule for PostgreSQL',
-    protocol: 'Tcp',
+  "postgresql-rule": {
+    name: "postgresql-lb-rule",
+    description: "Load balancing rule for PostgreSQL",
+    protocol: "Tcp",
     frontendPort: 5432,
     backendPort: 5432,
     enableFloatingIP: false,
@@ -343,10 +343,10 @@ export const LOAD_BALANCING_RULES = {
   /**
    * MySQL load balancing
    */
-  'mysql-rule': {
-    name: 'mysql-lb-rule',
-    description: 'Load balancing rule for MySQL',
-    protocol: 'Tcp',
+  "mysql-rule": {
+    name: "mysql-lb-rule",
+    description: "Load balancing rule for MySQL",
+    protocol: "Tcp",
     frontendPort: 3306,
     backendPort: 3306,
     enableFloatingIP: false,
@@ -357,10 +357,10 @@ export const LOAD_BALANCING_RULES = {
   /**
    * All ports load balancing (HA Ports)
    */
-  'ha-ports-rule': {
-    name: 'ha-ports-lb-rule',
-    description: 'HA Ports load balancing rule (all ports)',
-    protocol: 'All',
+  "ha-ports-rule": {
+    name: "ha-ports-lb-rule",
+    description: "HA Ports load balancing rule (all ports)",
+    protocol: "All",
     frontendPort: 0,
     backendPort: 0,
     enableFloatingIP: true,
@@ -378,10 +378,10 @@ export const INBOUND_NAT_RULES = {
   /**
    * SSH NAT rule
    */
-  'ssh-nat': {
-    name: 'ssh-nat-rule',
-    description: 'Inbound NAT rule for SSH',
-    protocol: 'Tcp',
+  "ssh-nat": {
+    name: "ssh-nat-rule",
+    description: "Inbound NAT rule for SSH",
+    protocol: "Tcp",
     frontendPort: 2222,
     backendPort: 22,
     enableFloatingIP: false,
@@ -392,10 +392,10 @@ export const INBOUND_NAT_RULES = {
   /**
    * RDP NAT rule
    */
-  'rdp-nat': {
-    name: 'rdp-nat-rule',
-    description: 'Inbound NAT rule for RDP',
-    protocol: 'Tcp',
+  "rdp-nat": {
+    name: "rdp-nat-rule",
+    description: "Inbound NAT rule for RDP",
+    protocol: "Tcp",
     frontendPort: 3390,
     backendPort: 3389,
     enableFloatingIP: false,
@@ -413,70 +413,70 @@ export const LOAD_BALANCER_TEMPLATES = {
   /**
    * Public web load balancer
    */
-  'public-web': {
-    name: 'Public Web Load Balancer',
-    description: 'Public-facing load balancer for web traffic',
-    sku: 'Standard',
-    tier: 'Regional',
+  "public-web": {
+    name: "Public Web Load Balancer",
+    description: "Public-facing load balancer for web traffic",
+    sku: "Standard",
+    tier: "Regional",
     isPublic: true,
-    healthProbes: ['http-80', 'https-443'],
-    backendPools: ['web-pool'],
-    loadBalancingRules: ['http-rule', 'https-rule'],
+    healthProbes: ["http-80", "https-443"],
+    backendPools: ["web-pool"],
+    loadBalancingRules: ["http-rule", "https-rule"],
   },
 
   /**
    * Internal app load balancer
    */
-  'internal-app': {
-    name: 'Internal App Load Balancer',
-    description: 'Internal load balancer for application tier',
-    sku: 'Standard',
-    tier: 'Regional',
+  "internal-app": {
+    name: "Internal App Load Balancer",
+    description: "Internal load balancer for application tier",
+    sku: "Standard",
+    tier: "Regional",
     isPublic: false,
-    healthProbes: ['http-8080'],
-    backendPools: ['app-pool'],
-    loadBalancingRules: ['app-8080-rule'],
+    healthProbes: ["http-8080"],
+    backendPools: ["app-pool"],
+    loadBalancingRules: ["app-8080-rule"],
   },
 
   /**
    * Internal database load balancer
    */
-  'internal-database': {
-    name: 'Internal Database Load Balancer',
-    description: 'Internal load balancer for database tier',
-    sku: 'Standard',
-    tier: 'Regional',
+  "internal-database": {
+    name: "Internal Database Load Balancer",
+    description: "Internal load balancer for database tier",
+    sku: "Standard",
+    tier: "Regional",
     isPublic: false,
-    healthProbes: ['tcp-3306', 'tcp-5432'],
-    backendPools: ['data-pool'],
-    loadBalancingRules: ['mysql-rule', 'postgresql-rule'],
+    healthProbes: ["tcp-3306", "tcp-5432"],
+    backendPools: ["data-pool"],
+    loadBalancingRules: ["mysql-rule", "postgresql-rule"],
   },
 
   /**
    * HA Ports internal load balancer
    */
-  'internal-ha-ports': {
-    name: 'Internal HA Ports Load Balancer',
-    description: 'Internal load balancer with HA Ports for all traffic',
-    sku: 'Standard',
-    tier: 'Regional',
+  "internal-ha-ports": {
+    name: "Internal HA Ports Load Balancer",
+    description: "Internal load balancer with HA Ports for all traffic",
+    sku: "Standard",
+    tier: "Regional",
     isPublic: false,
-    healthProbes: ['tcp-443'],
-    backendPools: ['default-pool'],
-    loadBalancingRules: ['ha-ports-rule'],
+    healthProbes: ["tcp-443"],
+    backendPools: ["default-pool"],
+    loadBalancingRules: ["ha-ports-rule"],
   },
 
   /**
    * Public SSH/RDP jump box
    */
-  'public-jumpbox': {
-    name: 'Public Jump Box Load Balancer',
-    description: 'Public load balancer for SSH/RDP access',
-    sku: 'Standard',
-    tier: 'Regional',
+  "public-jumpbox": {
+    name: "Public Jump Box Load Balancer",
+    description: "Public load balancer for SSH/RDP access",
+    sku: "Standard",
+    tier: "Regional",
     isPublic: true,
-    healthProbes: ['tcp-22', 'tcp-3389'],
-    backendPools: ['default-pool'],
+    healthProbes: ["tcp-22", "tcp-3389"],
+    backendPools: ["default-pool"],
     loadBalancingRules: [],
   },
 } as const;
@@ -486,14 +486,19 @@ export type LoadBalancerTemplateKey = keyof typeof LOAD_BALANCER_TEMPLATES;
 /**
  * Get health probe by key
  */
-export function getHealthProbe(key: HealthProbeKey): typeof HEALTH_PROBES[HealthProbeKey] | undefined {
+export function getHealthProbe(
+  key: HealthProbeKey,
+): (typeof HEALTH_PROBES)[HealthProbeKey] | undefined {
   return HEALTH_PROBES[key];
 }
 
 /**
  * Get all health probes
  */
-export function getAllHealthProbes(): Array<{ key: HealthProbeKey; probe: typeof HEALTH_PROBES[HealthProbeKey] }> {
+export function getAllHealthProbes(): Array<{
+  key: HealthProbeKey;
+  probe: (typeof HEALTH_PROBES)[HealthProbeKey];
+}> {
   return Object.entries(HEALTH_PROBES).map(([key, probe]) => ({
     key: key as HealthProbeKey,
     probe,
@@ -504,22 +509,32 @@ export function getAllHealthProbes(): Array<{ key: HealthProbeKey; probe: typeof
  * Get health probes by protocol
  */
 export function getHealthProbesByProtocol(
-  protocol: ProbeProtocol
-): Array<{ key: HealthProbeKey; probe: typeof HEALTH_PROBES[HealthProbeKey] }> {
-  return getAllHealthProbes().filter(({ probe }) => probe.protocol === protocol);
+  protocol: ProbeProtocol,
+): Array<{
+  key: HealthProbeKey;
+  probe: (typeof HEALTH_PROBES)[HealthProbeKey];
+}> {
+  return getAllHealthProbes().filter(
+    ({ probe }) => probe.protocol === protocol,
+  );
 }
 
 /**
  * Get backend pool by key
  */
-export function getBackendPool(key: BackendPoolKey): typeof BACKEND_POOLS[BackendPoolKey] | undefined {
+export function getBackendPool(
+  key: BackendPoolKey,
+): (typeof BACKEND_POOLS)[BackendPoolKey] | undefined {
   return BACKEND_POOLS[key];
 }
 
 /**
  * Get all backend pools
  */
-export function getAllBackendPools(): Array<{ key: BackendPoolKey; pool: typeof BACKEND_POOLS[BackendPoolKey] }> {
+export function getAllBackendPools(): Array<{
+  key: BackendPoolKey;
+  pool: (typeof BACKEND_POOLS)[BackendPoolKey];
+}> {
   return Object.entries(BACKEND_POOLS).map(([key, pool]) => ({
     key: key as BackendPoolKey,
     pool,
@@ -530,8 +545,8 @@ export function getAllBackendPools(): Array<{ key: BackendPoolKey; pool: typeof 
  * Get load balancing rule by key
  */
 export function getLoadBalancingRule(
-  key: LoadBalancingRuleKey
-): typeof LOAD_BALANCING_RULES[LoadBalancingRuleKey] | undefined {
+  key: LoadBalancingRuleKey,
+): (typeof LOAD_BALANCING_RULES)[LoadBalancingRuleKey] | undefined {
   return LOAD_BALANCING_RULES[key];
 }
 
@@ -540,7 +555,7 @@ export function getLoadBalancingRule(
  */
 export function getAllLoadBalancingRules(): Array<{
   key: LoadBalancingRuleKey;
-  rule: typeof LOAD_BALANCING_RULES[LoadBalancingRuleKey];
+  rule: (typeof LOAD_BALANCING_RULES)[LoadBalancingRuleKey];
 }> {
   return Object.entries(LOAD_BALANCING_RULES).map(([key, rule]) => ({
     key: key as LoadBalancingRuleKey,
@@ -552,8 +567,8 @@ export function getAllLoadBalancingRules(): Array<{
  * Get inbound NAT rule by key
  */
 export function getInboundNatRule(
-  key: InboundNatRuleKey
-): typeof INBOUND_NAT_RULES[InboundNatRuleKey] | undefined {
+  key: InboundNatRuleKey,
+): (typeof INBOUND_NAT_RULES)[InboundNatRuleKey] | undefined {
   return INBOUND_NAT_RULES[key];
 }
 
@@ -562,7 +577,7 @@ export function getInboundNatRule(
  */
 export function getAllInboundNatRules(): Array<{
   key: InboundNatRuleKey;
-  rule: typeof INBOUND_NAT_RULES[InboundNatRuleKey];
+  rule: (typeof INBOUND_NAT_RULES)[InboundNatRuleKey];
 }> {
   return Object.entries(INBOUND_NAT_RULES).map(([key, rule]) => ({
     key: key as InboundNatRuleKey,
@@ -574,8 +589,8 @@ export function getAllInboundNatRules(): Array<{
  * Get load balancer template by key
  */
 export function getLoadBalancerTemplate(
-  key: LoadBalancerTemplateKey
-): typeof LOAD_BALANCER_TEMPLATES[LoadBalancerTemplateKey] | undefined {
+  key: LoadBalancerTemplateKey,
+): (typeof LOAD_BALANCER_TEMPLATES)[LoadBalancerTemplateKey] | undefined {
   return LOAD_BALANCER_TEMPLATES[key];
 }
 
@@ -584,7 +599,7 @@ export function getLoadBalancerTemplate(
  */
 export function getAllLoadBalancerTemplates(): Array<{
   key: LoadBalancerTemplateKey;
-  template: typeof LOAD_BALANCER_TEMPLATES[LoadBalancerTemplateKey];
+  template: (typeof LOAD_BALANCER_TEMPLATES)[LoadBalancerTemplateKey];
 }> {
   return Object.entries(LOAD_BALANCER_TEMPLATES).map(([key, template]) => ({
     key: key as LoadBalancerTemplateKey,
@@ -595,9 +610,15 @@ export function getAllLoadBalancerTemplates(): Array<{
 /**
  * Validate health probe interval
  */
-export function validateProbeInterval(intervalInSeconds: number): { valid: boolean; error?: string } {
+export function validateProbeInterval(intervalInSeconds: number): {
+  valid: boolean;
+  error?: string;
+} {
   if (intervalInSeconds < 5 || intervalInSeconds > 2147483646) {
-    return { valid: false, error: 'Probe interval must be between 5 and 2147483646 seconds' };
+    return {
+      valid: false,
+      error: "Probe interval must be between 5 and 2147483646 seconds",
+    };
   }
   return { valid: true };
 }
@@ -605,9 +626,15 @@ export function validateProbeInterval(intervalInSeconds: number): { valid: boole
 /**
  * Validate number of probes
  */
-export function validateNumberOfProbes(numberOfProbes: number): { valid: boolean; error?: string } {
+export function validateNumberOfProbes(numberOfProbes: number): {
+  valid: boolean;
+  error?: string;
+} {
   if (numberOfProbes < 1 || numberOfProbes > 2147483647) {
-    return { valid: false, error: 'Number of probes must be between 1 and 2147483647' };
+    return {
+      valid: false,
+      error: "Number of probes must be between 1 and 2147483647",
+    };
   }
   return { valid: true };
 }
@@ -615,9 +642,15 @@ export function validateNumberOfProbes(numberOfProbes: number): { valid: boolean
 /**
  * Validate idle timeout
  */
-export function validateIdleTimeout(timeoutInMinutes: number): { valid: boolean; error?: string } {
+export function validateIdleTimeout(timeoutInMinutes: number): {
+  valid: boolean;
+  error?: string;
+} {
   if (timeoutInMinutes < 4 || timeoutInMinutes > 30) {
-    return { valid: false, error: 'Idle timeout must be between 4 and 30 minutes' };
+    return {
+      valid: false,
+      error: "Idle timeout must be between 4 and 30 minutes",
+    };
   }
   return { valid: true };
 }
@@ -625,6 +658,9 @@ export function validateIdleTimeout(timeoutInMinutes: number): { valid: boolean;
 /**
  * Calculate health check duration
  */
-export function calculateHealthCheckDuration(intervalInSeconds: number, numberOfProbes: number): number {
+export function calculateHealthCheckDuration(
+  intervalInSeconds: number,
+  numberOfProbes: number,
+): number {
   return intervalInSeconds * numberOfProbes;
 }

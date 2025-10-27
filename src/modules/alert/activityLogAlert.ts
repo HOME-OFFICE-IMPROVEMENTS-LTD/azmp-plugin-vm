@@ -1,4 +1,4 @@
-import Handlebars from 'handlebars';
+import Handlebars from "handlebars";
 
 /**
  * Options for alert:activityLogAlert helper
@@ -20,7 +20,7 @@ export interface ActivityLogAlertOptions {
 
 /**
  * Handlebars helper to create activity log alert
- * 
+ *
  * @example
  * ```handlebars
  * {{{alert:activityLogAlert
@@ -32,30 +32,35 @@ export interface ActivityLogAlertOptions {
  * }}}
  * ```
  */
-export function alertActivityLogAlert(this: unknown, hash: ActivityLogAlertOptions): string {
+export function alertActivityLogAlert(
+  this: unknown,
+  hash: ActivityLogAlertOptions,
+): string {
   if (!hash || !hash.name) {
-    throw new Error('alert:activityLogAlert requires name parameter');
+    throw new Error("alert:activityLogAlert requires name parameter");
   }
   if (!hash.scopes) {
-    throw new Error('alert:activityLogAlert requires scopes parameter');
+    throw new Error("alert:activityLogAlert requires scopes parameter");
   }
   if (!hash.condition) {
-    throw new Error('alert:activityLogAlert requires condition parameter');
+    throw new Error("alert:activityLogAlert requires condition parameter");
   }
 
   // Parse condition if it's a JSON string
   let conditionArray = hash.condition;
-  if (typeof hash.condition === 'string') {
+  if (typeof hash.condition === "string") {
     try {
       conditionArray = JSON.parse(hash.condition);
     } catch (e) {
-      throw new Error(`alert:activityLogAlert condition must be valid JSON array: ${e}`);
+      throw new Error(
+        `alert:activityLogAlert condition must be valid JSON array: ${e}`,
+      );
     }
   }
 
   // Parse scopes
   let scopesArray: string[];
-  if (typeof hash.scopes === 'string') {
+  if (typeof hash.scopes === "string") {
     try {
       scopesArray = JSON.parse(hash.scopes);
     } catch (e) {
@@ -68,7 +73,7 @@ export function alertActivityLogAlert(this: unknown, hash: ActivityLogAlertOptio
   // Parse action groups if provided
   let actionGroupsArray: string[] | undefined;
   if (hash.actionGroups) {
-    if (typeof hash.actionGroups === 'string') {
+    if (typeof hash.actionGroups === "string") {
       try {
         actionGroupsArray = JSON.parse(hash.actionGroups);
       } catch (e) {
@@ -80,29 +85,32 @@ export function alertActivityLogAlert(this: unknown, hash: ActivityLogAlertOptio
   }
 
   const result = {
-    type: 'Microsoft.Insights/activityLogAlerts',
-    apiVersion: '2020-10-01',
+    type: "Microsoft.Insights/activityLogAlerts",
+    apiVersion: "2020-10-01",
     name: hash.name,
-    location: 'global',
+    location: "global",
     ...(hash.tags && { tags: hash.tags }),
     properties: {
       description: hash.description || `Activity log alert for ${hash.name}`,
       enabled: hash.enabled !== undefined ? hash.enabled : true,
       scopes: scopesArray,
       condition: {
-        allOf: conditionArray
+        allOf: conditionArray,
       },
-      ...(actionGroupsArray && actionGroupsArray.length > 0 && {
-        actions: {
-          actionGroups: actionGroupsArray.map(id => ({ actionGroupId: id }))
-        }
-      })
-    }
+      ...(actionGroupsArray &&
+        actionGroupsArray.length > 0 && {
+          actions: {
+            actionGroups: actionGroupsArray.map((id) => ({
+              actionGroupId: id,
+            })),
+          },
+        }),
+    },
   };
 
   return JSON.stringify(result, null, 2);
 }
 
 export function registerActivityLogAlertHelpers(): void {
-  Handlebars.registerHelper('alert:activityLogAlert', alertActivityLogAlert);
+  Handlebars.registerHelper("alert:activityLogAlert", alertActivityLogAlert);
 }

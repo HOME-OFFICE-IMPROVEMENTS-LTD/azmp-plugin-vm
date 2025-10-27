@@ -3,12 +3,12 @@
  * Configures Application Insights for application performance monitoring
  */
 
-import Handlebars from 'handlebars';
+import Handlebars from "handlebars";
 
 export interface ApplicationInsightsOptions {
   name: string;
   location?: string;
-  applicationType?: 'web' | 'other';
+  applicationType?: "web" | "other";
   workspaceId?: string;
   samplingPercentage?: number;
   retentionInDays?: number;
@@ -31,14 +31,15 @@ export interface ApplicationInsightsOptions {
  */
 export function monitorApplicationInsights(this: any, options: any): string {
   const hash = options.hash as ApplicationInsightsOptions;
-  
+
   if (!hash.name) {
-    throw new Error('monitor:applicationInsights requires name parameter');
+    throw new Error("monitor:applicationInsights requires name parameter");
   }
 
-  const location = hash.location || '[resourceGroup().location]';
-  const applicationType = hash.applicationType || 'web';
-  const samplingPercentage = hash.samplingPercentage !== undefined ? hash.samplingPercentage : 100;
+  const location = hash.location || "[resourceGroup().location]";
+  const applicationType = hash.applicationType || "web";
+  const samplingPercentage =
+    hash.samplingPercentage !== undefined ? hash.samplingPercentage : 100;
   const retentionInDays = hash.retentionInDays || 90;
   const disableIpMasking = hash.disableIpMasking || false;
   const disableLocalAuth = hash.disableLocalAuth || false;
@@ -46,8 +47,8 @@ export function monitorApplicationInsights(this: any, options: any): string {
   // Workspace-based Application Insights (recommended)
   if (hash.workspaceId) {
     const result = {
-      type: 'Microsoft.Insights/components',
-      apiVersion: '2020-02-02',
+      type: "Microsoft.Insights/components",
+      apiVersion: "2020-02-02",
       name: hash.name,
       location: location,
       kind: applicationType,
@@ -59,17 +60,17 @@ export function monitorApplicationInsights(this: any, options: any): string {
         RetentionInDays: retentionInDays,
         DisableIpMasking: disableIpMasking,
         DisableLocalAuth: disableLocalAuth,
-        publicNetworkAccessForIngestion: 'Enabled',
-        publicNetworkAccessForQuery: 'Enabled'
-      }
+        publicNetworkAccessForIngestion: "Enabled",
+        publicNetworkAccessForQuery: "Enabled",
+      },
     };
     return JSON.stringify(result, null, 2);
   }
 
   // Classic Application Insights (legacy)
   const result = {
-    type: 'Microsoft.Insights/components',
-    apiVersion: '2020-02-02',
+    type: "Microsoft.Insights/components",
+    apiVersion: "2020-02-02",
     name: hash.name,
     location: location,
     kind: applicationType,
@@ -80,14 +81,17 @@ export function monitorApplicationInsights(this: any, options: any): string {
       RetentionInDays: retentionInDays,
       DisableIpMasking: disableIpMasking,
       DisableLocalAuth: disableLocalAuth,
-      publicNetworkAccessForIngestion: 'Enabled',
-      publicNetworkAccessForQuery: 'Enabled'
-    }
+      publicNetworkAccessForIngestion: "Enabled",
+      publicNetworkAccessForQuery: "Enabled",
+    },
   };
 
   return JSON.stringify(result, null, 2);
 }
 
 export function registerAppInsightsHelpers(): void {
-  Handlebars.registerHelper('monitor:applicationInsights', monitorApplicationInsights);
+  Handlebars.registerHelper(
+    "monitor:applicationInsights",
+    monitorApplicationInsights,
+  );
 }

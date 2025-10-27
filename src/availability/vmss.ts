@@ -1,21 +1,21 @@
 /**
  * Virtual Machine Scale Sets Module
- * 
+ *
  * Provides helpers for Azure VMSS (Virtual Machine Scale Sets) configuration.
  * VMSS enables auto-scaling, load balancing, and high availability.
- * 
+ *
  * @module availability/vmss
  */
 
 /**
  * VMSS Orchestration Mode
  */
-export type OrchestrationMode = 'Flexible' | 'Uniform';
+export type OrchestrationMode = "Flexible" | "Uniform";
 
 /**
  * VMSS Upgrade Mode
  */
-export type UpgradeMode = 'Automatic' | 'Manual' | 'Rolling';
+export type UpgradeMode = "Automatic" | "Manual" | "Rolling";
 
 /**
  * VMSS Configuration
@@ -38,7 +38,7 @@ export interface VMSSConfig {
  * VMSS Flexible Orchestration Template
  */
 export interface VMSSFlexibleTemplate {
-  type: 'Microsoft.Compute/virtualMachineScaleSets';
+  type: "Microsoft.Compute/virtualMachineScaleSets";
   apiVersion: string;
   name: string;
   location: string;
@@ -49,7 +49,7 @@ export interface VMSSFlexibleTemplate {
     capacity: number;
   };
   properties: {
-    orchestrationMode: 'Flexible';
+    orchestrationMode: "Flexible";
     platformFaultDomainCount: number;
     singlePlacementGroup?: boolean;
   };
@@ -58,10 +58,10 @@ export interface VMSSFlexibleTemplate {
 
 /**
  * Generate VMSS with Flexible orchestration (modern, recommended)
- * 
+ *
  * @param config - VMSS configuration
  * @returns VMSS Flexible template
- * 
+ *
  * @example
  * ```handlebars
  * {{availability:vmssFlexible name="myVMSS" zones='["1","2","3"]' vmSize="Standard_D2s_v3"}}
@@ -71,23 +71,23 @@ export function vmssFlexible(config: VMSSConfig): VMSSFlexibleTemplate {
   // Validate fault domain count for Flexible (1-5)
   const faultDomainCount = config.platformFaultDomainCount ?? 1;
   if (faultDomainCount < 1 || faultDomainCount > 5) {
-    throw new Error('Flexible VMSS fault domain count must be between 1 and 5');
+    throw new Error("Flexible VMSS fault domain count must be between 1 and 5");
   }
 
   const template: VMSSFlexibleTemplate = {
-    type: 'Microsoft.Compute/virtualMachineScaleSets',
-    apiVersion: '2023-09-01',
+    type: "Microsoft.Compute/virtualMachineScaleSets",
+    apiVersion: "2023-09-01",
     name: config.name,
-    location: config.location || '[resourceGroup().location]',
+    location: config.location || "[resourceGroup().location]",
     sku: {
       name: config.vmSize,
-      tier: 'Standard',
-      capacity: config.instanceCount ?? 3
+      tier: "Standard",
+      capacity: config.instanceCount ?? 3,
     },
     properties: {
-      orchestrationMode: 'Flexible',
-      platformFaultDomainCount: faultDomainCount
-    }
+      orchestrationMode: "Flexible",
+      platformFaultDomainCount: faultDomainCount,
+    },
   };
 
   // Add zones if specified
@@ -110,10 +110,10 @@ export function vmssFlexible(config: VMSSConfig): VMSSFlexibleTemplate {
 
 /**
  * Generate VMSS with Uniform orchestration (legacy, still widely used)
- * 
+ *
  * @param config - VMSS configuration
  * @returns VMSS Uniform template
- * 
+ *
  * @example
  * ```handlebars
  * {{availability:vmssUniform name="myVMSS" vmSize="Standard_D2s_v3" instanceCount=5}}
@@ -123,33 +123,33 @@ export function vmssUniform(config: VMSSConfig): any {
   // Validate fault domain count for Uniform (1-3)
   const faultDomainCount = config.platformFaultDomainCount ?? 2;
   if (faultDomainCount < 1 || faultDomainCount > 3) {
-    throw new Error('Uniform VMSS fault domain count must be between 1 and 3');
+    throw new Error("Uniform VMSS fault domain count must be between 1 and 3");
   }
 
   const template: any = {
-    type: 'Microsoft.Compute/virtualMachineScaleSets',
-    apiVersion: '2023-09-01',
+    type: "Microsoft.Compute/virtualMachineScaleSets",
+    apiVersion: "2023-09-01",
     name: config.name,
-    location: config.location || '[resourceGroup().location]',
+    location: config.location || "[resourceGroup().location]",
     sku: {
       name: config.vmSize,
-      tier: 'Standard',
-      capacity: config.instanceCount ?? 2
+      tier: "Standard",
+      capacity: config.instanceCount ?? 2,
     },
     properties: {
-      orchestrationMode: 'Uniform',
+      orchestrationMode: "Uniform",
       overprovision: config.overprovision ?? true,
       upgradePolicy: {
-        mode: config.upgradeMode || 'Manual'
+        mode: config.upgradeMode || "Manual",
       },
       platformFaultDomainCount: faultDomainCount,
       singlePlacementGroup: config.singlePlacementGroup ?? true,
       virtualMachineProfile: {
         storageProfile: {},
         osProfile: {},
-        networkProfile: {}
-      }
-    }
+        networkProfile: {},
+      },
+    },
   };
 
   // Add zones if specified
@@ -186,15 +186,21 @@ export interface AutoscaleRule {
     metricName: string;
     metricResourceId: string;
     timeGrain: string;
-    statistic: 'Average' | 'Min' | 'Max' | 'Sum';
+    statistic: "Average" | "Min" | "Max" | "Sum";
     timeWindow: string;
-    timeAggregation: 'Average' | 'Minimum' | 'Maximum' | 'Total' | 'Count';
-    operator: 'GreaterThan' | 'LessThan' | 'GreaterThanOrEqual' | 'LessThanOrEqual' | 'Equals' | 'NotEquals';
+    timeAggregation: "Average" | "Minimum" | "Maximum" | "Total" | "Count";
+    operator:
+      | "GreaterThan"
+      | "LessThan"
+      | "GreaterThanOrEqual"
+      | "LessThanOrEqual"
+      | "Equals"
+      | "NotEquals";
     threshold: number;
   };
   scaleAction: {
-    direction: 'Increase' | 'Decrease';
-    type: 'ChangeCount' | 'PercentChangeCount' | 'ExactCount';
+    direction: "Increase" | "Decrease";
+    type: "ChangeCount" | "PercentChangeCount" | "ExactCount";
     value: string;
     cooldown: string;
   };
@@ -202,33 +208,36 @@ export interface AutoscaleRule {
 
 /**
  * Generate auto-scaling settings for VMSS
- * 
+ *
  * @param vmssName - Name of the VMSS
  * @param profile - Auto-scaling profile
  * @returns Auto-scale settings template
- * 
+ *
  * @example
  * ```handlebars
  * {{availability:vmssAutoscale vmssName="myVMSS" minInstances=2 maxInstances=10}}
  * ```
  */
-export function vmssAutoscale(vmssName: string, profile: AutoscaleProfile): any {
+export function vmssAutoscale(
+  vmssName: string,
+  profile: AutoscaleProfile,
+): any {
   return {
-    type: 'Microsoft.Insights/autoscalesettings',
-    apiVersion: '2022-10-01',
+    type: "Microsoft.Insights/autoscalesettings",
+    apiVersion: "2022-10-01",
     name: `${vmssName}-autoscale`,
-    location: '[resourceGroup().location]',
+    location: "[resourceGroup().location]",
     properties: {
       enabled: true,
       targetResourceUri: `[resourceId('Microsoft.Compute/virtualMachineScaleSets', '${vmssName}')]`,
-      profiles: [profile]
-    }
+      profiles: [profile],
+    },
   };
 }
 
 /**
  * Create CPU-based auto-scaling rule
- * 
+ *
  * @param vmssResourceId - Resource ID of VMSS
  * @param scaleOutThreshold - CPU % to scale out (default: 75)
  * @param scaleInThreshold - CPU % to scale in (default: 25)
@@ -237,47 +246,47 @@ export function vmssAutoscale(vmssName: string, profile: AutoscaleProfile): any 
 export function cpuAutoscaleRules(
   vmssResourceId: string,
   scaleOutThreshold: number = 75,
-  scaleInThreshold: number = 25
+  scaleInThreshold: number = 25,
 ): AutoscaleRule[] {
   return [
     // Scale out rule
     {
       metricTrigger: {
-        metricName: 'Percentage CPU',
+        metricName: "Percentage CPU",
         metricResourceId: vmssResourceId,
-        timeGrain: 'PT1M',
-        statistic: 'Average',
-        timeWindow: 'PT5M',
-        timeAggregation: 'Average',
-        operator: 'GreaterThan',
-        threshold: scaleOutThreshold
+        timeGrain: "PT1M",
+        statistic: "Average",
+        timeWindow: "PT5M",
+        timeAggregation: "Average",
+        operator: "GreaterThan",
+        threshold: scaleOutThreshold,
       },
       scaleAction: {
-        direction: 'Increase',
-        type: 'ChangeCount',
-        value: '1',
-        cooldown: 'PT5M'
-      }
+        direction: "Increase",
+        type: "ChangeCount",
+        value: "1",
+        cooldown: "PT5M",
+      },
     },
     // Scale in rule
     {
       metricTrigger: {
-        metricName: 'Percentage CPU',
+        metricName: "Percentage CPU",
         metricResourceId: vmssResourceId,
-        timeGrain: 'PT1M',
-        statistic: 'Average',
-        timeWindow: 'PT5M',
-        timeAggregation: 'Average',
-        operator: 'LessThan',
-        threshold: scaleInThreshold
+        timeGrain: "PT1M",
+        statistic: "Average",
+        timeWindow: "PT5M",
+        timeAggregation: "Average",
+        operator: "LessThan",
+        threshold: scaleInThreshold,
       },
       scaleAction: {
-        direction: 'Decrease',
-        type: 'ChangeCount',
-        value: '1',
-        cooldown: 'PT5M'
-      }
-    }
+        direction: "Decrease",
+        type: "ChangeCount",
+        value: "1",
+        cooldown: "PT5M",
+      },
+    },
   ];
 }
 
@@ -285,7 +294,7 @@ export function cpuAutoscaleRules(
  * Health probe configuration for VMSS
  */
 export interface HealthProbeConfig {
-  protocol: 'Http' | 'Https' | 'Tcp';
+  protocol: "Http" | "Https" | "Tcp";
   port: number;
   requestPath?: string; // For HTTP/HTTPS
   intervalInSeconds?: number;
@@ -294,7 +303,7 @@ export interface HealthProbeConfig {
 
 /**
  * Generate application health extension for VMSS
- * 
+ *
  * @param config - Health probe configuration
  * @returns Application health extension
  */
@@ -303,28 +312,28 @@ export function vmssHealthExtension(config: HealthProbeConfig): any {
     protocol: config.protocol,
     port: config.port,
     intervalInSeconds: config.intervalInSeconds ?? 30,
-    numberOfProbes: config.numberOfProbes ?? 2
+    numberOfProbes: config.numberOfProbes ?? 2,
   };
 
-  if (config.protocol !== 'Tcp' && config.requestPath) {
+  if (config.protocol !== "Tcp" && config.requestPath) {
     settings.requestPath = config.requestPath;
   }
 
   return {
-    name: 'HealthExtension',
+    name: "HealthExtension",
     properties: {
-      publisher: 'Microsoft.ManagedServices',
-      type: 'ApplicationHealthLinux', // or ApplicationHealthWindows
-      typeHandlerVersion: '1.0',
+      publisher: "Microsoft.ManagedServices",
+      type: "ApplicationHealthLinux", // or ApplicationHealthWindows
+      typeHandlerVersion: "1.0",
       autoUpgradeMinorVersion: true,
-      settings
-    }
+      settings,
+    },
   };
 }
 
 /**
  * Generate rolling upgrade policy
- * 
+ *
  * @param maxBatchPercent - Max % of VMs to upgrade at once (default: 20)
  * @param maxUnhealthyPercent - Max % unhealthy before stopping (default: 20)
  * @param pauseTime - Pause between batches (default: PT0S)
@@ -333,20 +342,20 @@ export function vmssHealthExtension(config: HealthProbeConfig): any {
 export function rollingUpgradePolicy(
   maxBatchPercent: number = 20,
   maxUnhealthyPercent: number = 20,
-  pauseTime: string = 'PT0S'
+  pauseTime: string = "PT0S",
 ): any {
   return {
     maxBatchInstancePercent: maxBatchPercent,
     maxUnhealthyInstancePercent: maxUnhealthyPercent,
     maxUnhealthyUpgradedInstancePercent: maxUnhealthyPercent,
     pauseTimeBetweenBatches: pauseTime,
-    prioritizeUnhealthyInstances: true
+    prioritizeUnhealthyInstances: true,
   };
 }
 
 /**
  * Calculate expected uptime for VMSS
- * 
+ *
  * @param zoneCount - Number of zones (0 for regional, 1-3 for zonal)
  * @param instanceCount - Number of instances
  * @returns SLA percentage
@@ -359,7 +368,7 @@ export function vmssSLA(zoneCount: number, instanceCount: number): number {
 
 /**
  * Validate VMSS configuration
- * 
+ *
  * @param config - VMSS configuration
  * @returns Validation result
  */
@@ -373,51 +382,59 @@ export function validateVMSSConfig(config: VMSSConfig): {
 
   // Validate name
   if (!config.name || config.name.length === 0) {
-    errors.push('VMSS name is required');
+    errors.push("VMSS name is required");
   }
 
   // Validate VM size
   if (!config.vmSize || config.vmSize.length === 0) {
-    errors.push('VM size is required');
+    errors.push("VM size is required");
   }
 
   // Validate fault domain count based on orchestration mode
-  if (config.orchestrationMode === 'Flexible') {
-    if (config.platformFaultDomainCount && 
-        (config.platformFaultDomainCount < 1 || config.platformFaultDomainCount > 5)) {
-      errors.push('Flexible VMSS fault domain count must be between 1 and 5');
+  if (config.orchestrationMode === "Flexible") {
+    if (
+      config.platformFaultDomainCount &&
+      (config.platformFaultDomainCount < 1 ||
+        config.platformFaultDomainCount > 5)
+    ) {
+      errors.push("Flexible VMSS fault domain count must be between 1 and 5");
     }
-  } else if (config.orchestrationMode === 'Uniform') {
-    if (config.platformFaultDomainCount && 
-        (config.platformFaultDomainCount < 1 || config.platformFaultDomainCount > 3)) {
-      errors.push('Uniform VMSS fault domain count must be between 1 and 3');
+  } else if (config.orchestrationMode === "Uniform") {
+    if (
+      config.platformFaultDomainCount &&
+      (config.platformFaultDomainCount < 1 ||
+        config.platformFaultDomainCount > 3)
+    ) {
+      errors.push("Uniform VMSS fault domain count must be between 1 and 3");
     }
   }
 
   // Validate instance count
   if (config.instanceCount && config.instanceCount < 0) {
-    errors.push('Instance count must be non-negative');
+    errors.push("Instance count must be non-negative");
   }
 
   if (config.instanceCount === 1) {
-    warnings.push('Single instance VMSS provides no high availability benefits');
+    warnings.push(
+      "Single instance VMSS provides no high availability benefits",
+    );
   }
 
   // Warning for zones
   if (!config.zones || config.zones.length === 0) {
-    warnings.push('Consider using availability zones for 99.99% SLA');
+    warnings.push("Consider using availability zones for 99.99% SLA");
   }
 
   return {
     valid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
 /**
  * VMSS best practices documentation
- * 
+ *
  * @returns Best practices as markdown string
  */
 export function vmssBestPractices(): string {
@@ -494,5 +511,5 @@ export const vmss = {
   rollingUpgradePolicy,
   vmssSLA,
   validateVMSSConfig,
-  vmssBestPractices
+  vmssBestPractices,
 };

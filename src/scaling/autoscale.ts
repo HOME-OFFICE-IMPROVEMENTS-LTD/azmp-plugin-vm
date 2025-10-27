@@ -7,19 +7,31 @@
  * @module scaling/autoscale
  */
 
-export type MetricName = 
-  | 'Percentage CPU'
-  | 'Available Memory Bytes'
-  | 'Network In Total'
-  | 'Network Out Total'
-  | 'Disk Read Bytes/Sec'
-  | 'Disk Write Bytes/Sec'
-  | 'Data Disk Read Bytes/Sec'
-  | 'Data Disk Write Bytes/Sec';
+export type MetricName =
+  | "Percentage CPU"
+  | "Available Memory Bytes"
+  | "Network In Total"
+  | "Network Out Total"
+  | "Disk Read Bytes/Sec"
+  | "Disk Write Bytes/Sec"
+  | "Data Disk Read Bytes/Sec"
+  | "Data Disk Write Bytes/Sec";
 
-export type ScaleDirection = 'Increase' | 'Decrease';
-export type TimeAggregationType = 'Average' | 'Minimum' | 'Maximum' | 'Total' | 'Count' | 'Last';
-export type ComparisonOperator = 'Equals' | 'NotEquals' | 'GreaterThan' | 'GreaterThanOrEqual' | 'LessThan' | 'LessThanOrEqual';
+export type ScaleDirection = "Increase" | "Decrease";
+export type TimeAggregationType =
+  | "Average"
+  | "Minimum"
+  | "Maximum"
+  | "Total"
+  | "Count"
+  | "Last";
+export type ComparisonOperator =
+  | "Equals"
+  | "NotEquals"
+  | "GreaterThan"
+  | "GreaterThanOrEqual"
+  | "LessThan"
+  | "LessThanOrEqual";
 
 /**
  * Metric-based scaling rule configuration
@@ -35,7 +47,7 @@ export interface MetricScaleRule {
   threshold: number;
   direction: ScaleDirection;
   cooldown: string; // ISO 8601 duration (e.g., 'PT5M' for 5 minutes)
-  type?: 'ChangeCount' | 'PercentChangeCount' | 'ExactCount';
+  type?: "ChangeCount" | "PercentChangeCount" | "ExactCount";
   value?: number; // Scale amount
 }
 
@@ -50,7 +62,7 @@ export interface ScheduleScaleRule {
     default: number;
   };
   recurrence?: {
-    frequency: 'Week' | 'Month';
+    frequency: "Week" | "Month";
     schedule: {
       timeZone: string;
       days: string[];
@@ -61,7 +73,7 @@ export interface ScheduleScaleRule {
   fixedDate?: {
     timeZone: string;
     start: string; // ISO 8601 datetime
-    end: string;   // ISO 8601 datetime
+    end: string; // ISO 8601 datetime
   };
 }
 
@@ -82,7 +94,7 @@ export interface AutoScaleProfile {
     end: string;
   };
   recurrence?: {
-    frequency: 'Week' | 'Month';
+    frequency: "Week" | "Month";
     schedule: {
       timeZone: string;
       days: string[];
@@ -101,7 +113,7 @@ export interface AutoScalePolicyOptions {
   enabled?: boolean;
   profiles: AutoScaleProfile[];
   notifications?: {
-    operation: 'Scale';
+    operation: "Scale";
     email?: {
       sendToSubscriptionAdministrator?: boolean;
       sendToSubscriptionCoAdministrators?: boolean;
@@ -118,48 +130,54 @@ export interface AutoScalePolicyOptions {
 /**
  * Create a metric-based scaling rule
  */
-export function createMetricScaleRule(options: MetricScaleRule): Record<string, unknown> {
+export function createMetricScaleRule(
+  options: MetricScaleRule,
+): Record<string, unknown> {
   if (!options.metricName) {
-    throw new Error('Metric scale rule requires a metricName');
+    throw new Error("Metric scale rule requires a metricName");
   }
 
-  if (typeof options.threshold !== 'number') {
-    throw new Error('Metric scale rule requires a numeric threshold');
+  if (typeof options.threshold !== "number") {
+    throw new Error("Metric scale rule requires a numeric threshold");
   }
 
   return {
     metricTrigger: {
       metricName: options.metricName,
-      metricNamespace: '',
-      metricResourceUri: options.metricResourceUri || '[resourceId("Microsoft.Compute/virtualMachineScaleSets", parameters("vmssName"))]',
-      timeGrain: options.timeGrain || 'PT1M',
-      statistic: options.statistic || 'Average',
-      timeWindow: options.timeWindow || 'PT5M',
-      timeAggregation: options.timeAggregation || 'Average',
-      operator: options.operator || 'GreaterThan',
+      metricNamespace: "",
+      metricResourceUri:
+        options.metricResourceUri ||
+        '[resourceId("Microsoft.Compute/virtualMachineScaleSets", parameters("vmssName"))]',
+      timeGrain: options.timeGrain || "PT1M",
+      statistic: options.statistic || "Average",
+      timeWindow: options.timeWindow || "PT5M",
+      timeAggregation: options.timeAggregation || "Average",
+      operator: options.operator || "GreaterThan",
       threshold: options.threshold,
       dimensions: [],
-      dividePerInstance: false
+      dividePerInstance: false,
     },
     scaleAction: {
       direction: options.direction,
-      type: options.type || 'ChangeCount',
-      value: options.value?.toString() || '1',
-      cooldown: options.cooldown || 'PT5M'
-    }
+      type: options.type || "ChangeCount",
+      value: options.value?.toString() || "1",
+      cooldown: options.cooldown || "PT5M",
+    },
   };
 }
 
 /**
  * Create a schedule-based scaling profile
  */
-export function createScheduleProfile(options: ScheduleScaleRule): Record<string, unknown> {
+export function createScheduleProfile(
+  options: ScheduleScaleRule,
+): Record<string, unknown> {
   if (!options.name) {
-    throw new Error('Schedule profile requires a name');
+    throw new Error("Schedule profile requires a name");
   }
 
-  if (!options.capacity || typeof options.capacity.minimum !== 'number') {
-    throw new Error('Schedule profile requires capacity with minimum value');
+  if (!options.capacity || typeof options.capacity.minimum !== "number") {
+    throw new Error("Schedule profile requires capacity with minimum value");
   }
 
   const profile: Record<string, any> = {
@@ -167,16 +185,16 @@ export function createScheduleProfile(options: ScheduleScaleRule): Record<string
     capacity: {
       minimum: options.capacity.minimum.toString(),
       maximum: options.capacity.maximum.toString(),
-      default: options.capacity.default.toString()
+      default: options.capacity.default.toString(),
     },
-    rules: []
+    rules: [],
   };
 
   if (options.fixedDate) {
     profile.fixedDate = {
-      timeZone: options.fixedDate.timeZone || 'UTC',
+      timeZone: options.fixedDate.timeZone || "UTC",
       start: options.fixedDate.start,
-      end: options.fixedDate.end
+      end: options.fixedDate.end,
     };
   }
 
@@ -184,11 +202,11 @@ export function createScheduleProfile(options: ScheduleScaleRule): Record<string
     profile.recurrence = {
       frequency: options.recurrence.frequency,
       schedule: {
-        timeZone: options.recurrence.schedule.timeZone || 'UTC',
+        timeZone: options.recurrence.schedule.timeZone || "UTC",
         days: options.recurrence.schedule.days,
         hours: options.recurrence.schedule.hours,
-        minutes: options.recurrence.schedule.minutes
-      }
+        minutes: options.recurrence.schedule.minutes,
+      },
     };
   }
 
@@ -198,44 +216,46 @@ export function createScheduleProfile(options: ScheduleScaleRule): Record<string
 /**
  * Create an auto-scaling policy resource definition
  */
-export function createAutoScalePolicy(options: AutoScalePolicyOptions): Record<string, unknown> {
+export function createAutoScalePolicy(
+  options: AutoScalePolicyOptions,
+): Record<string, unknown> {
   if (!options.name) {
-    throw new Error('Auto-scale policy requires a name');
+    throw new Error("Auto-scale policy requires a name");
   }
 
   if (!options.targetResourceUri) {
-    throw new Error('Auto-scale policy requires a targetResourceUri');
+    throw new Error("Auto-scale policy requires a targetResourceUri");
   }
 
   if (!options.profiles || options.profiles.length === 0) {
-    throw new Error('Auto-scale policy requires at least one profile');
+    throw new Error("Auto-scale policy requires at least one profile");
   }
 
   const resource: Record<string, any> = {
-    type: 'Microsoft.Insights/autoscalesettings',
-    apiVersion: '2022-10-01',
+    type: "Microsoft.Insights/autoscalesettings",
+    apiVersion: "2022-10-01",
     name: options.name,
-    location: '[resourceGroup().location]',
+    location: "[resourceGroup().location]",
     properties: {
       name: options.name,
       enabled: options.enabled !== false,
       targetResourceUri: options.targetResourceUri,
-      profiles: options.profiles.map(profile => {
+      profiles: options.profiles.map((profile) => {
         const profileDef: Record<string, any> = {
           name: profile.name,
           capacity: {
             minimum: profile.capacity.minimum.toString(),
             maximum: profile.capacity.maximum.toString(),
-            default: profile.capacity.default.toString()
+            default: profile.capacity.default.toString(),
           },
-          rules: profile.rules.map(rule => createMetricScaleRule(rule))
+          rules: profile.rules.map((rule) => createMetricScaleRule(rule)),
         };
 
         if (profile.fixedDate) {
           profileDef.fixedDate = {
-            timeZone: profile.fixedDate.timeZone || 'UTC',
+            timeZone: profile.fixedDate.timeZone || "UTC",
             start: profile.fixedDate.start,
-            end: profile.fixedDate.end
+            end: profile.fixedDate.end,
           };
         }
 
@@ -243,17 +263,17 @@ export function createAutoScalePolicy(options: AutoScalePolicyOptions): Record<s
           profileDef.recurrence = {
             frequency: profile.recurrence.frequency,
             schedule: {
-              timeZone: profile.recurrence.schedule.timeZone || 'UTC',
+              timeZone: profile.recurrence.schedule.timeZone || "UTC",
               days: profile.recurrence.schedule.days,
               hours: profile.recurrence.schedule.hours,
-              minutes: profile.recurrence.schedule.minutes
-            }
+              minutes: profile.recurrence.schedule.minutes,
+            },
           };
         }
 
         return profileDef;
-      })
-    }
+      }),
+    },
   };
 
   if (options.notifications && options.notifications.length > 0) {
@@ -288,42 +308,44 @@ export function createCpuScalingPolicy(options: {
   return createAutoScalePolicy({
     name: options.name,
     targetResourceUri: options.targetResourceUri,
-    profiles: [{
-      name: 'Default Profile',
-      capacity: {
-        minimum: minInstances,
-        maximum: maxInstances,
-        default: defaultInstances
-      },
-      rules: [
-        {
-          metricName: 'Percentage CPU',
-          timeGrain: 'PT1M',
-          statistic: 'Average',
-          timeWindow: 'PT5M',
-          timeAggregation: 'Average',
-          operator: 'GreaterThan',
-          threshold: scaleOutThreshold,
-          direction: 'Increase',
-          cooldown: 'PT5M',
-          type: 'ChangeCount',
-          value: 1
+    profiles: [
+      {
+        name: "Default Profile",
+        capacity: {
+          minimum: minInstances,
+          maximum: maxInstances,
+          default: defaultInstances,
         },
-        {
-          metricName: 'Percentage CPU',
-          timeGrain: 'PT1M',
-          statistic: 'Average',
-          timeWindow: 'PT5M',
-          timeAggregation: 'Average',
-          operator: 'LessThan',
-          threshold: scaleInThreshold,
-          direction: 'Decrease',
-          cooldown: 'PT5M',
-          type: 'ChangeCount',
-          value: 1
-        }
-      ]
-    }]
+        rules: [
+          {
+            metricName: "Percentage CPU",
+            timeGrain: "PT1M",
+            statistic: "Average",
+            timeWindow: "PT5M",
+            timeAggregation: "Average",
+            operator: "GreaterThan",
+            threshold: scaleOutThreshold,
+            direction: "Increase",
+            cooldown: "PT5M",
+            type: "ChangeCount",
+            value: 1,
+          },
+          {
+            metricName: "Percentage CPU",
+            timeGrain: "PT1M",
+            statistic: "Average",
+            timeWindow: "PT5M",
+            timeAggregation: "Average",
+            operator: "LessThan",
+            threshold: scaleInThreshold,
+            direction: "Decrease",
+            cooldown: "PT5M",
+            type: "ChangeCount",
+            value: 1,
+          },
+        ],
+      },
+    ],
   });
 }
 
@@ -338,50 +360,70 @@ export function createBusinessHoursSchedule(options: {
   businessDays?: string[];
   businessHours?: { start: number; end: number };
 }): AutoScaleProfile[] {
-  const timeZone = options.timeZone || 'UTC';
-  const businessDays = options.businessDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const timeZone = options.timeZone || "UTC";
+  const businessDays = options.businessDays || [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+  ];
   const businessHours = options.businessHours || { start: 9, end: 17 };
 
   return [
     {
-      name: 'Business Hours Profile',
+      name: "Business Hours Profile",
       capacity: {
         minimum: options.businessHoursCapacity.min,
         maximum: options.businessHoursCapacity.max,
-        default: options.businessHoursCapacity.default
+        default: options.businessHoursCapacity.default,
       },
       rules: [],
       recurrence: {
-        frequency: 'Week',
+        frequency: "Week",
         schedule: {
           timeZone,
           days: businessDays,
-          hours: Array.from({ length: businessHours.end - businessHours.start }, (_, i) => businessHours.start + i),
-          minutes: [0]
-        }
-      }
+          hours: Array.from(
+            { length: businessHours.end - businessHours.start },
+            (_, i) => businessHours.start + i,
+          ),
+          minutes: [0],
+        },
+      },
     },
     {
-      name: 'Off Hours Profile',
+      name: "Off Hours Profile",
       capacity: {
         minimum: options.offHoursCapacity.min,
         maximum: options.offHoursCapacity.max,
-        default: options.offHoursCapacity.default
+        default: options.offHoursCapacity.default,
       },
       rules: [],
       recurrence: {
-        frequency: 'Week',
+        frequency: "Week",
         schedule: {
           timeZone,
-          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          days: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+          ],
           hours: [
             ...Array.from({ length: businessHours.start }, (_, i) => i),
-            ...Array.from({ length: 24 - businessHours.end }, (_, i) => businessHours.end + i)
+            ...Array.from(
+              { length: 24 - businessHours.end },
+              (_, i) => businessHours.end + i,
+            ),
           ],
-          minutes: [0]
-        }
-      }
-    }
+          minutes: [0],
+        },
+      },
+    },
   ];
 }
 
@@ -389,9 +431,9 @@ export function createBusinessHoursSchedule(options: {
  * Exported helper map for registration
  */
 export const autoscaleHelpers = {
-  'scale:autoscale.policy': createAutoScalePolicy,
-  'scale:autoscale.metric': createMetricScaleRule,
-  'scale:autoscale.schedule': createScheduleProfile,
-  'scale:autoscale.cpu': createCpuScalingPolicy,
-  'scale:autoscale.businessHours': createBusinessHoursSchedule
+  "scale:autoscale.policy": createAutoScalePolicy,
+  "scale:autoscale.metric": createMetricScaleRule,
+  "scale:autoscale.schedule": createScheduleProfile,
+  "scale:autoscale.cpu": createCpuScalingPolicy,
+  "scale:autoscale.businessHours": createBusinessHoursSchedule,
 };

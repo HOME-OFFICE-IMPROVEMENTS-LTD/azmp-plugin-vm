@@ -1,4 +1,4 @@
-import Handlebars from 'handlebars';
+import Handlebars from "handlebars";
 
 /**
  * Options for alert:logAlert helper
@@ -14,7 +14,7 @@ export interface LogAlertOptions {
   windowSize?: string; // PT5M, PT10M, PT15M, PT30M, PT1H, PT6H, PT12H, PT24H, P1D
   query: string; // KQL query
   metricMeasureColumn?: string; // For metric measurement alerts
-  operator?: 'GreaterThan' | 'LessThan' | 'Equal'; // For result count alerts
+  operator?: "GreaterThan" | "LessThan" | "Equal"; // For result count alerts
   threshold?: number;
   numberOfEvaluationPeriods?: number;
   minFailingPeriodsToAlert?: number;
@@ -28,7 +28,7 @@ export interface LogAlertOptions {
 
 /**
  * Handlebars helper to create log alert based on KQL query
- * 
+ *
  * @example
  * ```handlebars
  * {{{alert:logAlert
@@ -45,18 +45,18 @@ export interface LogAlertOptions {
  */
 export function alertLogAlert(this: unknown, hash: LogAlertOptions): string {
   if (!hash || !hash.name) {
-    throw new Error('alert:logAlert requires name parameter');
+    throw new Error("alert:logAlert requires name parameter");
   }
   if (!hash.scopes) {
-    throw new Error('alert:logAlert requires scopes parameter');
+    throw new Error("alert:logAlert requires scopes parameter");
   }
-  if (!hash.query || hash.query.trim() === '') {
-    throw new Error('alert:logAlert requires query parameter');
+  if (!hash.query || hash.query.trim() === "") {
+    throw new Error("alert:logAlert requires query parameter");
   }
 
   // Parse scopes
   let scopesArray: string[];
-  if (typeof hash.scopes === 'string') {
+  if (typeof hash.scopes === "string") {
     try {
       scopesArray = JSON.parse(hash.scopes);
     } catch (e) {
@@ -69,7 +69,7 @@ export function alertLogAlert(this: unknown, hash: LogAlertOptions): string {
   // Parse action groups if provided
   let actionGroupsArray: string[] | undefined;
   if (hash.actionGroups) {
-    if (typeof hash.actionGroups === 'string') {
+    if (typeof hash.actionGroups === "string") {
       try {
         actionGroupsArray = JSON.parse(hash.actionGroups);
       } catch (e) {
@@ -81,48 +81,61 @@ export function alertLogAlert(this: unknown, hash: LogAlertOptions): string {
   }
 
   const result = {
-    type: 'Microsoft.Insights/scheduledQueryRules',
-    apiVersion: '2021-08-01',
+    type: "Microsoft.Insights/scheduledQueryRules",
+    apiVersion: "2021-08-01",
     name: hash.name,
-    location: 'global',
+    location: "global",
     ...(hash.tags && { tags: hash.tags }),
     properties: {
       description: hash.description || `Log alert for ${hash.name}`,
       severity: hash.severity,
       enabled: hash.enabled !== undefined ? hash.enabled : true,
       scopes: scopesArray,
-      evaluationFrequency: hash.evaluationFrequency || 'PT5M',
-      windowSize: hash.windowSize || 'PT5M',
+      evaluationFrequency: hash.evaluationFrequency || "PT5M",
+      windowSize: hash.windowSize || "PT5M",
       criteria: {
         allOf: [
           {
             query: hash.query,
-            timeAggregation: 'Count',
-            ...(hash.metricMeasureColumn && { metricMeasureColumn: hash.metricMeasureColumn }),
-            operator: hash.operator || 'GreaterThan',
+            timeAggregation: "Count",
+            ...(hash.metricMeasureColumn && {
+              metricMeasureColumn: hash.metricMeasureColumn,
+            }),
+            operator: hash.operator || "GreaterThan",
             threshold: hash.threshold !== undefined ? hash.threshold : 0,
             failingPeriods: {
               numberOfEvaluationPeriods: hash.numberOfEvaluationPeriods || 1,
-              minFailingPeriodsToAlert: hash.minFailingPeriodsToAlert || 1
-            }
-          }
-        ]
+              minFailingPeriodsToAlert: hash.minFailingPeriodsToAlert || 1,
+            },
+          },
+        ],
       },
       autoMitigate: hash.autoMitigate !== undefined ? hash.autoMitigate : true,
-      ...(actionGroupsArray && actionGroupsArray.length > 0 && {
-        actions: {
-          actionGroups: actionGroupsArray,
-          ...(hash.muteActionsDuration && { customProperties: { muteActionsDuration: hash.muteActionsDuration } })
-        }
-      }),
-      checkWorkspaceAlertsStorageConfigured: hash.checkWorkspaceAlertsStorageConfigured !== undefined ? hash.checkWorkspaceAlertsStorageConfigured : false,
-      skipQueryValidation: hash.skipQueryValidation !== undefined ? hash.skipQueryValidation : false
-    }
+      ...(actionGroupsArray &&
+        actionGroupsArray.length > 0 && {
+          actions: {
+            actionGroups: actionGroupsArray,
+            ...(hash.muteActionsDuration && {
+              customProperties: {
+                muteActionsDuration: hash.muteActionsDuration,
+              },
+            }),
+          },
+        }),
+      checkWorkspaceAlertsStorageConfigured:
+        hash.checkWorkspaceAlertsStorageConfigured !== undefined
+          ? hash.checkWorkspaceAlertsStorageConfigured
+          : false,
+      skipQueryValidation:
+        hash.skipQueryValidation !== undefined
+          ? hash.skipQueryValidation
+          : false,
+    },
   };
 
   return JSON.stringify(result, null, 2);
 }
 
 export function registerLogAlertHelpers(): void {
-  Handlebars.registerHelper('alert:logAlert', alertLogAlert);
+  Handlebars.registerHelper("alert:logAlert", alertLogAlert);
 }

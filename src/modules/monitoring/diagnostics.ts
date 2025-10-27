@@ -3,7 +3,7 @@
  * Configures log and metric forwarding to Log Analytics, Storage, or Event Hub
  */
 
-import Handlebars from 'handlebars';
+import Handlebars from "handlebars";
 
 export interface DiagnosticSettingsOptions {
   targetResourceId: string;
@@ -30,19 +30,27 @@ export interface DiagnosticSettingsOptions {
  */
 export function monitorDiagnosticSettings(this: any, options: any): string {
   const hash = options.hash as DiagnosticSettingsOptions;
-  
+
   if (!hash.targetResourceId) {
-    throw new Error('monitor:diagnosticSettings requires targetResourceId parameter');
+    throw new Error(
+      "monitor:diagnosticSettings requires targetResourceId parameter",
+    );
   }
 
-  if (!hash.workspaceId && !hash.storageAccountId && !hash.eventHubAuthorizationRuleId) {
-    throw new Error('monitor:diagnosticSettings requires at least one destination (workspaceId, storageAccountId, or eventHubAuthorizationRuleId)');
+  if (
+    !hash.workspaceId &&
+    !hash.storageAccountId &&
+    !hash.eventHubAuthorizationRuleId
+  ) {
+    throw new Error(
+      "monitor:diagnosticSettings requires at least one destination (workspaceId, storageAccountId, or eventHubAuthorizationRuleId)",
+    );
   }
 
   // Parse logs array
   let logsArray: string[] = [];
   if (hash.logs) {
-    if (typeof hash.logs === 'string') {
+    if (typeof hash.logs === "string") {
       try {
         logsArray = JSON.parse(hash.logs);
       } catch {
@@ -56,7 +64,7 @@ export function monitorDiagnosticSettings(this: any, options: any): string {
   // Parse metrics array
   let metricsArray: string[] = [];
   if (hash.metrics) {
-    if (typeof hash.metrics === 'string') {
+    if (typeof hash.metrics === "string") {
       try {
         metricsArray = JSON.parse(hash.metrics);
       } catch {
@@ -68,42 +76,45 @@ export function monitorDiagnosticSettings(this: any, options: any): string {
   }
 
   const retentionDays = hash.retentionDays || 30;
-  const settingsName = hash.name || 'default';
+  const settingsName = hash.name || "default";
 
   const result = {
-    type: 'Microsoft.Insights/diagnosticSettings',
-    apiVersion: '2021-05-01-preview',
+    type: "Microsoft.Insights/diagnosticSettings",
+    apiVersion: "2021-05-01-preview",
     scope: hash.targetResourceId,
     name: settingsName,
     properties: {
       ...(hash.workspaceId && { workspaceId: hash.workspaceId }),
       ...(hash.storageAccountId && { storageAccountId: hash.storageAccountId }),
-      ...(hash.eventHubAuthorizationRuleId && { 
+      ...(hash.eventHubAuthorizationRuleId && {
         eventHubAuthorizationRuleId: hash.eventHubAuthorizationRuleId,
-        ...(hash.eventHubName && { eventHubName: hash.eventHubName })
+        ...(hash.eventHubName && { eventHubName: hash.eventHubName }),
       }),
-      logs: logsArray.map(category => ({
+      logs: logsArray.map((category) => ({
         category: category,
         enabled: true,
         retentionPolicy: {
           enabled: retentionDays > 0,
-          days: retentionDays
-        }
+          days: retentionDays,
+        },
       })),
-      metrics: metricsArray.map(category => ({
+      metrics: metricsArray.map((category) => ({
         category: category,
         enabled: true,
         retentionPolicy: {
           enabled: retentionDays > 0,
-          days: retentionDays
-        }
-      }))
-    }
+          days: retentionDays,
+        },
+      })),
+    },
   };
 
   return JSON.stringify(result, null, 2);
 }
 
 export function registerDiagnosticsHelpers(): void {
-  Handlebars.registerHelper('monitor:diagnosticSettings', monitorDiagnosticSettings);
+  Handlebars.registerHelper(
+    "monitor:diagnosticSettings",
+    monitorDiagnosticSettings,
+  );
 }

@@ -1,17 +1,17 @@
 /**
  * Template validation index
- * 
+ *
  * Provides unified interface for ARM and helper validation
  */
 
-import { 
-  ArmValidator, 
-  ValidationResult, 
-  ValidationError, 
+import {
+  ArmValidator,
+  ValidationResult,
+  ValidationError,
   ValidationWarning,
   createArmValidator,
-  validateArmStructure
-} from './armValidator';
+  validateArmStructure,
+} from "./armValidator";
 
 import {
   HelperUsageValidator,
@@ -21,13 +21,13 @@ import {
   HelperCoverage,
   validateHelperUsage,
   getHelperCategories,
-  isHelperAvailable
-} from './helperValidator';
+  isHelperAvailable,
+} from "./helperValidator";
 
-export { 
-  ArmValidator, 
-  ValidationResult, 
-  ValidationError, 
+export {
+  ArmValidator,
+  ValidationResult,
+  ValidationError,
   ValidationWarning,
   createArmValidator,
   validateArmStructure,
@@ -38,7 +38,7 @@ export {
   HelperCoverage,
   validateHelperUsage,
   getHelperCategories,
-  isHelperAvailable
+  isHelperAvailable,
 };
 
 /**
@@ -53,7 +53,7 @@ export interface CombinedValidationResult {
 
 /**
  * Validate template with both ARM and helper validation
- * 
+ *
  * @param template - ARM template JSON
  * @param templateContent - Template content string (for helper validation)
  * @param context - Template generation context
@@ -64,9 +64,8 @@ export async function validateTemplate(
   template: any,
   templateContent: string,
   context: any = {},
-  armValidator?: ArmValidator
+  armValidator?: ArmValidator,
 ): Promise<CombinedValidationResult> {
-  
   // ARM validation
   let armValidation: ValidationResult;
   if (armValidator) {
@@ -80,14 +79,14 @@ export async function validateTemplate(
 
   // Combined result
   const isValid = armValidation.isValid && helperValidation.isValid;
-  
+
   const summary = generateValidationSummary(armValidation, helperValidation);
 
   return {
     armValidation,
     helperValidation,
     isValid,
-    summary
+    summary,
   };
 }
 
@@ -95,15 +94,15 @@ export async function validateTemplate(
  * Generate validation summary
  */
 function generateValidationSummary(
-  armValidation: ValidationResult, 
-  helperValidation: HelperUsageResult
+  armValidation: ValidationResult,
+  helperValidation: HelperUsageResult,
 ): string {
   const lines: string[] = [];
 
   if (armValidation.isValid && helperValidation.isValid) {
-    lines.push('✅ Template validation passed');
+    lines.push("✅ Template validation passed");
   } else {
-    lines.push('❌ Template validation failed');
+    lines.push("❌ Template validation failed");
   }
 
   // ARM validation summary
@@ -123,7 +122,9 @@ function generateValidationSummary(
   }
 
   // Coverage summary
-  lines.push(`Helper Coverage: ${helperValidation.coverage.coveragePercentage}% (${helperValidation.coverage.usedHelpers}/${helperValidation.coverage.totalHelpers})`);
+  lines.push(
+    `Helper Coverage: ${helperValidation.coverage.coveragePercentage}% (${helperValidation.coverage.usedHelpers}/${helperValidation.coverage.totalHelpers})`,
+  );
 
-  return lines.join('\n');
+  return lines.join("\n");
 }

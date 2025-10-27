@@ -1,6 +1,6 @@
 /**
  * Advanced Azure Monitor Workbook Templates
- * 
+ *
  * Integrates performance metrics, cost analysis, and scaling patterns
  * for comprehensive VM observability and operational insights.
  */
@@ -10,10 +10,14 @@ export interface AdvancedWorkbookTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'vm-monitoring' | 'cost-optimization' | 'scaling-analytics' | 'advanced-monitoring';
+  category:
+    | "vm-monitoring"
+    | "cost-optimization"
+    | "scaling-analytics"
+    | "advanced-monitoring";
   tags: string[];
   version: string;
-  complexity: 'basic' | 'intermediate' | 'advanced' | 'expert';
+  complexity: "basic" | "intermediate" | "advanced" | "expert";
   estimatedSetupTime: string;
   prerequisites: string[];
   template: WorkbookDefinition;
@@ -38,7 +42,14 @@ export interface WorkbookDefinition {
 // Enhanced workbook parameters
 export interface WorkbookParameter {
   name: string;
-  type: 'subscription' | 'resourceGroup' | 'resource' | 'text' | 'dropdown' | 'timeRange' | 'multiSelect';
+  type:
+    | "subscription"
+    | "resourceGroup"
+    | "resource"
+    | "text"
+    | "dropdown"
+    | "timeRange"
+    | "multiSelect";
   label: string;
   description: string;
   defaultValue?: any;
@@ -61,7 +72,11 @@ export interface WorkbookParameter {
 
 // Advanced datasource configurations
 export interface WorkbookDatasource {
-  type: 'Azure Resource Graph' | 'Azure Monitor Logs' | 'Azure Monitor Metrics' | 'Azure Cost Management';
+  type:
+    | "Azure Resource Graph"
+    | "Azure Monitor Logs"
+    | "Azure Monitor Metrics"
+    | "Azure Cost Management";
   resourceType?: string;
   namespace?: string;
   resourceUri?: string;
@@ -85,13 +100,13 @@ export interface WorkbookItem {
   queryType?: number;
   resourceType?: string;
   datasource?: WorkbookDatasource;
-  visualization?: 'table' | 'chart' | 'grid' | 'map' | 'tiles' | 'graph';
+  visualization?: "table" | "chart" | "grid" | "map" | "tiles" | "graph";
   chartSettings?: {
-    type: 'line' | 'area' | 'bar' | 'scatter' | 'pie' | 'heatmap';
+    type: "line" | "area" | "bar" | "scatter" | "pie" | "heatmap";
     yAxis?: string[];
     xAxis?: string;
     series?: any[];
-    legend?: 'top' | 'bottom' | 'left' | 'right' | 'hidden';
+    legend?: "top" | "bottom" | "left" | "right" | "hidden";
     annotations?: any[];
   };
   gridSettings?: {
@@ -103,7 +118,7 @@ export interface WorkbookItem {
 
 export interface WorkbookVariable {
   name: string;
-  type: 3 | 'static' | 'parameter';
+  type: 3 | "static" | "parameter";
   value: any;
   datasource?: WorkbookDatasource;
 }
@@ -119,68 +134,76 @@ export interface WorkbookResource {
  * Combines performance, cost, and scaling analytics
  */
 export class AdvancedWorkbookGenerator {
-
   /**
    * Generate comprehensive VM performance workbook
    * Integrates performance metrics, cost analysis, and scaling insights
    */
-  static generateVmPerformanceWorkbook(options: {
-    subscriptionId?: string;
-    resourceGroupName?: string;
-    vmName?: string;
-    location?: string;
-    includePerformanceAnalysis?: boolean;
-    includeCostAnalysis?: boolean;
-    includeScalingAnalytics?: boolean;
-    timeRange?: string;
-  } = {}): WorkbookDefinition {
-    
+  static generateVmPerformanceWorkbook(
+    options: {
+      subscriptionId?: string;
+      resourceGroupName?: string;
+      vmName?: string;
+      location?: string;
+      includePerformanceAnalysis?: boolean;
+      includeCostAnalysis?: boolean;
+      includeScalingAnalytics?: boolean;
+      timeRange?: string;
+    } = {},
+  ): WorkbookDefinition {
     const items: WorkbookItem[] = [];
-    
+
     // Header and introduction
-    items.push(this.createHeaderItem('VM Performance & Cost Analytics', 
-      'Comprehensive analysis of virtual machine performance, cost optimization opportunities, and scaling patterns'));
-    
+    items.push(
+      this.createHeaderItem(
+        "VM Performance & Cost Analytics",
+        "Comprehensive analysis of virtual machine performance, cost optimization opportunities, and scaling patterns",
+      ),
+    );
+
     // Parameters section
     items.push(this.createParametersItem());
-    
+
     // VM Overview section
     items.push(this.createVmOverviewSection());
-    
+
     // Performance Analysis section
     if (options.includePerformanceAnalysis !== false) {
       items.push(...this.createPerformanceAnalysisSection());
     }
-    
+
     // Cost Analysis section
     if (options.includeCostAnalysis !== false) {
       items.push(...this.createCostAnalysisSection());
     }
-    
+
     // Scaling Analytics section
     if (options.includeScalingAnalytics !== false) {
       items.push(...this.createScalingAnalyticsSection());
     }
-    
+
     // Recommendations section
     items.push(...this.createRecommendationsSection());
-    
+
     // Alerts and Actions section
     items.push(...this.createAlertsSection());
-    
+
     return {
-      version: 'Notebook/1.0',
+      version: "Notebook/1.0",
       parameters: this.getStandardParameters(),
       variables: this.getStandardVariables(),
       resources: [],
       items,
       metadata: {
-        templateId: 'vm-performance-analytics',
-        integrations: ['Azure Monitor', 'Cost Management', 'Performance Insights'],
-        dataRetention: '90 days',
-        refreshInterval: '5 minutes',
-        costEstimate: 'Low - uses standard Azure Monitor logs'
-      }
+        templateId: "vm-performance-analytics",
+        integrations: [
+          "Azure Monitor",
+          "Cost Management",
+          "Performance Insights",
+        ],
+        dataRetention: "90 days",
+        refreshInterval: "5 minutes",
+        costEstimate: "Low - uses standard Azure Monitor logs",
+      },
     };
   }
 
@@ -188,59 +211,69 @@ export class AdvancedWorkbookGenerator {
    * Generate VMSS scaling analytics workbook
    * Focuses on autoscale performance and cost optimization
    */
-  static generateVmssScalingWorkbook(options: {
-    vmssResourceId?: string;
-    includeLoadPatterns?: boolean;
-    includePredictiveAnalysis?: boolean;
-    includeCostProjections?: boolean;
-  } = {}): WorkbookDefinition {
-    
+  static generateVmssScalingWorkbook(
+    options: {
+      vmssResourceId?: string;
+      includeLoadPatterns?: boolean;
+      includePredictiveAnalysis?: boolean;
+      includeCostProjections?: boolean;
+    } = {},
+  ): WorkbookDefinition {
     const items: WorkbookItem[] = [];
-    
+
     // Header
-    items.push(this.createHeaderItem('VMSS Scaling Analytics', 
-      'Advanced autoscaling analysis with load patterns, predictive insights, and cost optimization'));
-    
+    items.push(
+      this.createHeaderItem(
+        "VMSS Scaling Analytics",
+        "Advanced autoscaling analysis with load patterns, predictive insights, and cost optimization",
+      ),
+    );
+
     // Parameters
-    items.push(this.createParametersItem('vmss'));
-    
+    items.push(this.createParametersItem("vmss"));
+
     // VMSS Overview
     items.push(this.createVmssOverviewSection());
-    
+
     // Load Pattern Analysis
     if (options.includeLoadPatterns !== false) {
       items.push(...this.createLoadPatternSection());
     }
-    
+
     // Autoscale Performance
     items.push(...this.createAutoscalePerformanceSection());
-    
+
     // Predictive Analysis
     if (options.includePredictiveAnalysis !== false) {
       items.push(...this.createPredictiveAnalysisSection());
     }
-    
+
     // Cost Analysis
     if (options.includeCostProjections !== false) {
       items.push(...this.createScalingCostSection());
     }
-    
+
     // Optimization Recommendations
     items.push(...this.createScalingOptimizationSection());
-    
+
     return {
-      version: 'Notebook/1.0',
+      version: "Notebook/1.0",
       parameters: this.getVmssParameters(),
       variables: this.getVmssVariables(),
       resources: [],
       items,
       metadata: {
-        templateId: 'vmss-scaling-analytics',
-        integrations: ['Azure Monitor', 'Autoscale', 'Cost Management', 'Performance Analytics'],
-        dataRetention: '180 days',
-        refreshInterval: '1 minute',
-        costEstimate: 'Medium - includes detailed metrics analysis'
-      }
+        templateId: "vmss-scaling-analytics",
+        integrations: [
+          "Azure Monitor",
+          "Autoscale",
+          "Cost Management",
+          "Performance Analytics",
+        ],
+        dataRetention: "180 days",
+        refreshInterval: "1 minute",
+        costEstimate: "Medium - includes detailed metrics analysis",
+      },
     };
   }
 
@@ -248,81 +281,96 @@ export class AdvancedWorkbookGenerator {
    * Generate cost optimization workbook
    * Integrates performance insights with cost recommendations
    */
-  static generateCostOptimizationWorkbook(options: {
-    scope?: 'subscription' | 'resourceGroup' | 'resource';
-    includeRightsizing?: boolean;
-    includeReservedInstances?: boolean;
-    includeSpotRecommendations?: boolean;
-  } = {}): WorkbookDefinition {
-    
+  static generateCostOptimizationWorkbook(
+    options: {
+      scope?: "subscription" | "resourceGroup" | "resource";
+      includeRightsizing?: boolean;
+      includeReservedInstances?: boolean;
+      includeSpotRecommendations?: boolean;
+    } = {},
+  ): WorkbookDefinition {
     const items: WorkbookItem[] = [];
-    
+
     // Header
-    items.push(this.createHeaderItem('VM Cost Optimization', 
-      'Comprehensive cost analysis with performance-aware recommendations'));
-    
+    items.push(
+      this.createHeaderItem(
+        "VM Cost Optimization",
+        "Comprehensive cost analysis with performance-aware recommendations",
+      ),
+    );
+
     // Parameters
-    items.push(this.createParametersItem('cost'));
-    
+    items.push(this.createParametersItem("cost"));
+
     // Cost Overview
     items.push(...this.createCostOverviewSection());
-    
+
     // Right-sizing Analysis
     if (options.includeRightsizing !== false) {
       items.push(...this.createRightsizingSection());
     }
-    
+
     // Reserved Instance Analysis
     if (options.includeReservedInstances !== false) {
       items.push(...this.createReservedInstanceSection());
     }
-    
+
     // Spot Instance Opportunities
     if (options.includeSpotRecommendations !== false) {
       items.push(...this.createSpotInstanceSection());
     }
-    
+
     // Performance Impact Analysis
     items.push(...this.createPerformanceImpactSection());
-    
+
     // Action Items
     items.push(...this.createCostActionItemsSection());
-    
+
     return {
-      version: 'Notebook/1.0',
+      version: "Notebook/1.0",
       parameters: this.getCostParameters(),
       variables: this.getCostVariables(),
       resources: [],
       items,
       metadata: {
-        templateId: 'vm-cost-optimization',
-        integrations: ['Cost Management', 'Azure Advisor', 'Performance Analytics'],
-        dataRetention: '365 days',
-        refreshInterval: '1 hour',
-        costEstimate: 'Low - primarily uses Cost Management API'
-      }
+        templateId: "vm-cost-optimization",
+        integrations: [
+          "Cost Management",
+          "Azure Advisor",
+          "Performance Analytics",
+        ],
+        dataRetention: "365 days",
+        refreshInterval: "1 hour",
+        costEstimate: "Low - primarily uses Cost Management API",
+      },
     };
   }
 
   // Helper methods for creating workbook sections
 
-  private static createHeaderItem(title: string, description: string): WorkbookItem {
+  private static createHeaderItem(
+    title: string,
+    description: string,
+  ): WorkbookItem {
     return {
       type: 1, // text
       content: {
-        json: `# ${title}\n\n${description}\n\n---`
-      }
+        json: `# ${title}\n\n${description}\n\n---`,
+      },
     };
   }
 
-  private static createParametersItem(type: string = 'vm'): WorkbookItem {
+  private static createParametersItem(type: string = "vm"): WorkbookItem {
     return {
       type: 9, // parameters
       content: {
-        parameters: type === 'vmss' ? this.getVmssParameters() : 
-                   type === 'cost' ? this.getCostParameters() : 
-                   this.getStandardParameters()
-      }
+        parameters:
+          type === "vmss"
+            ? this.getVmssParameters()
+            : type === "cost"
+              ? this.getCostParameters()
+              : this.getStandardParameters(),
+      },
     };
   }
 
@@ -376,15 +424,15 @@ vm
         `,
         size: 0,
         timeContext: {
-          durationMs: 86400000
+          durationMs: 86400000,
         },
         queryType: 0,
-        resourceType: 'microsoft.operationalinsights/workspaces'
+        resourceType: "microsoft.operationalinsights/workspaces",
       },
-      name: 'VM Overview',
+      name: "VM Overview",
       styleSettings: {
-        showBorder: true
-      }
+        showBorder: true,
+      },
     };
   }
 
@@ -393,8 +441,8 @@ vm
       {
         type: 1,
         content: {
-          json: '## 📊 Performance Analysis\n\nDetailed performance metrics with bottleneck identification and optimization opportunities.'
-        }
+          json: "## 📊 Performance Analysis\n\nDetailed performance metrics with bottleneck identification and optimization opportunities.",
+        },
       },
       {
         type: 3,
@@ -437,14 +485,14 @@ by bin(TimeGenerated, 5m), CounterName
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'chart'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "chart",
         },
-        name: 'Performance Trends',
+        name: "Performance Trends",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -453,8 +501,8 @@ by bin(TimeGenerated, 5m), CounterName
       {
         type: 1,
         content: {
-          json: '## 💰 Cost Analysis\n\nPerformance-aware cost optimization with right-sizing recommendations.'
-        }
+          json: "## 💰 Cost Analysis\n\nPerformance-aware cost optimization with right-sizing recommendations.",
+        },
       },
       {
         type: 3,
@@ -494,13 +542,13 @@ performance
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces'
+          resourceType: "microsoft.operationalinsights/workspaces",
         },
-        name: 'Cost vs Performance',
+        name: "Cost vs Performance",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -509,8 +557,8 @@ performance
       {
         type: 1,
         content: {
-          json: '## 🚀 Scaling Analytics\n\nAutoscale performance and load pattern analysis.'
-        }
+          json: "## 🚀 Scaling Analytics\n\nAutoscale performance and load pattern analysis.",
+        },
       },
       {
         type: 3,
@@ -554,13 +602,13 @@ load
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces'
+          resourceType: "microsoft.operationalinsights/workspaces",
         },
-        name: 'Scaling Patterns',
+        name: "Scaling Patterns",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -569,8 +617,8 @@ load
       {
         type: 1,
         content: {
-          json: '## 🎯 Optimization Recommendations\n\nActionable insights based on performance, cost, and scaling analysis.'
-        }
+          json: "## 🎯 Optimization Recommendations\n\nActionable insights based on performance, cost, and scaling analysis.",
+        },
       },
       {
         type: 3,
@@ -612,13 +660,13 @@ recommendations
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces'
+          resourceType: "microsoft.operationalinsights/workspaces",
         },
-        name: 'Recommendations',
+        name: "Recommendations",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -627,8 +675,8 @@ recommendations
       {
         type: 1,
         content: {
-          json: '## 🚨 Recommended Alerts\n\nProactive monitoring alerts based on current performance patterns.'
-        }
+          json: "## 🚨 Recommended Alerts\n\nProactive monitoring alerts based on current performance patterns.",
+        },
       },
       {
         type: 1,
@@ -648,9 +696,9 @@ azmp vm mon-alert-cpu --threshold 80 --duration 10m
 azmp vm mon-alert-memory --threshold 500 --unit MB
 azmp vm mon-alert-cost --threshold 20 --unit percent
 \`\`\`
-          `
-        }
-      }
+          `,
+        },
+      },
     ];
   }
 
@@ -679,9 +727,9 @@ by MetricName, bin(TimeGenerated, 5m)
         `,
         size: 0,
         queryType: 0,
-        resourceType: 'microsoft.insights/components'
+        resourceType: "microsoft.insights/components",
       },
-      name: 'VMSS Overview'
+      name: "VMSS Overview",
     };
   }
 
@@ -690,8 +738,8 @@ by MetricName, bin(TimeGenerated, 5m)
       {
         type: 1,
         content: {
-          json: '## 📈 Load Pattern Analysis\n\nDetailed analysis of load patterns for autoscale optimization.'
-        }
+          json: "## 📈 Load Pattern Analysis\n\nDetailed analysis of load patterns for autoscale optimization.",
+        },
       },
       {
         type: 3,
@@ -732,14 +780,14 @@ cpuLoad
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Load Pattern Classification',
+        name: "Load Pattern Classification",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -748,8 +796,8 @@ cpuLoad
       {
         type: 1,
         content: {
-          json: '## ⚙️ Autoscale Performance\n\nScaling events, performance impact, and optimization opportunities.'
-        }
+          json: "## ⚙️ Autoscale Performance\n\nScaling events, performance impact, and optimization opportunities.",
+        },
       },
       {
         type: 3,
@@ -792,14 +840,14 @@ scaleEvents
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Autoscale Event Impact',
+        name: "Autoscale Event Impact",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -808,8 +856,8 @@ scaleEvents
       {
         type: 1,
         content: {
-          json: '## 🔮 Predictive Analysis\n\nForecasting and predictive scaling recommendations.'
-        }
+          json: "## 🔮 Predictive Analysis\n\nForecasting and predictive scaling recommendations.",
+        },
       },
       {
         type: 3,
@@ -840,14 +888,14 @@ cpuSeries
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'chart'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "chart",
         },
-        name: 'CPU Forecast',
+        name: "CPU Forecast",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -856,8 +904,8 @@ cpuSeries
       {
         type: 1,
         content: {
-          json: '## 💸 Scaling Cost Analysis\n\nCost impact of scaling decisions and optimization opportunities.'
-        }
+          json: "## 💸 Scaling Cost Analysis\n\nCost impact of scaling decisions and optimization opportunities.",
+        },
       },
       {
         type: 3,
@@ -889,14 +937,14 @@ vmCost
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Scaling Cost Impact',
+        name: "Scaling Cost Impact",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -905,8 +953,8 @@ vmCost
       {
         type: 1,
         content: {
-          json: '## 🎯 Scaling Optimization\n\nRecommendations for improving autoscale efficiency and cost-effectiveness.'
-        }
+          json: "## 🎯 Scaling Optimization\n\nRecommendations for improving autoscale efficiency and cost-effectiveness.",
+        },
       },
       {
         type: 3,
@@ -952,14 +1000,14 @@ loadSummary
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Scaling Optimization Recommendations',
+        name: "Scaling Optimization Recommendations",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -969,8 +1017,8 @@ loadSummary
       {
         type: 1,
         content: {
-          json: '## 💰 Cost Overview\n\nComprehensive cost analysis with performance correlation.'
-        }
+          json: "## 💰 Cost Overview\n\nComprehensive cost analysis with performance correlation.",
+        },
       },
       {
         type: 3,
@@ -1018,14 +1066,14 @@ cost
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Cost Overview',
+        name: "Cost Overview",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -1034,8 +1082,8 @@ cost
       {
         type: 1,
         content: {
-          json: '## 📏 Right-sizing Analysis\n\nPerformance-based VM size recommendations.'
-        }
+          json: "## 📏 Right-sizing Analysis\n\nPerformance-based VM size recommendations.",
+        },
       },
       {
         type: 3,
@@ -1093,14 +1141,14 @@ cpu
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Rightsizing Recommendations',
+        name: "Rightsizing Recommendations",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -1109,8 +1157,8 @@ cpu
       {
         type: 1,
         content: {
-          json: '## 🏦 Reserved Instance Analysis\n\nReservation recommendations based on usage patterns.'
-        }
+          json: "## 🏦 Reserved Instance Analysis\n\nReservation recommendations based on usage patterns.",
+        },
       },
       {
         type: 3,
@@ -1162,14 +1210,14 @@ hourlyUsage
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Reservation Coverage',
+        name: "Reservation Coverage",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -1178,8 +1226,8 @@ hourlyUsage
       {
         type: 1,
         content: {
-          json: '## 🎯 Spot Instance Opportunities\n\nSpot instance suitability analysis.'
-        }
+          json: "## 🎯 Spot Instance Opportunities\n\nSpot instance suitability analysis.",
+        },
       },
       {
         type: 3,
@@ -1237,14 +1285,14 @@ vmPerf
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Spot Suitability',
+        name: "Spot Suitability",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -1253,8 +1301,8 @@ vmPerf
       {
         type: 1,
         content: {
-          json: '## ⚡ Performance Impact Analysis\n\nPerformance implications of cost optimization recommendations.'
-        }
+          json: "## ⚡ Performance Impact Analysis\n\nPerformance implications of cost optimization recommendations.",
+        },
       },
       {
         type: 3,
@@ -1316,14 +1364,14 @@ cost
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Performance vs Cost Impact',
+        name: "Performance vs Cost Impact",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -1332,8 +1380,8 @@ cost
       {
         type: 1,
         content: {
-          json: '## ✅ Action Items\n\nPrioritized cost optimization actions.'
-        }
+          json: "## ✅ Action Items\n\nPrioritized cost optimization actions.",
+        },
       },
       {
         type: 3,
@@ -1362,14 +1410,14 @@ rightsizing
           `,
           size: 0,
           queryType: 0,
-          resourceType: 'microsoft.operationalinsights/workspaces',
-          visualization: 'table'
+          resourceType: "microsoft.operationalinsights/workspaces",
+          visualization: "table",
         },
-        name: 'Cost Optimization Actions',
+        name: "Cost Optimization Actions",
         styleSettings: {
-          showBorder: true
-        }
-      }
+          showBorder: true,
+        },
+      },
     ];
   }
 
@@ -1377,135 +1425,137 @@ rightsizing
   private static getStandardParameters(): WorkbookParameter[] {
     return [
       {
-        name: 'TimeRange',
-        type: 'timeRange',
-        label: 'Time Range',
-        description: 'Time range for analysis',
-        defaultValue: '24h',
-        required: true
-      },
-      {
-        name: 'Subscription',
-        type: 'subscription',
-        label: 'Subscription',
-        description: 'Azure subscription',
-        required: true
-      },
-      {
-        name: 'ResourceGroup',
-        type: 'resourceGroup',
-        label: 'Resource Group',
-        description: 'Resource group containing the VM',
+        name: "TimeRange",
+        type: "timeRange",
+        label: "Time Range",
+        description: "Time range for analysis",
+        defaultValue: "24h",
         required: true,
-        dependsOn: ['Subscription']
       },
       {
-        name: 'VirtualMachine',
-        type: 'resource',
-        label: 'Virtual Machine',
-        description: 'Target virtual machine',
+        name: "Subscription",
+        type: "subscription",
+        label: "Subscription",
+        description: "Azure subscription",
         required: true,
-        dependsOn: ['Subscription', 'ResourceGroup']
-      }
+      },
+      {
+        name: "ResourceGroup",
+        type: "resourceGroup",
+        label: "Resource Group",
+        description: "Resource group containing the VM",
+        required: true,
+        dependsOn: ["Subscription"],
+      },
+      {
+        name: "VirtualMachine",
+        type: "resource",
+        label: "Virtual Machine",
+        description: "Target virtual machine",
+        required: true,
+        dependsOn: ["Subscription", "ResourceGroup"],
+      },
     ];
   }
 
   private static getVmssParameters(): WorkbookParameter[] {
     return [
       {
-        name: 'TimeRange',
-        type: 'timeRange',
-        label: 'Time Range',
-        description: 'Time range for analysis',
-        defaultValue: '7d',
-        required: true
+        name: "TimeRange",
+        type: "timeRange",
+        label: "Time Range",
+        description: "Time range for analysis",
+        defaultValue: "7d",
+        required: true,
       },
       {
-        name: 'VmssResourceId',
-        type: 'resource',
-        label: 'VMSS Resource',
-        description: 'Virtual Machine Scale Set',
-        required: true
-      }
+        name: "VmssResourceId",
+        type: "resource",
+        label: "VMSS Resource",
+        description: "Virtual Machine Scale Set",
+        required: true,
+      },
     ];
   }
 
   private static getCostParameters(): WorkbookParameter[] {
     return [
       {
-        name: 'TimeRange',
-        type: 'timeRange',
-        label: 'Time Range',
-        description: 'Time range for cost analysis',
-        defaultValue: '30d',
-        required: true
+        name: "TimeRange",
+        type: "timeRange",
+        label: "Time Range",
+        description: "Time range for cost analysis",
+        defaultValue: "30d",
+        required: true,
       },
       {
-        name: 'Scope',
-        type: 'dropdown',
-        label: 'Analysis Scope',
-        description: 'Scope of cost analysis',
-        defaultValue: 'resourceGroup',
+        name: "Scope",
+        type: "dropdown",
+        label: "Analysis Scope",
+        description: "Scope of cost analysis",
+        defaultValue: "resourceGroup",
         required: true,
         options: [
-          { label: 'Subscription', value: 'subscription' },
-          { label: 'Resource Group', value: 'resourceGroup' },
-          { label: 'Resource', value: 'resource' }
-        ]
+          { label: "Subscription", value: "subscription" },
+          { label: "Resource Group", value: "resourceGroup" },
+          { label: "Resource", value: "resource" },
+        ],
       },
       {
-        name: 'SubscriptionId',
-        type: 'subscription',
-        label: 'Subscription (optional)',
-        description: 'Target subscription for cost analysis',
-        required: false
-      },
-      {
-        name: 'CostResourceGroup',
-        type: 'resourceGroup',
-        label: 'Resource Group (optional)',
-        description: 'Resource group to analyze',
+        name: "SubscriptionId",
+        type: "subscription",
+        label: "Subscription (optional)",
+        description: "Target subscription for cost analysis",
         required: false,
-        dependsOn: ['SubscriptionId']
       },
       {
-        name: 'CostResourceId',
-        type: 'resource',
-        label: 'Resource (optional)',
-        description: 'Specific resource scope (e.g., VM)',
+        name: "CostResourceGroup",
+        type: "resourceGroup",
+        label: "Resource Group (optional)",
+        description: "Resource group to analyze",
         required: false,
-        dependsOn: ['SubscriptionId', 'CostResourceGroup']
-      }
+        dependsOn: ["SubscriptionId"],
+      },
+      {
+        name: "CostResourceId",
+        type: "resource",
+        label: "Resource (optional)",
+        description: "Specific resource scope (e.g., VM)",
+        required: false,
+        dependsOn: ["SubscriptionId", "CostResourceGroup"],
+      },
     ];
   }
 
   private static getStandardVariables(): WorkbookVariable[] {
     return [
       {
-        name: 'WorkspaceId',
+        name: "WorkspaceId",
         type: 3,
-        value: 'Resources | where type == "microsoft.operationalinsights/workspaces" | project id'
-      }
+        value:
+          'Resources | where type == "microsoft.operationalinsights/workspaces" | project id',
+      },
     ];
   }
 
   private static getVmssVariables(): WorkbookVariable[] {
     return [
       {
-        name: 'VmssMetrics',
-        type: 3, 
-        value: 'AzureMetrics | where ResourceId contains "virtualMachineScaleSets" | distinct MetricName'
-      }
+        name: "VmssMetrics",
+        type: 3,
+        value:
+          'AzureMetrics | where ResourceId contains "virtualMachineScaleSets" | distinct MetricName',
+      },
     ];
   }
 
   private static getCostVariables(): WorkbookVariable[] {
     return [
       {
-        name: 'CostScope',
-        type: 'parameter',
-        value: '{Scope}'
-      }
+        name: "CostScope",
+        type: "parameter",
+        value: "{Scope}",
+      },
     ];
   }
 }
@@ -1515,39 +1565,60 @@ rightsizing
  */
 export const advancedWorkbookTemplates: AdvancedWorkbookTemplate[] = [
   {
-    id: 'vm-performance-analytics',
-    name: 'VM Performance Analytics',
-    description: 'Comprehensive VM performance analysis with cost insights and optimization recommendations',
-    category: 'advanced-monitoring',
-    tags: ['performance', 'cost', 'optimization', 'monitoring'],
-    version: '2.0.0',
-    complexity: 'advanced',
-    estimatedSetupTime: '15-20 minutes',
-    prerequisites: ['Log Analytics workspace', 'VM insights enabled', 'Performance counters configured'],
-    template: AdvancedWorkbookGenerator.generateVmPerformanceWorkbook()
+    id: "vm-performance-analytics",
+    name: "VM Performance Analytics",
+    description:
+      "Comprehensive VM performance analysis with cost insights and optimization recommendations",
+    category: "advanced-monitoring",
+    tags: ["performance", "cost", "optimization", "monitoring"],
+    version: "2.0.0",
+    complexity: "advanced",
+    estimatedSetupTime: "15-20 minutes",
+    prerequisites: [
+      "Log Analytics workspace",
+      "VM insights enabled",
+      "Performance counters configured",
+    ],
+    template: AdvancedWorkbookGenerator.generateVmPerformanceWorkbook(),
   },
   {
-    id: 'vmss-scaling-analytics',
-    name: 'VMSS Scaling Analytics',
-    description: 'Advanced autoscaling analysis with load patterns and predictive insights',
-    category: 'scaling-analytics',
-    tags: ['vmss', 'autoscale', 'load-patterns', 'predictive', 'cost'],
-    version: '2.0.0',
-    complexity: 'expert',
-    estimatedSetupTime: '20-30 minutes',
-    prerequisites: ['VMSS with autoscale enabled', 'Azure Monitor metrics', 'Historical scaling data'],
-    template: AdvancedWorkbookGenerator.generateVmssScalingWorkbook()
+    id: "vmss-scaling-analytics",
+    name: "VMSS Scaling Analytics",
+    description:
+      "Advanced autoscaling analysis with load patterns and predictive insights",
+    category: "scaling-analytics",
+    tags: ["vmss", "autoscale", "load-patterns", "predictive", "cost"],
+    version: "2.0.0",
+    complexity: "expert",
+    estimatedSetupTime: "20-30 minutes",
+    prerequisites: [
+      "VMSS with autoscale enabled",
+      "Azure Monitor metrics",
+      "Historical scaling data",
+    ],
+    template: AdvancedWorkbookGenerator.generateVmssScalingWorkbook(),
   },
   {
-    id: 'vm-cost-optimization',
-    name: 'VM Cost Optimization',
-    description: 'Performance-aware cost optimization with right-sizing and reservation recommendations',
-    category: 'cost-optimization',
-    tags: ['cost', 'optimization', 'rightsizing', 'reservations', 'performance'],
-    version: '2.0.0',
-    complexity: 'intermediate',
-    estimatedSetupTime: '10-15 minutes',
-    prerequisites: ['Cost Management access', 'Performance data', 'Azure Advisor enabled'],
-    template: AdvancedWorkbookGenerator.generateCostOptimizationWorkbook()
-  }
+    id: "vm-cost-optimization",
+    name: "VM Cost Optimization",
+    description:
+      "Performance-aware cost optimization with right-sizing and reservation recommendations",
+    category: "cost-optimization",
+    tags: [
+      "cost",
+      "optimization",
+      "rightsizing",
+      "reservations",
+      "performance",
+    ],
+    version: "2.0.0",
+    complexity: "intermediate",
+    estimatedSetupTime: "10-15 minutes",
+    prerequisites: [
+      "Cost Management access",
+      "Performance data",
+      "Azure Advisor enabled",
+    ],
+    template: AdvancedWorkbookGenerator.generateCostOptimizationWorkbook(),
+  },
 ];

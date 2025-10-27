@@ -3,14 +3,14 @@
  * Configures metric collection for VMs and VMSS
  */
 
-import Handlebars from 'handlebars';
+import Handlebars from "handlebars";
 
 export interface MetricsOptions {
   targetResourceId: string;
   metricNamespace?: string;
   metrics?: string | string[];
-  aggregation?: 'Average' | 'Min' | 'Max' | 'Total' | 'Count';
-  frequency?: 'PT1M' | 'PT5M' | 'PT15M' | 'PT1H';
+  aggregation?: "Average" | "Min" | "Max" | "Total" | "Count";
+  frequency?: "PT1M" | "PT5M" | "PT15M" | "PT1H";
 }
 
 /**
@@ -26,15 +26,15 @@ export interface MetricsOptions {
  */
 export function monitorMetrics(this: any, options: any): string {
   const hash = options.hash as MetricsOptions;
-  
+
   if (!hash.targetResourceId) {
-    throw new Error('monitor:metrics requires targetResourceId parameter');
+    throw new Error("monitor:metrics requires targetResourceId parameter");
   }
 
   // Parse metrics array if provided as string
   let metricsArray: string[] = [];
   if (hash.metrics) {
-    if (typeof hash.metrics === 'string') {
+    if (typeof hash.metrics === "string") {
       try {
         metricsArray = JSON.parse(hash.metrics);
       } catch {
@@ -46,49 +46,51 @@ export function monitorMetrics(this: any, options: any): string {
   }
 
   // Default values
-  const metricNamespace = hash.metricNamespace || 'Microsoft.Compute/virtualMachines';
-  const aggregation = hash.aggregation || 'Average';
-  const frequency = hash.frequency || 'PT1M';
+  const metricNamespace =
+    hash.metricNamespace || "Microsoft.Compute/virtualMachines";
+  const aggregation = hash.aggregation || "Average";
+  const frequency = hash.frequency || "PT1M";
 
   // Generate metric configuration
-  const metricConfigs = metricsArray.map(metricName => ({
+  const metricConfigs = metricsArray.map((metricName) => ({
     name: metricName,
     namespace: metricNamespace,
     aggregation: aggregation,
-    timeGrain: frequency
+    timeGrain: frequency,
   }));
 
   const result = {
-    type: 'Microsoft.Insights/metricAlerts',
-    apiVersion: '2018-03-01',
-    name: '[concat(parameters(\'resourceName\'), \'-metrics\')]',
-    location: 'global',
+    type: "Microsoft.Insights/metricAlerts",
+    apiVersion: "2018-03-01",
+    name: "[concat(parameters('resourceName'), '-metrics')]",
+    location: "global",
     properties: {
-      description: 'Metric collection configuration',
+      description: "Metric collection configuration",
       severity: 3,
       enabled: true,
       scopes: [hash.targetResourceId],
       evaluationFrequency: frequency,
       windowSize: frequency,
       criteria: {
-        'odata.type': 'Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria',
+        "odata.type":
+          "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria",
         allOf: metricConfigs.map((config, index) => ({
-          criterionType: 'StaticThresholdCriterion',
+          criterionType: "StaticThresholdCriterion",
           name: `metric${index}`,
           metricNamespace: config.namespace,
           metricName: config.name,
-          operator: 'GreaterThan',
+          operator: "GreaterThan",
           threshold: 0,
-          timeAggregation: config.aggregation
-        }))
+          timeAggregation: config.aggregation,
+        })),
       },
-      autoMitigate: true
-    }
+      autoMitigate: true,
+    },
   };
 
   return JSON.stringify(result, null, 2);
 }
 
 export function registerMetricsHelpers(): void {
-  Handlebars.registerHelper('monitor:metrics', monitorMetrics);
+  Handlebars.registerHelper("monitor:metrics", monitorMetrics);
 }
