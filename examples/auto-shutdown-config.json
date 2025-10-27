@@ -1,0 +1,21 @@
+{
+  "vmName": "devtest-vm",
+  "location": "eastus",
+  "vmSize": "Standard_B2ms",
+  "osType": "Windows",
+  "osImageReference": {
+    "publisher": "MicrosoftWindowsServer",
+    "offer": "WindowsServer",
+    "sku": "2022-datacenter-azure-edition",
+    "version": "latest"
+  },
+  "adminUsername": "azureadmin",
+  "authenticationType": "password",
+  "adminPasswordOrKey": "P@ssw0rd1234!",
+  "storageAccountType": "StandardSSD_LRS",
+  "enableAutoShutdown": true,
+  "autoShutdownTime": "1900",
+  "autoShutdownTimeZone": "Pacific Standard Time",
+  "autoShutdownNotificationEmail": "devteam@example.com",
+  "bootDiagnosticsEnabled": true
+}

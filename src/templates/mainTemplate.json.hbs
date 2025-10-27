@@ -685,6 +685,64 @@
       }
     },
     {{/if}}
+    {{#if useEphemeralOSDisk}}
+    "useEphemeralOSDisk": {
+      "type": "bool",
+      "defaultValue": {{useEphemeralOSDisk}},
+      "metadata": {
+        "description": "Use ephemeral OS disk for faster provisioning and lower cost (requires Premium_LRS or StandardSSD_LRS storage, VM size must support ephemeral disks)"
+      }
+    },
+    {{/if}}
+    {{#if ephemeralDiskPlacement}}
+    "ephemeralDiskPlacement": {
+      "type": "string",
+      "defaultValue": "{{ephemeralDiskPlacement}}",
+      "allowedValues": [
+        "CacheDisk",
+        "ResourceDisk"
+      ],
+      "metadata": {
+        "description": "Placement for ephemeral OS disk: CacheDisk (temp cache) or ResourceDisk (temp storage)"
+      }
+    },
+    {{/if}}
+    {{#if enableAutoShutdown}}
+    "enableAutoShutdown": {
+      "type": "bool",
+      "defaultValue": {{enableAutoShutdown}},
+      "metadata": {
+        "description": "Enable automatic shutdown schedule for cost savings (recommended for dev/test environments)"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownTime}}
+    "autoShutdownTime": {
+      "type": "string",
+      "defaultValue": "{{autoShutdownTime}}",
+      "metadata": {
+        "description": "Daily shutdown time in 24-hour format (e.g., 1900 for 7:00 PM)"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownTimeZone}}
+    "autoShutdownTimeZone": {
+      "type": "string",
+      "defaultValue": "{{autoShutdownTimeZone}}",
+      "metadata": {
+        "description": "Time zone for shutdown schedule (e.g., Pacific Standard Time, UTC)"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownNotificationEmail}}
+    "autoShutdownNotificationEmail": {
+      "type": "string",
+      "defaultValue": "{{autoShutdownNotificationEmail}}",
+      "metadata": {
+        "description": "Email address for shutdown notifications (optional)"
+      }
+    },
+    {{/if}}
     "dummyLastParameter": {
       "type": "string",
       "defaultValue": "",
@@ -1203,7 +1261,11 @@
             "createOption": "FromImage",
             "managedDisk": {
               "storageAccountType": "[parameters('storageAccountType')]"
-            }
+            }{{#if useEphemeralOSDisk}},
+            "diffDiskSettings": {
+              "option": "Local",
+              "placement": "[parameters('ephemeralDiskPlacement')]"
+            }{{/if}}
           }
         },
         "networkProfile": {
@@ -1368,7 +1430,31 @@
     {{/unless}}
     {{/if}}
     {{/if}}
-    {{/unless}}
+    {{/unless}}{{#if enableAutoShutdown}},
+    {
+      "type": "Microsoft.DevTestLab/schedules",
+      "apiVersion": "2018-09-15",
+      "name": "[concat('shutdown-computevm-', variables('vmName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+      ],
+      "properties": {
+        "status": "Enabled",
+        "taskType": "ComputeVmShutdownTask",
+        "dailyRecurrence": {
+          "time": "[parameters('autoShutdownTime')]"
+        },
+        "timeZoneId": "[parameters('autoShutdownTimeZone')]",
+        "targetResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"{{#if autoShutdownNotificationEmail}},
+        "notificationSettings": {
+          "status": "Enabled",
+          "timeInMinutes": 30,
+          "emailRecipient": "[parameters('autoShutdownNotificationEmail')]",
+          "notificationLocale": "en"
+        }{{/if}}
+      }
+    }{{/if}}
   ],
   "outputs": {
     {{#if vmName}}

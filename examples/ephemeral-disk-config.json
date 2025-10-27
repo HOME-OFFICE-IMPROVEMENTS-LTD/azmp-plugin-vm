@@ -1,0 +1,20 @@
+{
+  "vmName": "ephemeral-test-vm",
+  "location": "eastus",
+  "vmSize": "Standard_D4s_v5",
+  "osType": "Linux",
+  "osImageReference": {
+    "publisher": "Canonical",
+    "offer": "0001-com-ubuntu-server-jammy",
+    "sku": "22_04-lts-gen2",
+    "version": "latest"
+  },
+  "adminUsername": "azureuser",
+  "authenticationType": "sshPublicKey",
+  "adminPasswordOrKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC...",
+  "storageAccountType": "Premium_LRS",
+  "useEphemeralOSDisk": true,
+  "ephemeralDiskPlacement": "CacheDisk",
+  "enableAcceleratedNetworking": true,
+  "bootDiagnosticsEnabled": true
+}
