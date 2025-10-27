@@ -5,6 +5,20 @@ All notable changes to the Azure Marketplace Generator VM Plugin will be documen
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.2] - 2025-10-27
+
+### Fixed
+- **Metadata Version Sync**: Updated plugin metadata to correctly report version 1.8.2 (was incorrectly hardcoded as 1.6.0)
+  - Fixed `getMetadata()` method in `src/index.ts` to use actual package version
+  - Ensures consistency between package.json and runtime metadata
+
+### Changed
+- **Documentation**: Enhanced README.md with comprehensive programmatic usage section
+  - Added CommonJS import examples showing correct destructured pattern: `const { VmPlugin } = require('@hoiltd/azmp-plugin-vm')`
+  - Added ESM import examples: `import { VmPlugin } from '@hoiltd/azmp-plugin-vm'`
+  - Included plugin initialization code samples
+  - Clarified dual export pattern (named `VmPlugin` + default export)
+
 ## [1.7.0] - 2025-10-25
 
 ### Added - Day 7: Monitoring, Alerts & Observability
