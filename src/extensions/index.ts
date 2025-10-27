@@ -10,6 +10,7 @@
 import * as windows from "./windows";
 import * as linux from "./linux";
 import * as crossplatform from "./crossplatform";
+import * as health from "./health";
 
 /**
  * Extension category type
@@ -437,4 +438,4 @@ export function createExtensionHelpers() {
 }
 
 // Export all modules as namespaces (avoid name conflicts)
-export { windows, linux, crossplatform };
+export { windows, linux, crossplatform, health };
