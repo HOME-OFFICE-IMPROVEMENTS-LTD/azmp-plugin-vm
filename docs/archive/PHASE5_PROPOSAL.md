@@ -49,6 +49,7 @@ Phase 5 is **THE CRITICAL VALIDATION PHASE** - we have built 233 helpers across 
 - ✅ **Status**: Complete, merged to develop (just now!)
 
 ### Current Totals:
+
 - **233 helpers** across all VM capabilities
 - **38 CLI commands** for testing and exploration
 - **224 tests** (100% passing)
@@ -75,6 +76,7 @@ Phase 5:  [Helpers] → [.hbs Templates] → [Generated ARM JSON] → [Azure Dep
 ## 🎯 Phase 5 Objectives
 
 ### Primary Goal:
+
 **Create complete, production-ready Handlebars template files that generate valid Azure Marketplace offerings using all 233 helpers.**
 
 ### Specific Deliverables:

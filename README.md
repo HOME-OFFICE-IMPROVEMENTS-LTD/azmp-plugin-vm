@@ -13,9 +13,10 @@ Comprehensive Virtual Machine plugin for Azure Marketplace Generator with advanc
 - 🔒 **Security** - Disk encryption (ADE, SSE, Encryption at Host), Trusted Launch
 - 🔐 **Identity & Access** - Managed Identity, Azure AD integration, RBAC
 - ⚡ **High Availability** - Availability Sets, Availability Zones, VMSS with SLA calculations
-- � **Disaster Recovery** - Azure Backup, Site Recovery, Snapshots with retention policies
-- �📜 **Compliance** - SOC 2, PCI-DSS, HIPAA, ISO 27001, NIST 800-53, FedRAMP
-- 🎨 **164+ Handlebars Helpers** - Comprehensive template generation (44 new HA/DR helpers)
+- 🔁 **Disaster Recovery** - Azure Backup, Site Recovery, Snapshots with retention policies
+- 📈 **Enterprise Scaling** - VMSS (Uniform/Flexible), Auto-scaling (metric/schedule), Multi-region with Traffic Manager, Load Balancing (Standard LB, App Gateway v2)
+- 📜 **Compliance** - SOC 2, PCI-DSS, HIPAA, ISO 27001, NIST 800-53, FedRAMP
+- 🎨 **170+ Handlebars Helpers** - Comprehensive template generation (50+ scaling/HA/DR helpers)
 - 💻 **44 CLI Commands** - Rich command-line interface (12 new HA/DR commands)
 
 ## Installation
@@ -25,6 +26,8 @@ npm install @hoiltd/azmp-plugin-vm
 ```
 
 ## Quick Start
+
+### Using with Generator CLI
 
 Add to your `azmp-config.json`:
 
@@ -50,6 +53,66 @@ Add to your `azmp-config.json`:
   ]
 }
 ```
+
+### Programmatic Usage
+
+**CommonJS:**
+
+```javascript
+const { VmPlugin } = require('@hoiltd/azmp-plugin-vm');
+
+const plugin = new VmPlugin({
+  defaultVmSize: 'Standard_D2s_v3',
+  includeDiagnostics: true
+});
+
+// Initialize with context
+await plugin.initialize({
+  logger: console,
+  generatorVersion: '3.1.0',
+  templatesDir: './templates',
+  outputDir: './output',
+  config: {}
+});
+
+// Get available templates
+const templates = plugin.getTemplates();
+
+// Register CLI commands
+const { Command } = require('commander');
+const program = new Command();
+plugin.registerCommands(program);
+```
+
+**ES Modules:**
+
+```javascript
+import { VmPlugin } from '@hoiltd/azmp-plugin-vm';
+
+const plugin = new VmPlugin({
+  defaultVmSize: 'Standard_D2s_v3',
+  includeDiagnostics: true
+});
+
+await plugin.initialize({
+  logger: console,
+  generatorVersion: '3.1.0',
+  templatesDir: './templates',
+  outputDir: './output',
+  config: {}
+});
+```
+
+## 🔒 Security by Default (v1.8.0)
+
+**Trusted Launch is now enabled by default** for enhanced VM security:
+
+- ✅ **Secure Boot** - Protects against rootkits and bootkits  
+- ✅ **vTPM** - Virtual Trusted Platform Module for measured boot
+- ✅ **Zero Configuration** - Works automatically with Generation 2 VMs
+- ✅ **Compliance Ready** - Meets requirements for security frameworks
+
+[📖 Read more about Trusted Launch enhancement →](docs/v1.8.0/TRUSTED_LAUNCH_ENHANCEMENT.md)
 
 ## CLI Commands
 
@@ -209,7 +272,7 @@ azmp recovery recommend-snapshot-schedule --criticality high --change-frequency 
 | `includeDiagnostics` | boolean | `true` | Include boot diagnostics |
 | `includePublicIp` | boolean | `true` | Create public IP address |
 | `includeNsg` | boolean | `true` | Create Network Security Group |
-| `security.enableTrustedLaunch` | boolean | `false` | Enable Trusted Launch (Gen 2 VMs) |
+| `security.enableTrustedLaunch` | boolean | `true` | Enable Trusted Launch (Gen 2 VMs) **Default: ON** |
 | `security.enableDiskEncryption` | boolean | `false` | Enable Azure Disk Encryption |
 | `security.encryptionType` | string | `ade` | Encryption type: `ade`, `sse-pmk`, `sse-cmk`, `encryption-at-host` |
 | `identity.type` | string | `None` | Identity type: `SystemAssigned`, `UserAssigned`, `SystemAssigned,UserAssigned`, `None` |
@@ -660,6 +723,189 @@ Get storage configuration for disks.
 {{identity:compliance "HIPAA"}}
 ```
 
+### Scaling & High Availability Helpers (14 helpers, `scale:` namespace)
+
+#### VMSS (Virtual Machine Scale Sets) Helpers (1 helper)
+
+```handlebars
+<!-- Create VMSS definition -->
+{{scale:vmss.definition
+  name="webVmss"
+  orchestrationMode="Flexible"
+  upgradeMode="Rolling"
+  instanceCount=3
+  vmSize="Standard_D2s_v3"
+  osType="Linux"
+  imagePublisher="Canonical"
+  imageOffer="0001-com-ubuntu-server-jammy"
+  imageSku="22_04-lts-gen2"
+  adminUsername="azureuser"
+  authenticationType="password"
+  enableAutoOsUpgrade=true
+  healthProbeId="[resourceId('Microsoft.Network/loadBalancers/probes', 'myLb', 'http')]"
+  maxBatchInstancePercent=20
+  maxUnhealthyInstancePercent=20
+  maxUnhealthyUpgradedInstancePercent=20
+  pauseTimeBetweenBatches="PT5S"}}
+
+<!-- Orchestration Modes: "Uniform" or "Flexible" -->
+<!-- Upgrade Modes: "Automatic", "Rolling", or "Manual" -->
+```
+
+#### Auto-scaling Helpers (5 helpers)
+
+```handlebars
+<!-- Create auto-scale policy -->
+{{scale:autoscale.policy
+  vmssResourceId="[resourceId('Microsoft.Compute/virtualMachineScaleSets', 'myVmss')]"
+  minCapacity=2
+  maxCapacity=10
+  defaultCapacity=3
+  rules=(array metricRule scheduleRule)}}
+
+<!-- Create metric-based scale rule -->
+{{scale:autoscale.metricRule
+  metricName="Percentage CPU"
+  operator="GreaterThan"
+  threshold=75
+  scaleAction="Increase"
+  cooldown="PT5M"}}
+
+<!-- Create schedule-based profile -->
+{{scale:autoscale.scheduleProfile
+  startTime="2024-01-01T08:00:00"
+  endTime="2024-12-31T18:00:00"
+  recurrence=(object
+    frequency="Week"
+    schedule=(object days=(array "Monday" "Tuesday" "Wednesday" "Thursday" "Friday")))
+  minCapacity=5
+  maxCapacity=20
+  defaultCapacity=10}}
+
+<!-- Pre-built CPU-based scaling policy -->
+{{scale:autoscale.cpu
+  vmssResourceId="[resourceId('Microsoft.Compute/virtualMachineScaleSets', 'myVmss')]"
+  minCapacity=2
+  maxCapacity=10
+  defaultCapacity=3
+  scaleOutThreshold=75
+  scaleInThreshold=25}}
+
+<!-- Pre-built business hours schedule -->
+{{scale:autoscale.businessHours
+  minCapacity=5
+  maxCapacity=20
+  defaultCapacity=10
+  timezone="Pacific Standard Time"}}
+```
+
+#### Multi-Region Helpers (4 helpers)
+
+```handlebars
+<!-- Create Traffic Manager profile -->
+{{scale:multiregion.profile
+  profileName="globalApp"
+  dnsName="globalapp-tm"
+  routingMethod="Performance"
+  monitorProtocol="HTTPS"
+  monitorPort=443
+  monitorPath="/"}}
+
+<!-- Routing Methods: "Performance", "Priority", "Weighted", "Geographic", "MultiValue", "Subnet" -->
+
+<!-- Create Traffic Manager endpoint configuration -->
+{{scale:multiregion.endpoint
+  endpointName="eastus-endpoint"
+  type="azureEndpoints"
+  targetResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'eastus-pip')]"
+  priority=1
+  weight=100
+  endpointLocation="East US"}}
+
+<!-- Create multi-region deployment plan -->
+{{scale:multiregion.deploymentPlan
+  primaryRegion="East US"
+  secondaryRegions=(array "West US" "North Europe")
+  replicationStrategy="active-active"
+  dataSync="async"}}
+
+<!-- Replication Strategies: "active-active", "active-passive", "multi-master" -->
+
+<!-- Create failover plan -->
+{{scale:multiregion.failover
+  primaryRegion="East US"
+  failoverRegion="West US"
+  rto=60
+  rpo=15
+  automaticFailover=true}}
+
+<!-- RTO: Recovery Time Objective in minutes -->
+<!-- RPO: Recovery Point Objective in minutes -->
+```
+
+#### Load Balancing Helpers (4 helpers)
+
+```handlebars
+<!-- Create Standard Load Balancer -->
+{{scale:lb.definition
+  name="webLb"
+  sku="Standard"
+  tier="Regional"
+  frontendIpName="webFrontend"
+  publicIpResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'webPip')]"
+  backendPoolName="webBackend"
+  probeName="httpProbe"
+  probeProtocol="Http"
+  probePort=80
+  probePath="/"
+  ruleName="httpRule"
+  ruleProtocol="Tcp"
+  ruleFrontendPort=80
+  ruleBackendPort=80
+  enableFloatingIp=false
+  idleTimeoutInMinutes=4}}
+
+<!-- SKUs: "Basic" or "Standard" -->
+<!-- Tiers: "Regional" or "Global" -->
+
+<!-- Create health probe configuration -->
+{{scale:lb.probe
+  name="httpsProbe"
+  protocol="Https"
+  port=443
+  path="/health"
+  intervalInSeconds=15
+  numberOfProbes=2}}
+
+<!-- Recommend health probe based on application -->
+{{scale:lb.recommendHealthProbe "web-application"}}
+{{scale:lb.recommendHealthProbe "api-service"}}
+{{scale:lb.recommendHealthProbe "database"}}
+
+<!-- Create Application Gateway v2 -->
+{{scale:appgw.definition
+  name="webAppGw"
+  tier="Standard_v2"
+  capacity=2
+  autoScaleMinCapacity=2
+  autoScaleMaxCapacity=10
+  enableWaf=false
+  frontendPort=80
+  backendPort=80
+  protocol="Http"
+  backendAddresses=(array "10.0.1.4" "10.0.1.5")
+  cookieBasedAffinity="Disabled"
+  requestTimeout=30}}
+
+<!-- Tiers: "Standard_v2" or "WAF_v2" -->
+
+<!-- Recommend Application Gateway SKU -->
+{{scale:appgw.recommendSku
+  expectedTraffic="high"
+  wafRequired=true
+  autoScaleEnabled=true}}
+```
+
 ## Usage Examples
 
 ### Example 1: Secure VM with Trusted Launch and Managed Identity
@@ -731,6 +977,138 @@ Get storage configuration for disks.
 }
 ```
 
+### Example 4: VMSS with Auto-scaling
+
+```handlebars
+{
+  "type": "Microsoft.Compute/virtualMachineScaleSets",
+  "apiVersion": "2023-09-01",
+  "name": "[parameters('vmssName')]",
+  "location": "[parameters('location')]",
+  "sku": {
+    "name": "[parameters('vmSize')]",
+    "tier": "Standard",
+    "capacity": "[parameters('instanceCount')]"
+  },
+  "properties": {{scale:vmss.definition
+    name="[parameters('vmssName')]"
+    orchestrationMode="Flexible"
+    upgradeMode="Rolling"
+    instanceCount="[parameters('instanceCount')]"
+    vmSize="[parameters('vmSize')]"
+    osType="Linux"
+    imagePublisher="Canonical"
+    imageOffer="0001-com-ubuntu-server-jammy"
+    imageSku="22_04-lts-gen2"
+    adminUsername="[parameters('adminUsername')]"
+    authenticationType="password"
+    enableAutoOsUpgrade=true
+    healthProbeId="[resourceId('Microsoft.Network/loadBalancers/probes', parameters('lbName'), 'httpProbe')]"
+    maxBatchInstancePercent=20
+    maxUnhealthyInstancePercent=20
+    maxUnhealthyUpgradedInstancePercent=20
+    pauseTimeBetweenBatches="PT5S"}}
+},
+{
+  "type": "Microsoft.Insights/autoscalesettings",
+  "apiVersion": "2022-10-01",
+  "name": "[concat(parameters('vmssName'), '-autoscale')]",
+  "location": "[parameters('location')]",
+  "dependsOn": [
+    "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
+  ],
+  "properties": {{scale:autoscale.cpu
+    vmssResourceId="[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
+    minCapacity=2
+    maxCapacity=10
+    defaultCapacity=3
+    scaleOutThreshold=75
+    scaleInThreshold=25}}
+}
+```
+
+### Example 5: Multi-Region Deployment with Traffic Manager
+
+```handlebars
+{
+  "type": "Microsoft.Network/trafficManagerProfiles",
+  "apiVersion": "2022-04-01",
+  "name": "[parameters('trafficManagerName')]",
+  "location": "global",
+  "properties": {{scale:multiregion.profile
+    profileName="[parameters('trafficManagerName')]"
+    dnsName="[parameters('dnsName')]"
+    routingMethod="Performance"
+    monitorProtocol="HTTPS"
+    monitorPort=443
+    monitorPath="/health"}},
+  "resources": [
+    {
+      "type": "endpoints",
+      "apiVersion": "2022-04-01",
+      "name": "eastus-endpoint",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/trafficManagerProfiles', parameters('trafficManagerName'))]"
+      ],
+      "properties": {{scale:multiregion.endpoint
+        endpointName="eastus-endpoint"
+        type="azureEndpoints"
+        targetResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'eastus-pip')]"
+        priority=1
+        weight=100
+        endpointLocation="East US"}}
+    },
+    {
+      "type": "endpoints",
+      "apiVersion": "2022-04-01",
+      "name": "westus-endpoint",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/trafficManagerProfiles', parameters('trafficManagerName'))]"
+      ],
+      "properties": {{scale:multiregion.endpoint
+        endpointName="westus-endpoint"
+        type="azureEndpoints"
+        targetResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'westus-pip')]"
+        priority=2
+        weight=100
+        endpointLocation="West US"}}
+    }
+  ]
+}
+```
+
+### Example 6: Load Balancer with Health Probes
+
+```handlebars
+{
+  "type": "Microsoft.Network/loadBalancers",
+  "apiVersion": "2023-05-01",
+  "name": "[parameters('lbName')]",
+  "location": "[parameters('location')]",
+  "sku": {
+    "name": "Standard",
+    "tier": "Regional"
+  },
+  "properties": {{scale:lb.definition
+    name="[parameters('lbName')]"
+    sku="Standard"
+    tier="Regional"
+    frontendIpName="webFrontend"
+    publicIpResourceId="[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]"
+    backendPoolName="webBackend"
+    probeName="httpProbe"
+    probeProtocol="Http"
+    probePort=80
+    probePath="/health"
+    ruleName="httpRule"
+    ruleProtocol="Tcp"
+    ruleFrontendPort=80
+    ruleBackendPort=80
+    enableFloatingIp=false
+    idleTimeoutInMinutes=4}}
+}
+```
+
 ## Templates
 
 The plugin generates comprehensive ARM templates for Azure Marketplace offerings:
@@ -778,13 +1156,13 @@ The plugin includes 40+ pre-built templates across 8 categories:
 
 ## Plugin Statistics
 
-- **Version:** 1.3.0
-- **Total Helpers:** 120+ Handlebars helpers
-- **CLI Commands:** 32 commands
-- **Tests:** 161 tests (100% passing)
+- **Version:** 1.6.0
+- **Total Helpers:** 170+ Handlebars helpers (14 new scaling helpers)
+- **CLI Commands:** 44 commands (12 HA/DR commands)
+- **Tests:** 266 tests (100% passing)
 - **Code Coverage:** Comprehensive test coverage across all modules
 - **TypeScript:** Full type safety with strict mode
-- **Documentation:** 2,000+ lines of inline documentation
+- **Documentation:** 2,500+ lines of inline documentation
 
 ## Compliance & Security
 
@@ -1063,6 +1441,6 @@ For issues, questions, or contributions:
 
 ---
 
-**Version:** 1.3.0  
-**Last Updated:** October 22, 2024  
+**Version:** 1.6.0  
+**Last Updated:** Day 6 - Enterprise Scaling Release  
 **Status:** ✅ Production Ready
