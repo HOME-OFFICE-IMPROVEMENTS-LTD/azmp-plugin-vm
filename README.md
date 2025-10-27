@@ -27,6 +27,8 @@ npm install @hoiltd/azmp-plugin-vm
 
 ## Quick Start
 
+### Using with Generator CLI
+
 Add to your `azmp-config.json`:
 
 ```json
@@ -50,6 +52,55 @@ Add to your `azmp-config.json`:
     }
   ]
 }
+```
+
+### Programmatic Usage
+
+**CommonJS:**
+
+```javascript
+const { VmPlugin } = require('@hoiltd/azmp-plugin-vm');
+
+const plugin = new VmPlugin({
+  defaultVmSize: 'Standard_D2s_v3',
+  includeDiagnostics: true
+});
+
+// Initialize with context
+await plugin.initialize({
+  logger: console,
+  generatorVersion: '3.1.0',
+  templatesDir: './templates',
+  outputDir: './output',
+  config: {}
+});
+
+// Get available templates
+const templates = plugin.getTemplates();
+
+// Register CLI commands
+const { Command } = require('commander');
+const program = new Command();
+plugin.registerCommands(program);
+```
+
+**ES Modules:**
+
+```javascript
+import { VmPlugin } from '@hoiltd/azmp-plugin-vm';
+
+const plugin = new VmPlugin({
+  defaultVmSize: 'Standard_D2s_v3',
+  includeDiagnostics: true
+});
+
+await plugin.initialize({
+  logger: console,
+  generatorVersion: '3.1.0',
+  templatesDir: './templates',
+  outputDir: './output',
+  config: {}
+});
 ```
 
 ## 🔒 Security by Default (v1.8.0)
