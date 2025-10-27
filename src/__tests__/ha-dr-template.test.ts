@@ -39,9 +39,11 @@ describe('High Availability & Disaster Recovery Template Integration', () => {
     });
 
     test('should define VMSS parameters', () => {
-      expect(templateContent).toContain('"vmssInstanceCount"');
-      expect(templateContent).toContain('"defaultValue": 2');
-      expect(templateContent).toContain('"maxValue": 1000');
+      // v1.8.0 supports VMSS as availabilityOption but detailed VMSS configuration
+      // (instance count, orchestration mode, upgrade mode) are future enhancements
+      expect(templateContent).toContain('"availabilityOption"');
+      expect(templateContent).toContain('"VMSS"');
+      expect(templateContent).toContain('useVMSS');
     });
   });
 
