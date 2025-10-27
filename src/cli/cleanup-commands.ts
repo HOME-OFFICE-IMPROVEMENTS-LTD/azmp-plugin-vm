@@ -261,7 +261,7 @@ async function executeVaultCleanup(options: VaultCleanupOptions, context: Plugin
         'To approve this vault cleanup:\n' +
         '  1. Run: azmp vm cleanup vault --dry-run --json > dry-run.json\n' +
         '  2. Review dry-run.json\n' +
-        '  3. Run: azmp vm cleanup vault-approve dry-run.json\n' +
+        '  3. Run: azmp vm cleanup approve dry-run.json\n' +
         '  4. Then retry with --force'
       );
     }
@@ -431,7 +431,7 @@ async function executeVaultCheck(
     context.logger.info('');
     context.logger.info('To approve a vault cleanup:');
     context.logger.info('  1. Run: azmp vm cleanup vault --dry-run --json > dry-run.json');
-    context.logger.info('  2. Run: azmp vm cleanup vault-approve dry-run.json');
+    context.logger.info('  2. Run: azmp vm cleanup approve dry-run.json');
     process.exit(1);
   }
   
@@ -504,10 +504,10 @@ export function registerCleanupCommands(
     });
 
   // ========================================
-  // cleanup vault-approve
+  // cleanup approve
   // ========================================
   cleanupCommand
-    .command('vault-approve <dry-run-file>')
+    .command('approve <dry-run-file>')
     .description('Approve a dry-run result for later execution')
     .option('--ttl <hours>', 'Time-to-live for approval in hours (default: 24)', '24')
     .action(async (dryRunFile: string, cmdOptions: { ttl: string }) => {
@@ -521,10 +521,10 @@ export function registerCleanupCommands(
     });
 
   // ========================================
-  // cleanup vault-check
+  // cleanup check
   // ========================================
   cleanupCommand
-    .command('vault-check')
+    .command('check')
     .description('Check if a vault has a valid approval')
     .option('-n, --vault-name <name>', 'Name of the Recovery Services Vault')
     .option('-g, --resource-group <name>', 'Resource group containing the vault')
