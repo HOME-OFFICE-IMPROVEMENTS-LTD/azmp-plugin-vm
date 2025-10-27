@@ -114,6 +114,55 @@ await plugin.initialize({
 
 [📖 Read more about Trusted Launch enhancement →](docs/v1.8.0/TRUSTED_LAUNCH_ENHANCEMENT.md)
 
+## 🚀 v1.9.0: Performance, Security & Diagnostics
+
+Three high-impact features for production workloads:
+
+### **Accelerated Networking** ⚡
+- **SR-IOV** for up to 30 Gbps network throughput
+- Significantly reduced latency and jitter
+- Ideal for: HPC, databases, high-throughput applications
+- Auto-enabled for supported VM sizes
+
+```json
+{
+  "enableAcceleratedNetworking": true
+}
+```
+
+### **Trusted Launch** 🔒
+- **Secure Boot**: Validates boot chain integrity
+- **vTPM**: Enables attestation and BitLocker encryption
+- Protection against boot kits, rootkits, kernel malware
+- Required for: Zero-trust architectures, compliance frameworks
+- Requires: Generation 2 VM images
+
+```json
+{
+  "securityType": "TrustedLaunch",
+  "secureBootEnabled": true,
+  "vTpmEnabled": true
+}
+```
+
+### **Boot Diagnostics** 🔧
+- Serial console output capture
+- Boot screenshot for visual troubleshooting
+- Essential for: Kernel panics, boot failures, rapid incident resolution
+- Managed storage (no config needed) or custom storage account
+
+```json
+{
+  "bootDiagnosticsEnabled": true,
+  "bootDiagnosticsStorageUri": ""  // Empty = managed storage
+}
+```
+
+**Example Configurations:**
+- [`examples/trusted-launch-config.json`](examples/trusted-launch-config.json) - Full security baseline
+- [`examples/accelerated-networking-config.json`](examples/accelerated-networking-config.json) - High-performance networking
+- [`examples/boot-diagnostics-config.json`](examples/boot-diagnostics-config.json) - Enhanced supportability
+
 ## CLI Commands
 
 ### Core VM Commands (6 commands)
@@ -272,6 +321,12 @@ azmp recovery recommend-snapshot-schedule --criticality high --change-frequency 
 | `includeDiagnostics` | boolean | `true` | Include boot diagnostics |
 | `includePublicIp` | boolean | `true` | Create public IP address |
 | `includeNsg` | boolean | `true` | Create Network Security Group |
+| `enableAcceleratedNetworking` | boolean | `true` | Enable SR-IOV for up to 30 Gbps throughput (requires supported VM size) |
+| `bootDiagnosticsEnabled` | boolean | `true` | Enable boot diagnostics for troubleshooting (serial console + screenshots) |
+| `bootDiagnosticsStorageUri` | string | - | Custom storage URI for boot diagnostics (leave empty for managed storage) |
+| `securityType` | string | `TrustedLaunch` | Security type: `TrustedLaunch`, `Standard` (requires Gen2 VM images) |
+| `secureBootEnabled` | boolean | `true` | Enable UEFI Secure Boot (requires TrustedLaunch security type) |
+| `vTpmEnabled` | boolean | `true` | Enable virtual TPM device (requires TrustedLaunch security type) |
 | `security.enableTrustedLaunch` | boolean | `true` | Enable Trusted Launch (Gen 2 VMs) **Default: ON** |
 | `security.enableDiskEncryption` | boolean | `false` | Enable Azure Disk Encryption |
 | `security.encryptionType` | string | `ade` | Encryption type: `ade`, `sse-pmk`, `sse-cmk`, `encryption-at-host` |
