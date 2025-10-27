@@ -59,27 +59,27 @@ Add to your `azmp-config.json`:
 **CommonJS:**
 
 ```javascript
-const { VmPlugin } = require('@hoiltd/azmp-plugin-vm');
+const { VmPlugin } = require("@hoiltd/azmp-plugin-vm");
 
 const plugin = new VmPlugin({
-  defaultVmSize: 'Standard_D2s_v3',
-  includeDiagnostics: true
+  defaultVmSize: "Standard_D2s_v3",
+  includeDiagnostics: true,
 });
 
 // Initialize with context
 await plugin.initialize({
   logger: console,
-  generatorVersion: '3.1.0',
-  templatesDir: './templates',
-  outputDir: './output',
-  config: {}
+  generatorVersion: "3.1.0",
+  templatesDir: "./templates",
+  outputDir: "./output",
+  config: {},
 });
 
 // Get available templates
 const templates = plugin.getTemplates();
 
 // Register CLI commands
-const { Command } = require('commander');
+const { Command } = require("commander");
 const program = new Command();
 plugin.registerCommands(program);
 ```
@@ -87,19 +87,19 @@ plugin.registerCommands(program);
 **ES Modules:**
 
 ```javascript
-import { VmPlugin } from '@hoiltd/azmp-plugin-vm';
+import { VmPlugin } from "@hoiltd/azmp-plugin-vm";
 
 const plugin = new VmPlugin({
-  defaultVmSize: 'Standard_D2s_v3',
-  includeDiagnostics: true
+  defaultVmSize: "Standard_D2s_v3",
+  includeDiagnostics: true,
 });
 
 await plugin.initialize({
   logger: console,
-  generatorVersion: '3.1.0',
-  templatesDir: './templates',
-  outputDir: './output',
-  config: {}
+  generatorVersion: "3.1.0",
+  templatesDir: "./templates",
+  outputDir: "./output",
+  config: {},
 });
 ```
 
@@ -107,7 +107,7 @@ await plugin.initialize({
 
 **Trusted Launch is now enabled by default** for enhanced VM security:
 
-- ✅ **Secure Boot** - Protects against rootkits and bootkits  
+- ✅ **Secure Boot** - Protects against rootkits and bootkits
 - ✅ **vTPM** - Virtual Trusted Platform Module for measured boot
 - ✅ **Zero Configuration** - Works automatically with Generation 2 VMs
 - ✅ **Compliance Ready** - Meets requirements for security frameworks
@@ -119,6 +119,7 @@ await plugin.initialize({
 Three high-impact features for production workloads:
 
 ### **Accelerated Networking** ⚡
+
 - **SR-IOV** for up to 30 Gbps network throughput
 - Significantly reduced latency and jitter
 - Ideal for: HPC, databases, high-throughput applications
@@ -131,6 +132,7 @@ Three high-impact features for production workloads:
 ```
 
 ### **Trusted Launch** 🔒
+
 - **Secure Boot**: Validates boot chain integrity
 - **vTPM**: Enables attestation and BitLocker encryption
 - Protection against boot kits, rootkits, kernel malware
@@ -146,6 +148,7 @@ Three high-impact features for production workloads:
 ```
 
 ### **Boot Diagnostics** 🔧
+
 - Serial console output capture
 - Boot screenshot for visual troubleshooting
 - Essential for: Kernel panics, boot failures, rapid incident resolution
@@ -154,14 +157,70 @@ Three high-impact features for production workloads:
 ```json
 {
   "bootDiagnosticsEnabled": true,
-  "bootDiagnosticsStorageUri": ""  // Empty = managed storage
+  "bootDiagnosticsStorageUri": "" // Empty = managed storage
 }
 ```
 
 **Example Configurations:**
+
 - [`examples/trusted-launch-config.json`](examples/trusted-launch-config.json) - Full security baseline
 - [`examples/accelerated-networking-config.json`](examples/accelerated-networking-config.json) - High-performance networking
 - [`examples/boot-diagnostics-config.json`](examples/boot-diagnostics-config.json) - Enhanced supportability
+
+## 💰 v1.10.0: Cost Optimization & Resource Efficiency
+
+Two powerful features to reduce Azure spending:
+
+### **Ephemeral OS Disks** 💨
+
+- **30-40% faster** VM provisioning (no remote disk writes)
+- **Lower storage costs** - no persistent OS disk charges
+- Uses local VM cache or temp storage (no Azure Storage overhead)
+- Ideal for: Stateless workloads, CI/CD agents, scale sets, dev/test
+- Requires: Premium_LRS or StandardSSD_LRS, supported VM sizes
+
+```json
+{
+  "useEphemeralOSDisk": true,
+  "ephemeralDiskPlacement": "CacheDisk" // or "ResourceDisk"
+}
+```
+
+**Placement Options:**
+
+- `CacheDisk`: Uses VM cache (most common, better performance)
+- `ResourceDisk`: Uses temporary storage disk (for VMs with limited cache)
+
+### **Auto-Shutdown Schedules** ⏰
+
+- **Up to 70% cost savings** on dev/test VMs
+- Automatic daily shutdown with configurable time & timezone
+- Email notifications 30 minutes before shutdown
+- Zero compute charges when stopped (still pays for storage)
+- DevTest Labs integration - no custom scripts needed
+
+```json
+{
+  "enableAutoShutdown": true,
+  "autoShutdownTime": "1900", // 7:00 PM in 24-hour format
+  "autoShutdownTimeZone": "Pacific Standard Time",
+  "autoShutdownNotificationEmail": "devteam@example.com"
+}
+```
+
+**Common Time Zones:**
+
+- `UTC` - Coordinated Universal Time
+- `Pacific Standard Time` - US West Coast
+- `Eastern Standard Time` - US East Coast
+- `GMT Standard Time` - London
+- `Central European Standard Time` - Paris, Berlin
+
+**Example Configurations:**
+
+- [`examples/ephemeral-disk-config.json`](examples/ephemeral-disk-config.json) - Fast provisioning with ephemeral disks
+- [`examples/auto-shutdown-config.json`](examples/auto-shutdown-config.json) - Dev/test cost savings
+- [`examples/full-cost-optimization-config.json`](examples/full-cost-optimization-config.json) - Combined cost controls
 
 ## CLI Commands
 
@@ -315,29 +374,36 @@ azmp recovery recommend-snapshot-schedule --criticality high --change-frequency 
 
 ## Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `defaultVmSize` | string | `Standard_D2s_v3` | Default VM size |
-| `includeDiagnostics` | boolean | `true` | Include boot diagnostics |
-| `includePublicIp` | boolean | `true` | Create public IP address |
-| `includeNsg` | boolean | `true` | Create Network Security Group |
-| `enableAcceleratedNetworking` | boolean | `true` | Enable SR-IOV for up to 30 Gbps throughput (requires supported VM size) |
-| `bootDiagnosticsEnabled` | boolean | `true` | Enable boot diagnostics for troubleshooting (serial console + screenshots) |
-| `bootDiagnosticsStorageUri` | string | - | Custom storage URI for boot diagnostics (leave empty for managed storage) |
-| `securityType` | string | `TrustedLaunch` | Security type: `TrustedLaunch`, `Standard` (requires Gen2 VM images) |
-| `secureBootEnabled` | boolean | `true` | Enable UEFI Secure Boot (requires TrustedLaunch security type) |
-| `vTpmEnabled` | boolean | `true` | Enable virtual TPM device (requires TrustedLaunch security type) |
-| `security.enableTrustedLaunch` | boolean | `true` | Enable Trusted Launch (Gen 2 VMs) **Default: ON** |
-| `security.enableDiskEncryption` | boolean | `false` | Enable Azure Disk Encryption |
-| `security.encryptionType` | string | `ade` | Encryption type: `ade`, `sse-pmk`, `sse-cmk`, `encryption-at-host` |
-| `identity.type` | string | `None` | Identity type: `SystemAssigned`, `UserAssigned`, `SystemAssigned,UserAssigned`, `None` |
-| `identity.userAssignedIdentityId` | string | - | User-assigned identity resource ID |
+| Option                            | Type    | Default           | Description                                                                                         |
+| --------------------------------- | ------- | ----------------- | --------------------------------------------------------------------------------------------------- |
+| `defaultVmSize`                   | string  | `Standard_D2s_v3` | Default VM size                                                                                     |
+| `includeDiagnostics`              | boolean | `true`            | Include boot diagnostics                                                                            |
+| `includePublicIp`                 | boolean | `true`            | Create public IP address                                                                            |
+| `includeNsg`                      | boolean | `true`            | Create Network Security Group                                                                       |
+| `enableAcceleratedNetworking`     | boolean | `true`            | Enable SR-IOV for up to 30 Gbps throughput (requires supported VM size)                             |
+| `bootDiagnosticsEnabled`          | boolean | `true`            | Enable boot diagnostics for troubleshooting (serial console + screenshots)                          |
+| `bootDiagnosticsStorageUri`       | string  | -                 | Custom storage URI for boot diagnostics (leave empty for managed storage)                           |
+| `securityType`                    | string  | `TrustedLaunch`   | Security type: `TrustedLaunch`, `Standard` (requires Gen2 VM images)                                |
+| `secureBootEnabled`               | boolean | `true`            | Enable UEFI Secure Boot (requires TrustedLaunch security type)                                      |
+| `vTpmEnabled`                     | boolean | `true`            | Enable virtual TPM device (requires TrustedLaunch security type)                                    |
+| `useEphemeralOSDisk`              | boolean | `false`           | Use ephemeral OS disk for faster provisioning and lower cost (requires Premium_LRS/StandardSSD_LRS) |
+| `ephemeralDiskPlacement`          | string  | `CacheDisk`       | Ephemeral disk placement: `CacheDisk` (VM cache) or `ResourceDisk` (temp storage)                   |
+| `enableAutoShutdown`              | boolean | `false`           | Enable automatic shutdown schedule for cost savings (recommended for dev/test)                      |
+| `autoShutdownTime`                | string  | `1900`            | Daily shutdown time in 24-hour format (e.g., 1900 for 7:00 PM)                                      |
+| `autoShutdownTimeZone`            | string  | `UTC`             | Time zone for shutdown schedule (e.g., 'Pacific Standard Time', 'UTC')                              |
+| `autoShutdownNotificationEmail`   | string  | -                 | Email address for shutdown notifications (optional, sends alert 30 min before)                      |
+| `security.enableTrustedLaunch`    | boolean | `true`            | Enable Trusted Launch (Gen 2 VMs) **Default: ON**                                                   |
+| `security.enableDiskEncryption`   | boolean | `false`           | Enable Azure Disk Encryption                                                                        |
+| `security.encryptionType`         | string  | `ade`             | Encryption type: `ade`, `sse-pmk`, `sse-cmk`, `encryption-at-host`                                  |
+| `identity.type`                   | string  | `None`            | Identity type: `SystemAssigned`, `UserAssigned`, `SystemAssigned,UserAssigned`, `None`              |
+| `identity.userAssignedIdentityId` | string  | -                 | User-assigned identity resource ID                                                                  |
 
 ## Handlebars Helpers
 
 ### Core VM Helpers (3 helpers)
 
 #### `vmSize`
+
 Get VM size configuration with details.
 
 ```handlebars
@@ -346,6 +412,7 @@ Get VM size configuration with details.
 ```
 
 #### `vmImage`
+
 Get VM image reference for OS deployment.
 
 ```handlebars
@@ -354,6 +421,7 @@ Get VM image reference for OS deployment.
 ```
 
 #### `vmStorage`
+
 Get storage configuration for disks.
 
 ```handlebars
@@ -412,7 +480,8 @@ Get storage configuration for disks.
   access="Allow"
   protocol="Tcp"
   sourceAddressPrefix="10.0.1.0/24"
-  destinationPortRange="8080"}}
+  destinationPortRange="8080"
+}}
 ```
 
 #### Load Balancer Helpers (17 helpers)
@@ -517,39 +586,43 @@ Get storage configuration for disks.
 {{ext:crossplatform "DiskEncryption"}}
 
 <!-- Utility Helpers -->
-{{ext:list "windows"}}          <!-- List extensions by platform -->
-{{ext:template "CustomScript"}}  <!-- Get extension template -->
-{{ext:count "linux"}}            <!-- Count extensions -->
-{{ext:filter-by-feature "monitoring"}}  <!-- Filter by feature -->
-{{ext:dependencies "Docker"}}    <!-- Get extension dependencies -->
-{{ext:multi-extension "AzureMonitor" "DependencyAgent"}}  <!-- Combine extensions -->
+{{ext:list "windows"}}
+<!-- List extensions by platform -->
+{{ext:template "CustomScript"}}
+<!-- Get extension template -->
+{{ext:count "linux"}}
+<!-- Count extensions -->
+{{ext:filter-by-feature "monitoring"}}
+<!-- Filter by feature -->
+{{ext:dependencies "Docker"}}
+<!-- Get extension dependencies -->
+{{ext:multi-extension "AzureMonitor" "DependencyAgent"}}
+<!-- Combine extensions -->
 
 <!-- Generate CustomScript Extension -->
 {{ext:script
   platform="linux"
   scriptUrl="https://example.com/setup.sh"
-  commandToExecute="bash setup.sh"}}
+  commandToExecute="bash setup.sh"
+}}
 
 <!-- Generate Domain Join Extension -->
 {{ext:domain-join
   domain="contoso.com"
   ouPath="OU=Servers,DC=contoso,DC=com"
-  user="admin@contoso.com"}}
+  user="admin@contoso.com"
+}}
 
 <!-- Generate Antimalware Extension -->
-{{ext:antimalware
-  realtimeProtection=true
-  scheduledScan=true
-  scanType="Quick"}}
+{{ext:antimalware realtimeProtection=true scheduledScan=true scanType="Quick"}}
 
 <!-- Generate Docker Extension -->
 {{ext:docker
-  dockerComposeYml="version: '3'\nservices:\n  web:\n    image: nginx"}}
+  dockerComposeYml="version: '3'\nservices:\n  web:\n    image: nginx"
+}}
 
 <!-- Generate Azure Monitor Agent -->
-{{ext:monitor
-  workspaceId="workspace-id"
-  workspaceKey="workspace-key"}}
+{{ext:monitor workspaceId="workspace-id" workspaceKey="workspace-key"}}
 ```
 
 ### Security Helpers (26 helpers, `security:` namespace)
@@ -561,7 +634,8 @@ Get storage configuration for disks.
 {{security:ade
   keyVaultResourceId="/subscriptions/.../Microsoft.KeyVault/vaults/mykeyvault"
   keyVaultUrl="https://mykeyvault.vault.azure.net/"
-  volumeType="All"}}
+  volumeType="All"
+}}
 
 <!-- Server-Side Encryption with Platform-Managed Keys -->
 {{security:sse-pmk}}
@@ -569,7 +643,8 @@ Get storage configuration for disks.
 <!-- Server-Side Encryption with Customer-Managed Keys -->
 {{security:sse-cmk
   keyVaultResourceId="/subscriptions/.../Microsoft.KeyVault/vaults/mykeyvault"
-  keyUrl="https://mykeyvault.vault.azure.net/keys/mykey/version"}}
+  keyUrl="https://mykeyvault.vault.azure.net/keys/mykey/version"
+}}
 
 <!-- Encryption at Host -->
 {{security:encryption-at-host}}
@@ -582,11 +657,16 @@ Get storage configuration for disks.
 {{security:trusted-launch}}
 
 <!-- Individual Trusted Launch features -->
-{{security:secure-boot}}           <!-- Secure Boot -->
-{{security:vtpm}}                   <!-- Virtual TPM -->
-{{security:boot-integrity}}         <!-- Boot Integrity Monitoring -->
-{{security:guest-attestation}}      <!-- Guest Attestation Extension -->
-{{security:defender}}               <!-- Microsoft Defender integration -->
+{{security:secure-boot}}
+<!-- Secure Boot -->
+{{security:vtpm}}
+<!-- Virtual TPM -->
+{{security:boot-integrity}}
+<!-- Boot Integrity Monitoring -->
+{{security:guest-attestation}}
+<!-- Guest Attestation Extension -->
+{{security:defender}}
+<!-- Microsoft Defender integration -->
 ```
 
 #### Security Template Helpers
@@ -611,8 +691,10 @@ Get storage configuration for disks.
 {{security:list "trusted-launch"}}
 
 <!-- Count security features -->
-{{security:count "encryption"}}  <!-- Returns: 3 -->
-{{security:count "trusted-launch"}}  <!-- Returns: 5 -->
+{{security:count "encryption"}}
+<!-- Returns: 3 -->
+{{security:count "trusted-launch"}}
+<!-- Returns: 5 -->
 
 <!-- Validate security configuration -->
 {{security:validate config}}
@@ -633,19 +715,23 @@ Get storage configuration for disks.
 
 <!-- User-assigned identity -->
 {{identity:managedidentity.userAssigned
-  identityId="/subscriptions/.../Microsoft.ManagedIdentity/userAssignedIdentities/myidentity"}}
+  identityId="/subscriptions/.../Microsoft.ManagedIdentity/userAssignedIdentities/myidentity"
+}}
 
 <!-- Multiple identities (hybrid) -->
 {{identity:managedidentity.multiple
   userIdentityIds=(array
     "/subscriptions/.../userAssignedIdentities/identity1"
-    "/subscriptions/.../userAssignedIdentities/identity2")}}
+    "/subscriptions/.../userAssignedIdentities/identity2"
+  )
+}}
 
 <!-- Create managed identity resource -->
 {{identity:managedidentity.create
   name="myidentity"
   location="eastus"
-  tags=(object name="Environment" value="Production")}}
+  tags=(object name="Environment" value="Production")
+}}
 
 <!-- Get identity recommendations -->
 {{identity:managedidentity.recommendations "key-vault"}}
@@ -660,7 +746,8 @@ Get storage configuration for disks.
 {{identity:managedidentity.roleAssignment
   principalId="identity-principal-id"
   roleDefinitionId="built-in-role-id"
-  scope="/subscriptions/.../resourceGroups/myrg"}}
+  scope="/subscriptions/.../resourceGroups/myrg"
+}}
 ```
 
 #### Azure AD Helpers (8 helpers)
@@ -676,16 +763,14 @@ Get storage configuration for disks.
 {{identity:azuread.conditionalAccess
   requireMfa=true
   requireCompliantDevice=true
-  allowedLocations=(array "US" "EU")}}
+  allowedLocations=(array "US" "EU")
+}}
 
 <!-- MFA configuration -->
-{{identity:azuread.mfa
-  methods=(array "phone" "authenticator")
-  required=true}}
+{{identity:azuread.mfa methods=(array "phone" "authenticator") required=true}}
 
 <!-- Passwordless authentication -->
-{{identity:azuread.passwordless
-  methods=(array "fido2" "windowsHello")}}
+{{identity:azuread.passwordless methods=(array "fido2" "windowsHello")}}
 
 <!-- VM access role -->
 {{identity:azuread.vmAccessRole "administrator"}}
@@ -694,7 +779,8 @@ Get storage configuration for disks.
 <!-- Create complete AAD integration -->
 {{identity:azuread.create
   platform="linux"
-  features=(array "sshLogin" "mfa" "conditionalAccess")}}
+  features=(array "sshLogin" "mfa" "conditionalAccess")
+}}
 
 <!-- Validate AAD configuration -->
 {{identity:azuread.validate config}}
@@ -708,7 +794,8 @@ Get storage configuration for disks.
   principalId="identity-principal-id"
   roleName="Contributor"
   scopeType="resourceGroup"
-  scopeId="myrg"}}
+  scopeId="myrg"
+}}
 
 <!-- Create custom role -->
 {{identity:rbac.createCustomRole
@@ -716,8 +803,10 @@ Get storage configuration for disks.
   description="Can start and stop VMs"
   actions=(array
     "Microsoft.Compute/virtualMachines/start/action"
-    "Microsoft.Compute/virtualMachines/powerOff/action")
-  assignableScopes=(array "/subscriptions/sub-id")}}
+    "Microsoft.Compute/virtualMachines/powerOff/action"
+  )
+  assignableScopes=(array "/subscriptions/sub-id")
+}}
 
 <!-- Generate scope string -->
 {{identity:rbac.scope "resourceGroup" "myrg"}}
@@ -731,14 +820,21 @@ Get storage configuration for disks.
 {{identity:rbac.recommend
   requiredActions=(array
     "Microsoft.Storage/storageAccounts/read"
-    "Microsoft.Storage/storageAccounts/listKeys/action")}}
+    "Microsoft.Storage/storageAccounts/listKeys/action"
+  )
+}}
 
 <!-- Pre-built custom role templates -->
-{{identity:rbac.vmStartStopOperator}}      <!-- VM Start/Stop Operator -->
-{{identity:rbac.vmBackupOperator}}         <!-- VM Backup Operator -->
-{{identity:rbac.vmNetworkConfigurator}}    <!-- VM Network Configurator -->
-{{identity:rbac.vmMonitorReader}}          <!-- VM Monitor Reader -->
-{{identity:rbac.vmExtensionManager}}       <!-- VM Extension Manager -->
+{{identity:rbac.vmStartStopOperator}}
+<!-- VM Start/Stop Operator -->
+{{identity:rbac.vmBackupOperator}}
+<!-- VM Backup Operator -->
+{{identity:rbac.vmNetworkConfigurator}}
+<!-- VM Network Configurator -->
+{{identity:rbac.vmMonitorReader}}
+<!-- VM Monitor Reader -->
+{{identity:rbac.vmExtensionManager}}
+<!-- VM Extension Manager -->
 
 <!-- Validate RBAC configuration -->
 {{identity:rbac.validate assignment}}
@@ -766,9 +862,12 @@ Get storage configuration for disks.
 {{identity:template "compliance-soc2"}}
 
 <!-- Count identity features -->
-{{identity:count "managed-identity"}}  <!-- Returns: 3 types -->
-{{identity:count "azure-ad"}}  <!-- Returns: 7 features -->
-{{identity:count "rbac"}}  <!-- Returns: 20+ roles -->
+{{identity:count "managed-identity"}}
+<!-- Returns: 3 types -->
+{{identity:count "azure-ad"}}
+<!-- Returns: 7 features -->
+{{identity:count "rbac"}}
+<!-- Returns: 20+ roles -->
 
 <!-- Filter identity features by capability -->
 {{identity:filterByFeature "passwordless"}}
@@ -801,7 +900,8 @@ Get storage configuration for disks.
   maxBatchInstancePercent=20
   maxUnhealthyInstancePercent=20
   maxUnhealthyUpgradedInstancePercent=20
-  pauseTimeBetweenBatches="PT5S"}}
+  pauseTimeBetweenBatches="PT5S"
+}}
 
 <!-- Orchestration Modes: "Uniform" or "Flexible" -->
 <!-- Upgrade Modes: "Automatic", "Rolling", or "Manual" -->
@@ -816,7 +916,8 @@ Get storage configuration for disks.
   minCapacity=2
   maxCapacity=10
   defaultCapacity=3
-  rules=(array metricRule scheduleRule)}}
+  rules=(array metricRule scheduleRule)
+}}
 
 <!-- Create metric-based scale rule -->
 {{scale:autoscale.metricRule
@@ -824,7 +925,8 @@ Get storage configuration for disks.
   operator="GreaterThan"
   threshold=75
   scaleAction="Increase"
-  cooldown="PT5M"}}
+  cooldown="PT5M"
+}}
 
 <!-- Create schedule-based profile -->
 {{scale:autoscale.scheduleProfile
@@ -832,10 +934,14 @@ Get storage configuration for disks.
   endTime="2024-12-31T18:00:00"
   recurrence=(object
     frequency="Week"
-    schedule=(object days=(array "Monday" "Tuesday" "Wednesday" "Thursday" "Friday")))
+    schedule=(object
+      days=(array "Monday" "Tuesday" "Wednesday" "Thursday" "Friday")
+    )
+  )
   minCapacity=5
   maxCapacity=20
-  defaultCapacity=10}}
+  defaultCapacity=10
+}}
 
 <!-- Pre-built CPU-based scaling policy -->
 {{scale:autoscale.cpu
@@ -844,14 +950,16 @@ Get storage configuration for disks.
   maxCapacity=10
   defaultCapacity=3
   scaleOutThreshold=75
-  scaleInThreshold=25}}
+  scaleInThreshold=25
+}}
 
 <!-- Pre-built business hours schedule -->
 {{scale:autoscale.businessHours
   minCapacity=5
   maxCapacity=20
   defaultCapacity=10
-  timezone="Pacific Standard Time"}}
+  timezone="Pacific Standard Time"
+}}
 ```
 
 #### Multi-Region Helpers (4 helpers)
@@ -864,7 +972,8 @@ Get storage configuration for disks.
   routingMethod="Performance"
   monitorProtocol="HTTPS"
   monitorPort=443
-  monitorPath="/"}}
+  monitorPath="/"
+}}
 
 <!-- Routing Methods: "Performance", "Priority", "Weighted", "Geographic", "MultiValue", "Subnet" -->
 
@@ -875,14 +984,16 @@ Get storage configuration for disks.
   targetResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'eastus-pip')]"
   priority=1
   weight=100
-  endpointLocation="East US"}}
+  endpointLocation="East US"
+}}
 
 <!-- Create multi-region deployment plan -->
 {{scale:multiregion.deploymentPlan
   primaryRegion="East US"
   secondaryRegions=(array "West US" "North Europe")
   replicationStrategy="active-active"
-  dataSync="async"}}
+  dataSync="async"
+}}
 
 <!-- Replication Strategies: "active-active", "active-passive", "multi-master" -->
 
@@ -892,7 +1003,8 @@ Get storage configuration for disks.
   failoverRegion="West US"
   rto=60
   rpo=15
-  automaticFailover=true}}
+  automaticFailover=true
+}}
 
 <!-- RTO: Recovery Time Objective in minutes -->
 <!-- RPO: Recovery Point Objective in minutes -->
@@ -918,7 +1030,8 @@ Get storage configuration for disks.
   ruleFrontendPort=80
   ruleBackendPort=80
   enableFloatingIp=false
-  idleTimeoutInMinutes=4}}
+  idleTimeoutInMinutes=4
+}}
 
 <!-- SKUs: "Basic" or "Standard" -->
 <!-- Tiers: "Regional" or "Global" -->
@@ -930,7 +1043,8 @@ Get storage configuration for disks.
   port=443
   path="/health"
   intervalInSeconds=15
-  numberOfProbes=2}}
+  numberOfProbes=2
+}}
 
 <!-- Recommend health probe based on application -->
 {{scale:lb.recommendHealthProbe "web-application"}}
@@ -950,7 +1064,8 @@ Get storage configuration for disks.
   protocol="Http"
   backendAddresses=(array "10.0.1.4" "10.0.1.5")
   cookieBasedAffinity="Disabled"
-  requestTimeout=30}}
+  requestTimeout=30
+}}
 
 <!-- Tiers: "Standard_v2" or "WAF_v2" -->
 
@@ -958,7 +1073,8 @@ Get storage configuration for disks.
 {{scale:appgw.recommendSku
   expectedTraffic="high"
   wafRequired=true
-  autoScaleEnabled=true}}
+  autoScaleEnabled=true
+}}
 ```
 
 ## Usage Examples
@@ -966,201 +1082,161 @@ Get storage configuration for disks.
 ### Example 1: Secure VM with Trusted Launch and Managed Identity
 
 ```handlebars
-{
-  "type": "Microsoft.Compute/virtualMachines",
-  "apiVersion": "2023-03-01",
-  "name": "[parameters('vmName')]",
-  "location": "[parameters('location')]",
-  "identity": {{identity:managedidentity.systemAssigned}},
-  "properties": {
-    "hardwareProfile": {{vmSize "Standard_D2s_v3"}},
-    "osProfile": {
-      "computerName": "[parameters('vmName')]",
-      "adminUsername": "[parameters('adminUsername')]",
-      "adminPassword": "[parameters('adminPassword')]"
-    },
-    "storageProfile": {
-      "imageReference": {{vmImage "Ubuntu" "22.04-LTS"}},
-      "osDisk": {
-        "createOption": "FromImage",
-        "managedDisk": {{security:sse-cmk
-          keyVaultResourceId="[parameters('keyVaultId')]"
-          keyUrl="[parameters('keyUrl')]"}}
-      }
-    },
-    "securityProfile": {{security:trusted-launch}},
-    "networkProfile": {
-      "networkInterfaces": [
-        {
-          "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('nicName'))]"
-        }
-      ]
-    }
-  }
-}
+{ "type": "Microsoft.Compute/virtualMachines", "apiVersion": "2023-03-01",
+"name": "[parameters('vmName')]", "location": "[parameters('location')]",
+"identity":
+{{identity:managedidentity.systemAssigned}}, "properties": { "hardwareProfile":
+{{vmSize "Standard_D2s_v3"}}, "osProfile": { "computerName":
+"[parameters('vmName')]", "adminUsername": "[parameters('adminUsername')]",
+"adminPassword": "[parameters('adminPassword')]" }, "storageProfile": {
+"imageReference":
+{{vmImage "Ubuntu" "22.04-LTS"}}, "osDisk": { "createOption": "FromImage",
+"managedDisk":
+{{security:sse-cmk
+  keyVaultResourceId="[parameters('keyVaultId')]"
+  keyUrl="[parameters('keyUrl')]"
+}}
+} }, "securityProfile":
+{{security:trusted-launch}}, "networkProfile": { "networkInterfaces": [ { "id":
+"[resourceId('Microsoft.Network/networkInterfaces', parameters('nicName'))]" } ]
+} } }
 ```
 
 ### Example 2: VM with Extensions
 
 ```handlebars
-{
-  "type": "Microsoft.Compute/virtualMachines/extensions",
-  "apiVersion": "2023-03-01",
-  "name": "[concat(parameters('vmName'), '/AzureMonitorLinuxAgent')]",
-  "location": "[parameters('location')]",
-  "dependsOn": [
-    "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
-  ],
-  "properties": {{ext:monitor
-    workspaceId="[parameters('workspaceId')]"
-    workspaceKey="[parameters('workspaceKey')]"}}
+{ "type": "Microsoft.Compute/virtualMachines/extensions", "apiVersion":
+"2023-03-01", "name": "[concat(parameters('vmName'),
+'/AzureMonitorLinuxAgent')]", "location": "[parameters('location')]",
+"dependsOn": [ "[resourceId('Microsoft.Compute/virtualMachines',
+parameters('vmName'))]" ], "properties":
+{{ext:monitor
+  workspaceId="[parameters('workspaceId')]"
+  workspaceKey="[parameters('workspaceKey')]"
+}}
 }
 ```
 
 ### Example 3: RBAC Role Assignment
 
 ```handlebars
-{
-  "type": "Microsoft.Authorization/roleAssignments",
-  "apiVersion": "2022-04-01",
-  "name": "[guid(resourceGroup().id, parameters('principalId'), 'Contributor')]",
-  "properties": {{identity:rbac.assignBuiltInRole
-    principalId="[parameters('principalId')]"
-    roleName="Contributor"
-    scopeType="resourceGroup"
-    scopeId="[resourceGroup().name]"}}
+{ "type": "Microsoft.Authorization/roleAssignments", "apiVersion": "2022-04-01",
+"name": "[guid(resourceGroup().id, parameters('principalId'), 'Contributor')]",
+"properties":
+{{identity:rbac.assignBuiltInRole
+  principalId="[parameters('principalId')]"
+  roleName="Contributor"
+  scopeType="resourceGroup"
+  scopeId="[resourceGroup().name]"
+}}
 }
 ```
 
 ### Example 4: VMSS with Auto-scaling
 
 ```handlebars
-{
-  "type": "Microsoft.Compute/virtualMachineScaleSets",
-  "apiVersion": "2023-09-01",
-  "name": "[parameters('vmssName')]",
-  "location": "[parameters('location')]",
-  "sku": {
-    "name": "[parameters('vmSize')]",
-    "tier": "Standard",
-    "capacity": "[parameters('instanceCount')]"
-  },
-  "properties": {{scale:vmss.definition
-    name="[parameters('vmssName')]"
-    orchestrationMode="Flexible"
-    upgradeMode="Rolling"
-    instanceCount="[parameters('instanceCount')]"
-    vmSize="[parameters('vmSize')]"
-    osType="Linux"
-    imagePublisher="Canonical"
-    imageOffer="0001-com-ubuntu-server-jammy"
-    imageSku="22_04-lts-gen2"
-    adminUsername="[parameters('adminUsername')]"
-    authenticationType="password"
-    enableAutoOsUpgrade=true
-    healthProbeId="[resourceId('Microsoft.Network/loadBalancers/probes', parameters('lbName'), 'httpProbe')]"
-    maxBatchInstancePercent=20
-    maxUnhealthyInstancePercent=20
-    maxUnhealthyUpgradedInstancePercent=20
-    pauseTimeBetweenBatches="PT5S"}}
-},
-{
-  "type": "Microsoft.Insights/autoscalesettings",
-  "apiVersion": "2022-10-01",
-  "name": "[concat(parameters('vmssName'), '-autoscale')]",
-  "location": "[parameters('location')]",
-  "dependsOn": [
-    "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
-  ],
-  "properties": {{scale:autoscale.cpu
-    vmssResourceId="[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
-    minCapacity=2
-    maxCapacity=10
-    defaultCapacity=3
-    scaleOutThreshold=75
-    scaleInThreshold=25}}
+{ "type": "Microsoft.Compute/virtualMachineScaleSets", "apiVersion":
+"2023-09-01", "name": "[parameters('vmssName')]", "location":
+"[parameters('location')]", "sku": { "name": "[parameters('vmSize')]", "tier":
+"Standard", "capacity": "[parameters('instanceCount')]" }, "properties":
+{{scale:vmss.definition
+  name="[parameters('vmssName')]"
+  orchestrationMode="Flexible"
+  upgradeMode="Rolling"
+  instanceCount="[parameters('instanceCount')]"
+  vmSize="[parameters('vmSize')]"
+  osType="Linux"
+  imagePublisher="Canonical"
+  imageOffer="0001-com-ubuntu-server-jammy"
+  imageSku="22_04-lts-gen2"
+  adminUsername="[parameters('adminUsername')]"
+  authenticationType="password"
+  enableAutoOsUpgrade=true
+  healthProbeId="[resourceId('Microsoft.Network/loadBalancers/probes', parameters('lbName'), 'httpProbe')]"
+  maxBatchInstancePercent=20
+  maxUnhealthyInstancePercent=20
+  maxUnhealthyUpgradedInstancePercent=20
+  pauseTimeBetweenBatches="PT5S"
+}}
+}, { "type": "Microsoft.Insights/autoscalesettings", "apiVersion": "2022-10-01",
+"name": "[concat(parameters('vmssName'), '-autoscale')]", "location":
+"[parameters('location')]", "dependsOn": [
+"[resourceId('Microsoft.Compute/virtualMachineScaleSets',
+parameters('vmssName'))]" ], "properties":
+{{scale:autoscale.cpu
+  vmssResourceId="[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
+  minCapacity=2
+  maxCapacity=10
+  defaultCapacity=3
+  scaleOutThreshold=75
+  scaleInThreshold=25
+}}
 }
 ```
 
 ### Example 5: Multi-Region Deployment with Traffic Manager
 
 ```handlebars
-{
-  "type": "Microsoft.Network/trafficManagerProfiles",
-  "apiVersion": "2022-04-01",
-  "name": "[parameters('trafficManagerName')]",
-  "location": "global",
-  "properties": {{scale:multiregion.profile
-    profileName="[parameters('trafficManagerName')]"
-    dnsName="[parameters('dnsName')]"
-    routingMethod="Performance"
-    monitorProtocol="HTTPS"
-    monitorPort=443
-    monitorPath="/health"}},
-  "resources": [
-    {
-      "type": "endpoints",
-      "apiVersion": "2022-04-01",
-      "name": "eastus-endpoint",
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/trafficManagerProfiles', parameters('trafficManagerName'))]"
-      ],
-      "properties": {{scale:multiregion.endpoint
-        endpointName="eastus-endpoint"
-        type="azureEndpoints"
-        targetResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'eastus-pip')]"
-        priority=1
-        weight=100
-        endpointLocation="East US"}}
-    },
-    {
-      "type": "endpoints",
-      "apiVersion": "2022-04-01",
-      "name": "westus-endpoint",
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/trafficManagerProfiles', parameters('trafficManagerName'))]"
-      ],
-      "properties": {{scale:multiregion.endpoint
-        endpointName="westus-endpoint"
-        type="azureEndpoints"
-        targetResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'westus-pip')]"
-        priority=2
-        weight=100
-        endpointLocation="West US"}}
-    }
-  ]
-}
+{ "type": "Microsoft.Network/trafficManagerProfiles", "apiVersion":
+"2022-04-01", "name": "[parameters('trafficManagerName')]", "location":
+"global", "properties":
+{{scale:multiregion.profile
+  profileName="[parameters('trafficManagerName')]"
+  dnsName="[parameters('dnsName')]"
+  routingMethod="Performance"
+  monitorProtocol="HTTPS"
+  monitorPort=443
+  monitorPath="/health"
+}}, "resources": [ { "type": "endpoints", "apiVersion": "2022-04-01", "name":
+"eastus-endpoint", "dependsOn": [
+"[resourceId('Microsoft.Network/trafficManagerProfiles',
+parameters('trafficManagerName'))]" ], "properties":
+{{scale:multiregion.endpoint
+  endpointName="eastus-endpoint"
+  type="azureEndpoints"
+  targetResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'eastus-pip')]"
+  priority=1
+  weight=100
+  endpointLocation="East US"
+}}
+}, { "type": "endpoints", "apiVersion": "2022-04-01", "name": "westus-endpoint",
+"dependsOn": [ "[resourceId('Microsoft.Network/trafficManagerProfiles',
+parameters('trafficManagerName'))]" ], "properties":
+{{scale:multiregion.endpoint
+  endpointName="westus-endpoint"
+  type="azureEndpoints"
+  targetResourceId="[resourceId('Microsoft.Network/publicIPAddresses', 'westus-pip')]"
+  priority=2
+  weight=100
+  endpointLocation="West US"
+}}
+} ] }
 ```
 
 ### Example 6: Load Balancer with Health Probes
 
 ```handlebars
-{
-  "type": "Microsoft.Network/loadBalancers",
-  "apiVersion": "2023-05-01",
-  "name": "[parameters('lbName')]",
-  "location": "[parameters('location')]",
-  "sku": {
-    "name": "Standard",
-    "tier": "Regional"
-  },
-  "properties": {{scale:lb.definition
-    name="[parameters('lbName')]"
-    sku="Standard"
-    tier="Regional"
-    frontendIpName="webFrontend"
-    publicIpResourceId="[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]"
-    backendPoolName="webBackend"
-    probeName="httpProbe"
-    probeProtocol="Http"
-    probePort=80
-    probePath="/health"
-    ruleName="httpRule"
-    ruleProtocol="Tcp"
-    ruleFrontendPort=80
-    ruleBackendPort=80
-    enableFloatingIp=false
-    idleTimeoutInMinutes=4}}
+{ "type": "Microsoft.Network/loadBalancers", "apiVersion": "2023-05-01", "name":
+"[parameters('lbName')]", "location": "[parameters('location')]", "sku": {
+"name": "Standard", "tier": "Regional" }, "properties":
+{{scale:lb.definition
+  name="[parameters('lbName')]"
+  sku="Standard"
+  tier="Regional"
+  frontendIpName="webFrontend"
+  publicIpResourceId="[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]"
+  backendPoolName="webBackend"
+  probeName="httpProbe"
+  probeProtocol="Http"
+  probePort=80
+  probePath="/health"
+  ruleName="httpRule"
+  ruleProtocol="Tcp"
+  ruleFrontendPort=80
+  ruleBackendPort=80
+  enableFloatingIp=false
+  idleTimeoutInMinutes=4
+}}
 }
 ```
 
@@ -1169,11 +1245,13 @@ Get storage configuration for disks.
 The plugin generates comprehensive ARM templates for Azure Marketplace offerings:
 
 ### Main Templates
+
 - `mainTemplate.json` - Main VM deployment template
 - `createUiDefinition.json` - Azure Portal UI definition
 - `viewDefinition.json` - Managed application view definition
 
 ### Nested Templates
+
 - **Core Resources:**
   - `virtualMachine.json` - VM configuration with extensions
   - `networkInterface.json` - Network interface
@@ -1386,16 +1464,19 @@ npm run test:watch
 To test the plugin with Azure Marketplace Generator:
 
 1. Build the plugin:
+
    ```bash
    npm run build
    ```
 
 2. Link locally (in plugin directory):
+
    ```bash
    npm link
    ```
 
 3. Link in your generator project:
+
    ```bash
    cd /path/to/your/generator/project
    npm link @hoiltd/azmp-plugin-vm
@@ -1426,6 +1507,7 @@ We welcome contributions! Please follow these guidelines:
 7. Open a Pull Request
 
 Please ensure:
+
 - All tests pass
 - Code follows the existing style
 - Commit messages are clear and descriptive
@@ -1460,6 +1542,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release history.
 ## Browser Support
 
 The generated `createUiDefinition.json` supports:
+
 - Microsoft Edge (latest)
 - Google Chrome (latest)
 - Mozilla Firefox (latest)
@@ -1484,6 +1567,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## Support
 
 For issues, questions, or contributions:
+
 - **Issues:** [GitHub Issues](https://github.com/HOME-OFFICE-IMPROVEMENTS-LTD/azmp-plugin-vm/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/HOME-OFFICE-IMPROVEMENTS-LTD/azmp-plugin-vm/discussions)
 - **Documentation:** [Wiki](https://github.com/HOME-OFFICE-IMPROVEMENTS-LTD/azmp-plugin-vm/wiki)
