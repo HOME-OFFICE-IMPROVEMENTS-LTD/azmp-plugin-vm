@@ -1,26 +1,26 @@
 /**
  * Availability Zones Module
- * 
+ *
  * Provides helpers for Azure Availability Zones configuration.
  * Availability Zones are physically separate datacenters within a region
  * providing 99.99% SLA when using 2+ VMs across zones.
- * 
+ *
  * @module availability/availabilityzones
  */
 
 /**
  * Zone Configuration
  */
-export type ZoneNumber = '1' | '2' | '3';
+export type ZoneNumber = "1" | "2" | "3";
 export type ZoneArray = ZoneNumber[];
 
 /**
  * Zone-Redundant Configuration
  */
 export interface ZoneConfig {
-  zones?: ZoneArray;           // Specific zones: ['1', '2', '3']
-  zoneRedundant?: boolean;     // Distribute across all zones
-  singleZone?: ZoneNumber;     // Deploy to specific zone
+  zones?: ZoneArray; // Specific zones: ['1', '2', '3']
+  zoneRedundant?: boolean; // Distribute across all zones
+  singleZone?: ZoneNumber; // Deploy to specific zone
 }
 
 /**
@@ -35,26 +35,45 @@ export interface ZonalVMConfig {
 
 /**
  * Get zones for a specific Azure region
- * 
+ *
  * @param location - Azure region name
  * @returns Available zones for the region
  */
 export function getAvailableZones(location: string): ZoneArray {
   // Regions with 3 availability zones
   const threeZoneRegions = [
-    'eastus', 'eastus2', 'westus2', 'westus3', 'centralus', 'southcentralus',
-    'northeurope', 'westeurope', 'francecentral', 'uksouth',
-    'germanywestcentral', 'norwayeast', 'switzerlandnorth',
-    'swedencentral', 'polandcentral',
-    'southeastasia', 'eastasia', 'australiaeast', 'japaneast',
-    'koreacentral', 'southafricanorth', 'brazilsouth',
-    'canadacentral', 'uaenorth', 'qatarcentral', 'israelcentral'
+    "eastus",
+    "eastus2",
+    "westus2",
+    "westus3",
+    "centralus",
+    "southcentralus",
+    "northeurope",
+    "westeurope",
+    "francecentral",
+    "uksouth",
+    "germanywestcentral",
+    "norwayeast",
+    "switzerlandnorth",
+    "swedencentral",
+    "polandcentral",
+    "southeastasia",
+    "eastasia",
+    "australiaeast",
+    "japaneast",
+    "koreacentral",
+    "southafricanorth",
+    "brazilsouth",
+    "canadacentral",
+    "uaenorth",
+    "qatarcentral",
+    "israelcentral",
   ];
 
-  const normalizedLocation = location.toLowerCase().replace(/\s/g, '');
-  
+  const normalizedLocation = location.toLowerCase().replace(/\s/g, "");
+
   if (threeZoneRegions.includes(normalizedLocation)) {
-    return ['1', '2', '3'];
+    return ["1", "2", "3"];
   }
 
   // Regions without zones return empty array
@@ -63,7 +82,7 @@ export function getAvailableZones(location: string): ZoneArray {
 
 /**
  * Check if region supports availability zones
- * 
+ *
  * @param location - Azure region name
  * @returns True if region supports zones
  */
@@ -73,10 +92,10 @@ export function supportsAvailabilityZones(location: string): boolean {
 
 /**
  * Generate VM with zone specification
- * 
+ *
  * @param config - Zonal VM configuration
  * @returns VM template with zone
- * 
+ *
  * @example
  * ```handlebars
  * {{availability:zonalVM name="myVM" zone="1" vmSize="Standard_D2s_v3"}}
@@ -84,19 +103,19 @@ export function supportsAvailabilityZones(location: string): boolean {
  */
 export function zonalVM(config: ZonalVMConfig): any {
   const template: any = {
-    type: 'Microsoft.Compute/virtualMachines',
-    apiVersion: '2023-09-01',
+    type: "Microsoft.Compute/virtualMachines",
+    apiVersion: "2023-09-01",
     name: config.name,
-    location: config.location || '[resourceGroup().location]',
-    zones: [config.zone]
+    location: config.location || "[resourceGroup().location]",
+    zones: [config.zone],
   };
 
   // Add VM size if provided
   if (config.vmSize) {
     template.properties = {
       hardwareProfile: {
-        vmSize: config.vmSize
-      }
+        vmSize: config.vmSize,
+      },
     };
   }
 
@@ -105,17 +124,20 @@ export function zonalVM(config: ZonalVMConfig): any {
 
 /**
  * Generate zone-redundant disk configuration
- * 
+ *
  * @param diskName - Name of the disk
  * @param zones - Zones for redundancy
  * @returns Managed disk with ZRS
- * 
+ *
  * @example
  * ```handlebars
  * {{availability:zoneRedundantDisk name="myDisk" zones="[1,2,3]"}}
  * ```
  */
-export function zoneRedundantDisk(diskName: string, zones?: ZoneArray): {
+export function zoneRedundantDisk(
+  diskName: string,
+  zones?: ZoneArray,
+): {
   type: string;
   apiVersion: string;
   name: string;
@@ -132,36 +154,39 @@ export function zoneRedundantDisk(diskName: string, zones?: ZoneArray): {
   };
 } {
   return {
-    type: 'Microsoft.Compute/disks',
-    apiVersion: '2023-04-02',
+    type: "Microsoft.Compute/disks",
+    apiVersion: "2023-04-02",
     name: diskName,
-    location: '[resourceGroup().location]',
+    location: "[resourceGroup().location]",
     sku: {
-      name: 'Premium_ZRS' // Zone-redundant storage
+      name: "Premium_ZRS", // Zone-redundant storage
     },
-    zones: zones || ['1', '2', '3'],
+    zones: zones || ["1", "2", "3"],
     properties: {
       creationData: {
-        createOption: 'Empty'
+        createOption: "Empty",
       },
-      diskSizeGB: 128
-    }
+      diskSizeGB: 128,
+    },
   };
 }
 
 /**
  * Generate zone-redundant public IP address
- * 
+ *
  * @param ipName - Name of the public IP
  * @param zones - Zones for redundancy
  * @returns Public IP with zone redundancy
- * 
+ *
  * @example
  * ```handlebars
  * {{availability:zoneRedundantIP name="myIP"}}
  * ```
  */
-export function zoneRedundantIP(ipName: string, zones?: ZoneArray): {
+export function zoneRedundantIP(
+  ipName: string,
+  zones?: ZoneArray,
+): {
   type: string;
   apiVersion: string;
   name: string;
@@ -176,29 +201,32 @@ export function zoneRedundantIP(ipName: string, zones?: ZoneArray): {
   };
 } {
   return {
-    type: 'Microsoft.Network/publicIPAddresses',
-    apiVersion: '2023-09-01',
+    type: "Microsoft.Network/publicIPAddresses",
+    apiVersion: "2023-09-01",
     name: ipName,
-    location: '[resourceGroup().location]',
+    location: "[resourceGroup().location]",
     sku: {
-      name: 'Standard', // Standard SKU required for zone redundancy
-      tier: 'Regional'
+      name: "Standard", // Standard SKU required for zone redundancy
+      tier: "Regional",
     },
-    zones: zones || ['1', '2', '3'],
+    zones: zones || ["1", "2", "3"],
     properties: {
-      publicIPAllocationMethod: 'Static'
-    }
+      publicIPAllocationMethod: "Static",
+    },
   };
 }
 
 /**
  * Calculate expected uptime percentage for zones
- * 
+ *
  * @param vmCount - Number of VMs
  * @param zoneCount - Number of zones used (1-3)
  * @returns SLA percentage
  */
-export function availabilityZoneSLA(vmCount: number, zoneCount: number): number {
+export function availabilityZoneSLA(
+  vmCount: number,
+  zoneCount: number,
+): number {
   if (vmCount < 2 || zoneCount < 2) {
     return 99.9; // Single instance or single zone
   }
@@ -207,7 +235,7 @@ export function availabilityZoneSLA(vmCount: number, zoneCount: number): number 
 
 /**
  * Recommend zone distribution for VM count
- * 
+ *
  * @param vmCount - Total number of VMs
  * @returns Recommended zone distribution
  */
@@ -218,45 +246,48 @@ export function recommendZoneDistribution(vmCount: number): {
 } {
   if (vmCount === 1) {
     return {
-      zones: ['1'],
+      zones: ["1"],
       vmPerZone: [1],
-      description: 'Single VM in zone 1 (99.9% SLA)'
+      description: "Single VM in zone 1 (99.9% SLA)",
     };
   }
 
   if (vmCount === 2) {
     return {
-      zones: ['1', '2'],
+      zones: ["1", "2"],
       vmPerZone: [1, 1],
-      description: '1 VM per zone across 2 zones (99.99% SLA)'
+      description: "1 VM per zone across 2 zones (99.99% SLA)",
     };
   }
 
   // Distribute evenly across 3 zones
   const basePerZone = Math.floor(vmCount / 3);
   const remainder = vmCount % 3;
-  
+
   const vmPerZone = [
     basePerZone + (remainder > 0 ? 1 : 0),
     basePerZone + (remainder > 1 ? 1 : 0),
-    basePerZone
+    basePerZone,
   ];
 
   return {
-    zones: ['1', '2', '3'],
+    zones: ["1", "2", "3"],
     vmPerZone,
-    description: `${vmPerZone[0]}-${vmPerZone[1]}-${vmPerZone[2]} distribution across 3 zones (99.99% SLA)`
+    description: `${vmPerZone[0]}-${vmPerZone[1]}-${vmPerZone[2]} distribution across 3 zones (99.99% SLA)`,
   };
 }
 
 /**
  * Validate zone configuration
- * 
+ *
  * @param config - Zone configuration
  * @param location - Azure region
  * @returns Validation result
  */
-export function validateZoneConfig(config: ZoneConfig, location: string): {
+export function validateZoneConfig(
+  config: ZoneConfig,
+  location: string,
+): {
   valid: boolean;
   errors: string[];
   warnings: string[];
@@ -272,7 +303,7 @@ export function validateZoneConfig(config: ZoneConfig, location: string): {
 
   // Validate zone numbers
   if (config.zones) {
-    const validZones: ZoneNumber[] = ['1', '2', '3'];
+    const validZones: ZoneNumber[] = ["1", "2", "3"];
     for (const zone of config.zones) {
       if (!validZones.includes(zone)) {
         errors.push(`Invalid zone number: ${zone}. Must be '1', '2', or '3'`);
@@ -282,27 +313,31 @@ export function validateZoneConfig(config: ZoneConfig, location: string): {
 
   // Validate single zone
   if (config.singleZone) {
-    const validZones: ZoneNumber[] = ['1', '2', '3'];
+    const validZones: ZoneNumber[] = ["1", "2", "3"];
     if (!validZones.includes(config.singleZone)) {
-      errors.push(`Invalid zone number: ${config.singleZone}. Must be '1', '2', or '3'`);
+      errors.push(
+        `Invalid zone number: ${config.singleZone}. Must be '1', '2', or '3'`,
+      );
     }
   }
 
   // Warning for single zone deployment
   if (config.singleZone && !config.zoneRedundant) {
-    warnings.push('Single zone deployment provides 99.9% SLA. Consider multi-zone for 99.99% SLA');
+    warnings.push(
+      "Single zone deployment provides 99.9% SLA. Consider multi-zone for 99.99% SLA",
+    );
   }
 
   return {
     valid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
 /**
  * Generate availability zones best practices documentation
- * 
+ *
  * @returns Best practices as markdown string
  */
 export function availabilityZonesBestPractices(): string {
@@ -348,26 +383,44 @@ export function availabilityZonesBestPractices(): string {
 
 /**
  * Get regions with availability zones support
- * 
+ *
  * @returns Array of region names with zone support
  */
 export function getZoneSupportedRegions(): string[] {
   return [
     // Americas
-    'eastus', 'eastus2', 'westus2', 'westus3', 'centralus', 'southcentralus',
-    'canadacentral', 'brazilsouth',
-    
+    "eastus",
+    "eastus2",
+    "westus2",
+    "westus3",
+    "centralus",
+    "southcentralus",
+    "canadacentral",
+    "brazilsouth",
+
     // Europe
-    'northeurope', 'westeurope', 'francecentral', 'uksouth',
-    'germanywestcentral', 'norwayeast', 'switzerlandnorth',
-    'swedencentral', 'polandcentral',
-    
+    "northeurope",
+    "westeurope",
+    "francecentral",
+    "uksouth",
+    "germanywestcentral",
+    "norwayeast",
+    "switzerlandnorth",
+    "swedencentral",
+    "polandcentral",
+
     // Asia Pacific
-    'southeastasia', 'eastasia', 'australiaeast', 'japaneast',
-    'koreacentral', 'southafricanorth',
-    
+    "southeastasia",
+    "eastasia",
+    "australiaeast",
+    "japaneast",
+    "koreacentral",
+    "southafricanorth",
+
     // Middle East
-    'uaenorth', 'qatarcentral', 'israelcentral'
+    "uaenorth",
+    "qatarcentral",
+    "israelcentral",
   ];
 }
 
@@ -384,5 +437,5 @@ export const availabilityZones = {
   recommendZoneDistribution,
   validateZoneConfig,
   availabilityZonesBestPractices,
-  getZoneSupportedRegions
+  getZoneSupportedRegions,
 };

@@ -1,0 +1,35 @@
+{
+  "vmName": "standard-vm",
+  "vmSize": "Standard_B2ms",
+  "location": "eastus",
+  "adminUsername": "azureuser",
+  "authenticationType": "sshPublicKey",
+  "osImageReference": {
+    "publisher": "Canonical",
+    "offer": "0001-com-ubuntu-server-jammy",
+    "sku": "22_04-lts",
+    "version": "latest"
+  },
+  "storageAccountType": "StandardSSD_LRS",
+  "bootDiagnosticsEnabled": true,
+  "createVirtualNetwork": true,
+  "createPublicIP": true,
+  "createNetworkSecurityGroup": true,
+  "vnetAddressSpace": "10.0.0.0/16",
+  "subnetAddressPrefix": "10.0.1.0/24",
+  "networkSecurityGroupRules": [
+    {
+      "name": "SSH",
+      "priority": 1000,
+      "direction": "Inbound",
+      "access": "Allow",
+      "protocol": "Tcp",
+      "sourcePortRange": "*",
+      "destinationPortRange": "22",
+      "sourceAddressPrefix": "*",
+      "destinationAddressPrefix": "*"
+    }
+  ],
+  "description": "Standard Ubuntu VM with Boot Diagnostics for easy troubleshooting",
+  "author": "HOME OFFICE IMPROVEMENTS LTD"
+}

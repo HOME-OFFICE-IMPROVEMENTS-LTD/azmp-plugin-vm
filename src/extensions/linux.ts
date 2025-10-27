@@ -1,9 +1,9 @@
 /**
  * Linux VM Extensions Module
- * 
+ *
  * Provides Handlebars helpers for Linux-specific VM extensions
  * Supporting 7 essential Linux extensions for Azure VMs
- * 
+ *
  * @module extensions/linux
  */
 
@@ -23,7 +23,7 @@ export interface LinuxExtension {
 /**
  * 1. Microsoft.Azure.Extensions.CustomScript
  * Execute bash scripts for VM configuration and deployment
- * 
+ *
  * @param config - Script configuration
  * @returns Extension JSON object
  */
@@ -34,7 +34,9 @@ export interface CustomScriptConfig {
   timestamp?: number;
 }
 
-export function customScriptExtension(config: CustomScriptConfig): LinuxExtension {
+export function customScriptExtension(
+  config: CustomScriptConfig,
+): LinuxExtension {
   const settings: Record<string, any> = {};
   const protectedSettings: Record<string, any> = {};
 
@@ -55,65 +57,69 @@ export function customScriptExtension(config: CustomScriptConfig): LinuxExtensio
   }
 
   return {
-    name: 'CustomScript',
-    publisher: 'Microsoft.Azure.Extensions',
-    type: 'CustomScript',
-    typeHandlerVersion: '2.1',
+    name: "CustomScript",
+    publisher: "Microsoft.Azure.Extensions",
+    type: "CustomScript",
+    typeHandlerVersion: "2.1",
     autoUpgradeMinorVersion: true,
     settings: Object.keys(settings).length > 0 ? settings : undefined,
-    protectedSettings: Object.keys(protectedSettings).length > 0 ? protectedSettings : undefined
+    protectedSettings:
+      Object.keys(protectedSettings).length > 0 ? protectedSettings : undefined,
   };
 }
 
 /**
  * 2. Microsoft.EnterpriseCloud.Monitoring.OmsAgentForLinux
  * Azure Monitor and Log Analytics integration for Linux
- * 
+ *
  * @param workspaceId - Log Analytics workspace ID
  * @param workspaceKey - Log Analytics workspace key
  * @returns Extension JSON object
  */
-export function omsAgentExtension(workspaceId: string, workspaceKey: string): LinuxExtension {
+export function omsAgentExtension(
+  workspaceId: string,
+  workspaceKey: string,
+): LinuxExtension {
   return {
-    name: 'OmsAgentForLinux',
-    publisher: 'Microsoft.EnterpriseCloud.Monitoring',
-    type: 'OmsAgentForLinux',
-    typeHandlerVersion: '1.14',
+    name: "OmsAgentForLinux",
+    publisher: "Microsoft.EnterpriseCloud.Monitoring",
+    type: "OmsAgentForLinux",
+    typeHandlerVersion: "1.14",
     autoUpgradeMinorVersion: true,
     settings: {
       workspaceId: workspaceId,
-      stopOnMultipleConnections: false
+      stopOnMultipleConnections: false,
     },
     protectedSettings: {
-      workspaceKey: workspaceKey
-    }
+      workspaceKey: workspaceKey,
+    },
   };
 }
 
 /**
  * 3. Microsoft.Azure.Security.Monitoring.AzureSecurityLinuxAgent
  * Security baseline monitoring and compliance
- * 
+ *
  * @returns Extension JSON object
  */
 export function securityAgentExtension(): LinuxExtension {
   return {
-    name: 'AzureSecurityLinuxAgent',
-    publisher: 'Microsoft.Azure.Security.Monitoring',
-    type: 'AzureSecurityLinuxAgent',
-    typeHandlerVersion: '2.14',
+    name: "AzureSecurityLinuxAgent",
+    publisher: "Microsoft.Azure.Security.Monitoring",
+    type: "AzureSecurityLinuxAgent",
+    typeHandlerVersion: "2.14",
     autoUpgradeMinorVersion: true,
     settings: {
       enableGenevaUpload: true,
-      enableAutoConfig: true
-    }
+      enableAutoConfig: true,
+    },
   };
 }
 
 /**
  * 4. Microsoft.OSTCExtensions.VMAccessForLinux
  * SSH key management and user administration
- * 
+ *
  * @param config - VM Access configuration
  * @returns Extension JSON object
  */
@@ -154,54 +160,54 @@ export function vmAccessExtension(config: VMAccessConfig): LinuxExtension {
   }
 
   return {
-    name: 'VMAccessForLinux',
-    publisher: 'Microsoft.OSTCExtensions',
-    type: 'VMAccessForLinux',
-    typeHandlerVersion: '1.5',
+    name: "VMAccessForLinux",
+    publisher: "Microsoft.OSTCExtensions",
+    type: "VMAccessForLinux",
+    typeHandlerVersion: "1.5",
     autoUpgradeMinorVersion: true,
-    protectedSettings
+    protectedSettings,
   };
 }
 
 /**
  * 5. Microsoft.Azure.Monitor.DependencyAgent.DependencyAgentLinux
  * Application dependency mapping
- * 
+ *
  * @returns Extension JSON object
  */
 export function dependencyAgentExtension(): LinuxExtension {
   return {
-    name: 'DependencyAgentLinux',
-    publisher: 'Microsoft.Azure.Monitoring.DependencyAgent',
-    type: 'DependencyAgentLinux',
-    typeHandlerVersion: '9.10',
+    name: "DependencyAgentLinux",
+    publisher: "Microsoft.Azure.Monitoring.DependencyAgent",
+    type: "DependencyAgentLinux",
+    typeHandlerVersion: "9.10",
     autoUpgradeMinorVersion: true,
     settings: {
-      enableAMA: true
-    }
+      enableAMA: true,
+    },
   };
 }
 
 /**
  * 6. Microsoft.HpcCompute.NvidiaGpuDriverLinux
  * NVIDIA GPU driver installation for Linux
- * 
+ *
  * @returns Extension JSON object
  */
 export function gpuDriverExtension(): LinuxExtension {
   return {
-    name: 'NvidiaGpuDriverLinux',
-    publisher: 'Microsoft.HpcCompute',
-    type: 'NvidiaGpuDriverLinux',
-    typeHandlerVersion: '1.6',
-    autoUpgradeMinorVersion: true
+    name: "NvidiaGpuDriverLinux",
+    publisher: "Microsoft.HpcCompute",
+    type: "NvidiaGpuDriverLinux",
+    typeHandlerVersion: "1.6",
+    autoUpgradeMinorVersion: true,
   };
 }
 
 /**
  * 7. Microsoft.CPlat.Core.RunCommandLinux
  * Remote command execution
- * 
+ *
  * @param config - Run command configuration
  * @returns Extension JSON object
  */
@@ -237,13 +243,14 @@ export function runCommandExtension(config: RunCommandConfig): LinuxExtension {
   }
 
   return {
-    name: 'RunCommandLinux',
-    publisher: 'Microsoft.CPlat.Core',
-    type: 'RunCommandLinux',
-    typeHandlerVersion: '1.0',
+    name: "RunCommandLinux",
+    publisher: "Microsoft.CPlat.Core",
+    type: "RunCommandLinux",
+    typeHandlerVersion: "1.0",
     autoUpgradeMinorVersion: true,
     settings: Object.keys(settings).length > 0 ? settings : undefined,
-    protectedSettings: Object.keys(protectedSettings).length > 0 ? protectedSettings : undefined
+    protectedSettings:
+      Object.keys(protectedSettings).length > 0 ? protectedSettings : undefined,
   };
 }
 
@@ -257,5 +264,5 @@ export const linuxExtensions = {
   vmAccessExtension,
   dependencyAgentExtension,
   gpuDriverExtension,
-  runCommandExtension
+  runCommandExtension,
 };

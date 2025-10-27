@@ -1,0 +1,36 @@
+{
+  "vmName": "performance-vm",
+  "vmSize": "Standard_D8s_v5",
+  "location": "eastus",
+  "adminUsername": "azureuser",
+  "authenticationType": "sshPublicKey",
+  "osImageReference": {
+    "publisher": "Canonical",
+    "offer": "0001-com-ubuntu-server-jammy",
+    "sku": "22_04-lts-gen2",
+    "version": "latest"
+  },
+  "storageAccountType": "Premium_LRS",
+  "enableAcceleratedNetworking": true,
+  "bootDiagnosticsEnabled": true,
+  "createVirtualNetwork": true,
+  "createPublicIP": true,
+  "createNetworkSecurityGroup": true,
+  "vnetAddressSpace": "10.0.0.0/16",
+  "subnetAddressPrefix": "10.0.1.0/24",
+  "networkSecurityGroupRules": [
+    {
+      "name": "SSH",
+      "priority": 1000,
+      "direction": "Inbound",
+      "access": "Allow",
+      "protocol": "Tcp",
+      "sourcePortRange": "*",
+      "destinationPortRange": "22",
+      "sourceAddressPrefix": "*",
+      "destinationAddressPrefix": "*"
+    }
+  ],
+  "description": "High-performance Ubuntu VM with Accelerated Networking (up to 30 Gbps)",
+  "author": "HOME OFFICE IMPROVEMENTS LTD"
+}

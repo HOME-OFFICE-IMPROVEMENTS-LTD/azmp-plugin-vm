@@ -1,6 +1,6 @@
 /**
  * Alert Module
- * 
+ *
  * Provides Handlebars helpers for creating Azure Monitor alerts:
  * - Metric alerts (static and dynamic thresholds)
  * - Log alerts (KQL-based)
@@ -9,12 +9,12 @@
  * - Smart groups (correlation/suppression)
  */
 
-import { registerMetricAlertHelpers } from './metricAlert';
-import { registerDynamicMetricAlertHelpers } from './dynamicMetricAlert';
-import { registerLogAlertHelpers } from './logAlert';
-import { registerActivityLogAlertHelpers } from './activityLogAlert';
-import { registerActionGroupHelpers } from './actionGroup';
-import { registerSmartGroupHelpers } from './smartGroup';
+import { registerMetricAlertHelpers } from "./metricAlert";
+import { registerDynamicMetricAlertHelpers } from "./dynamicMetricAlert";
+import { registerLogAlertHelpers } from "./logAlert";
+import { registerActivityLogAlertHelpers } from "./activityLogAlert";
+import { registerActionGroupHelpers } from "./actionGroup";
+import { registerSmartGroupHelpers } from "./smartGroup";
 
 export {
   registerMetricAlertHelpers,
@@ -22,15 +22,15 @@ export {
   registerLogAlertHelpers,
   registerActivityLogAlertHelpers,
   registerActionGroupHelpers,
-  registerSmartGroupHelpers
+  registerSmartGroupHelpers,
 };
 
-export type { MetricAlertOptions } from './metricAlert';
-export type { DynamicMetricAlertOptions } from './dynamicMetricAlert';
-export type { LogAlertOptions } from './logAlert';
-export type { ActivityLogAlertOptions } from './activityLogAlert';
-export type { ActionGroupOptions } from './actionGroup';
-export type { SmartGroupOptions } from './smartGroup';
+export type { MetricAlertOptions } from "./metricAlert";
+export type { DynamicMetricAlertOptions } from "./dynamicMetricAlert";
+export type { LogAlertOptions } from "./logAlert";
+export type { ActivityLogAlertOptions } from "./activityLogAlert";
+export type { ActionGroupOptions } from "./actionGroup";
+export type { SmartGroupOptions } from "./smartGroup";
 
 /**
  * Register all alert helpers with Handlebars

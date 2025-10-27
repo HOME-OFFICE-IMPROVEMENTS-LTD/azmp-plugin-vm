@@ -1,4 +1,4 @@
-import Handlebars from 'handlebars';
+import Handlebars from "handlebars";
 
 /**
  * Options for alert:smartGroup helper
@@ -21,10 +21,10 @@ export interface SmartGroupOptions {
 
 /**
  * Handlebars helper to create smart group for alert correlation
- * 
+ *
  * Smart Groups use ML to automatically correlate related alerts and reduce noise.
  * They group alerts based on similarity patterns and suppress duplicate notifications.
- * 
+ *
  * @example
  * ```handlebars
  * {{{alert:smartGroup
@@ -35,21 +35,24 @@ export interface SmartGroupOptions {
  *   suppressionConfiguration='{"recurrenceDuration":"PT1H"}'
  * }}}
  * ```
- * 
+ *
  * Note: Smart Groups are configured via Azure Monitor Alert Processing Rules.
  * This helper generates an alert processing rule with grouping logic.
  */
-export function alertSmartGroup(this: unknown, hash: SmartGroupOptions): string {
+export function alertSmartGroup(
+  this: unknown,
+  hash: SmartGroupOptions,
+): string {
   if (!hash || !hash.name) {
-    throw new Error('alert:smartGroup requires name parameter');
+    throw new Error("alert:smartGroup requires name parameter");
   }
   if (!hash.scopes) {
-    throw new Error('alert:smartGroup requires scopes parameter');
+    throw new Error("alert:smartGroup requires scopes parameter");
   }
 
   // Parse scopes
   let scopesArray: string[];
-  if (typeof hash.scopes === 'string') {
+  if (typeof hash.scopes === "string") {
     try {
       scopesArray = JSON.parse(hash.scopes);
     } catch (e) {
@@ -62,11 +65,13 @@ export function alertSmartGroup(this: unknown, hash: SmartGroupOptions): string 
   // Parse grouping configuration if provided
   let groupingConfig;
   if (hash.groupingConfiguration) {
-    if (typeof hash.groupingConfiguration === 'string') {
+    if (typeof hash.groupingConfiguration === "string") {
       try {
         groupingConfig = JSON.parse(hash.groupingConfiguration);
       } catch (e) {
-        throw new Error(`alert:smartGroup groupingConfiguration must be valid JSON: ${e}`);
+        throw new Error(
+          `alert:smartGroup groupingConfiguration must be valid JSON: ${e}`,
+        );
       }
     } else {
       groupingConfig = hash.groupingConfiguration;
@@ -76,11 +81,13 @@ export function alertSmartGroup(this: unknown, hash: SmartGroupOptions): string 
   // Parse suppression configuration if provided
   let suppressionConfig;
   if (hash.suppressionConfiguration) {
-    if (typeof hash.suppressionConfiguration === 'string') {
+    if (typeof hash.suppressionConfiguration === "string") {
       try {
         suppressionConfig = JSON.parse(hash.suppressionConfiguration);
       } catch (e) {
-        throw new Error(`alert:smartGroup suppressionConfiguration must be valid JSON: ${e}`);
+        throw new Error(
+          `alert:smartGroup suppressionConfiguration must be valid JSON: ${e}`,
+        );
       }
     } else {
       suppressionConfig = hash.suppressionConfiguration;
@@ -89,61 +96,66 @@ export function alertSmartGroup(this: unknown, hash: SmartGroupOptions): string 
 
   // Build actions array based on configuration
   const actions: unknown[] = [];
-  
+
   if (groupingConfig) {
     actions.push({
-      actionType: 'AddActionGroups',
+      actionType: "AddActionGroups",
       actionGroupIds: [], // Smart grouping doesn't require action groups
-      groupBy: groupingConfig.groupByFields || ['alertRuleName', 'severity'],
-      ...(groupingConfig.lookbackDuration && { lookbackDuration: groupingConfig.lookbackDuration })
+      groupBy: groupingConfig.groupByFields || ["alertRuleName", "severity"],
+      ...(groupingConfig.lookbackDuration && {
+        lookbackDuration: groupingConfig.lookbackDuration,
+      }),
     });
   }
 
   if (suppressionConfig) {
     actions.push({
-      actionType: 'RemoveAllActionGroups',
+      actionType: "RemoveAllActionGroups",
       conditions: [
         {
-          field: 'Fired',
-          operator: 'Equals',
-          values: ['true']
-        }
+          field: "Fired",
+          operator: "Equals",
+          values: ["true"],
+        },
       ],
       recurrence: {
-        recurrenceType: 'Daily',
-        ...(suppressionConfig.recurrenceDuration && { 
+        recurrenceType: "Daily",
+        ...(suppressionConfig.recurrenceDuration && {
           schedule: {
-            timeZone: 'UTC',
-            suppressionDuration: suppressionConfig.recurrenceDuration
-          }
-        })
-      }
+            timeZone: "UTC",
+            suppressionDuration: suppressionConfig.recurrenceDuration,
+          },
+        }),
+      },
     });
   }
 
   const result = {
-    type: 'Microsoft.AlertsManagement/actionRules',
-    apiVersion: '2021-08-08',
+    type: "Microsoft.AlertsManagement/actionRules",
+    apiVersion: "2021-08-08",
     name: hash.name,
-    location: 'global',
+    location: "global",
     ...(hash.tags && { tags: hash.tags }),
     properties: {
       description: hash.description || `Smart group for ${hash.name}`,
       enabled: hash.enabled !== undefined ? hash.enabled : true,
       scopes: scopesArray,
-      actions: actions.length > 0 ? actions : [
-        {
-          actionType: 'AddActionGroups',
-          actionGroupIds: [],
-          groupBy: ['alertRuleName', 'severity']
-        }
-      ]
-    }
+      actions:
+        actions.length > 0
+          ? actions
+          : [
+              {
+                actionType: "AddActionGroups",
+                actionGroupIds: [],
+                groupBy: ["alertRuleName", "severity"],
+              },
+            ],
+    },
   };
 
   return JSON.stringify(result, null, 2);
 }
 
 export function registerSmartGroupHelpers(): void {
-  Handlebars.registerHelper('alert:smartGroup', alertSmartGroup);
+  Handlebars.registerHelper("alert:smartGroup", alertSmartGroup);
 }

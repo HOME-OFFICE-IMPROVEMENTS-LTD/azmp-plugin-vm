@@ -1,68 +1,79 @@
-import { describe, test, expect, beforeAll } from '@jest/globals';
-import * as fs from 'fs';
-import * as path from 'path';
+import { describe, test, expect, beforeAll } from "@jest/globals";
+import * as fs from "fs";
+import * as path from "path";
 
-describe('Cost & Performance Template Integration', () => {
+describe("Cost & Performance Template Integration", () => {
   let templateContent: string;
 
   beforeAll(() => {
-    const templatePath = path.join(__dirname, '../../templates/mainTemplate.json.hbs');
-    templateContent = fs.readFileSync(templatePath, 'utf-8');
+    const templatePath = path.join(
+      __dirname,
+      "../../templates/mainTemplate.json.hbs",
+    );
+    templateContent = fs.readFileSync(templatePath, "utf-8");
   });
 
-  describe('Cost Optimization Parameters', () => {
-    test('should include enableCostOptimization parameter', () => {
+  describe("Cost Optimization Parameters", () => {
+    test("should include enableCostOptimization parameter", () => {
       expect(templateContent).toContain('"enableCostOptimization"');
       expect(templateContent).toContain('"type": "bool"');
-      expect(templateContent).toContain('Enable cost optimization features including right-sizing recommendations and budget alerts');
+      expect(templateContent).toContain(
+        "Enable cost optimization features including right-sizing recommendations and budget alerts",
+      );
     });
 
-    test('should include monthlyBudgetLimit parameter with range', () => {
+    test("should include monthlyBudgetLimit parameter with range", () => {
       expect(templateContent).toContain('"monthlyBudgetLimit"');
       expect(templateContent).toContain('"type": "int"');
       expect(templateContent).toContain('"defaultValue": 500');
       expect(templateContent).toContain('"minValue": 0');
-      expect(templateContent).toContain('Monthly budget limit in USD');
+      expect(templateContent).toContain("Monthly budget limit in USD");
     });
 
-    test('should include budgetAlertThreshold parameter', () => {
+    test("should include budgetAlertThreshold parameter", () => {
       expect(templateContent).toContain('"budgetAlertThreshold"');
       expect(templateContent).toContain('"defaultValue": 80');
       expect(templateContent).toContain('"minValue": 1');
       expect(templateContent).toContain('"maxValue": 100');
     });
 
-    test('should include enableRightSizing parameter', () => {
+    test("should include enableRightSizing parameter", () => {
       expect(templateContent).toContain('"enableRightSizing"');
-      expect(templateContent).toContain('Enable automatic right-sizing recommendations');
+      expect(templateContent).toContain(
+        "Enable automatic right-sizing recommendations",
+      );
     });
   });
 
-  describe('Performance Optimization Parameters', () => {
-    test('should include enablePerformanceOptimization parameter', () => {
+  describe("Performance Optimization Parameters", () => {
+    test("should include enablePerformanceOptimization parameter", () => {
       expect(templateContent).toContain('"enablePerformanceOptimization"');
-      expect(templateContent).toContain('Enable performance optimization features');
+      expect(templateContent).toContain(
+        "Enable performance optimization features",
+      );
     });
 
-    test('should include enableAutoscale parameter', () => {
+    test("should include enableAutoscale parameter", () => {
       expect(templateContent).toContain('"enableAutoscale"');
-      expect(templateContent).toContain('Enable autoscaling for the VM');
+      expect(templateContent).toContain("Enable autoscaling for the VM");
     });
 
-    test('should include autoscale instance range parameters', () => {
+    test("should include autoscale instance range parameters", () => {
       expect(templateContent).toContain('"autoscaleMinInstances"');
       expect(templateContent).toContain('"autoscaleMaxInstances"');
       expect(templateContent).toContain('"defaultValue": 1');
       expect(templateContent).toContain('"defaultValue": 10');
     });
 
-    test('should include autoscaleCpuThreshold parameter', () => {
+    test("should include autoscaleCpuThreshold parameter", () => {
       expect(templateContent).toContain('"autoscaleCpuThreshold"');
       expect(templateContent).toContain('"defaultValue": 75');
-      expect(templateContent).toContain('CPU percentage threshold to trigger scale-out');
+      expect(templateContent).toContain(
+        "CPU percentage threshold to trigger scale-out",
+      );
     });
 
-    test('should include performanceProfile parameter with allowed values', () => {
+    test("should include performanceProfile parameter with allowed values", () => {
       expect(templateContent).toContain('"performanceProfile"');
       expect(templateContent).toContain('"allowedValues"');
       expect(templateContent).toContain('"LowCost"');
@@ -71,15 +82,15 @@ describe('Cost & Performance Template Integration', () => {
     });
   });
 
-  describe('Cost Optimization Variables', () => {
-    test('should define costOptimizationConfig with budget configuration', () => {
+  describe("Cost Optimization Variables", () => {
+    test("should define costOptimizationConfig with budget configuration", () => {
       expect(templateContent).toContain('"costOptimizationConfig"');
       expect(templateContent).toContain('"budgetName"');
-      expect(templateContent).toContain('budget');
+      expect(templateContent).toContain("budget");
       expect(templateContent).toContain('"estimatedMonthlyCost"');
     });
 
-    test('should include cost allocation tags', () => {
+    test("should include cost allocation tags", () => {
       expect(templateContent).toContain('"costAllocationTags"');
       expect(templateContent).toContain('"CostCenter"');
       expect(templateContent).toContain('"Environment"');
@@ -87,14 +98,14 @@ describe('Cost & Performance Template Integration', () => {
     });
   });
 
-  describe('Performance Optimization Variables', () => {
-    test('should define performanceOptimizationConfig with autoscale settings', () => {
+  describe("Performance Optimization Variables", () => {
+    test("should define performanceOptimizationConfig with autoscale settings", () => {
       expect(templateContent).toContain('"performanceOptimizationConfig"');
       expect(templateContent).toContain('"autoscaleSettingsName"');
-      expect(templateContent).toContain('autoscale');
+      expect(templateContent).toContain("autoscale");
     });
 
-    test('should include performance baselines', () => {
+    test("should include performance baselines", () => {
       expect(templateContent).toContain('"performanceBaseline"');
       expect(templateContent).toContain('"cpuBaseline"');
       expect(templateContent).toContain('"memoryBaseline"');
@@ -102,7 +113,7 @@ describe('Cost & Performance Template Integration', () => {
       expect(templateContent).toContain('"networkThroughputBaseline"');
     });
 
-    test('should define performance profile configurations', () => {
+    test("should define performance profile configurations", () => {
       expect(templateContent).toContain('"performanceProfile"');
       expect(templateContent).toContain('"LowCost"');
       expect(templateContent).toContain('"Balanced"');
@@ -112,35 +123,51 @@ describe('Cost & Performance Template Integration', () => {
     });
   });
 
-  describe('Cost & Performance Resources', () => {
-    test('should include budget resource with conditional deployment', () => {
-      expect(templateContent).toContain('"type": "Microsoft.Consumption/budgets"');
-      expect(templateContent).toContain('"condition": "[and(parameters(\'enableCostOptimization\')');
+  describe("Cost & Performance Resources", () => {
+    test("should include budget resource with conditional deployment", () => {
+      expect(templateContent).toContain(
+        '"type": "Microsoft.Consumption/budgets"',
+      );
+      expect(templateContent).toContain(
+        '"condition": "[and(parameters(\'enableCostOptimization\')',
+      );
       expect(templateContent).toContain('"category": "Cost"');
-      expect(templateContent).toContain('"amount": "[parameters(\'monthlyBudgetLimit\')]"');
+      expect(templateContent).toContain(
+        '"amount": "[parameters(\'monthlyBudgetLimit\')]"',
+      );
     });
 
-    test('should include budget notifications with thresholds', () => {
+    test("should include budget notifications with thresholds", () => {
       expect(templateContent).toContain('"notifications"');
       expect(templateContent).toContain('"Actual_GreaterThan_80_Percent"');
       expect(templateContent).toContain('"Forecasted_GreaterThan_90_Percent"');
-      expect(templateContent).toContain('"threshold": "[parameters(\'budgetAlertThreshold\')]"');
+      expect(templateContent).toContain(
+        '"threshold": "[parameters(\'budgetAlertThreshold\')]"',
+      );
     });
 
-    test('should include autoscale settings resource', () => {
-      expect(templateContent).toContain('"type": "Microsoft.Insights/autoscaleSettings"');
-      expect(templateContent).toContain('"condition": "[and(parameters(\'enablePerformanceOptimization\')');
+    test("should include autoscale settings resource", () => {
+      expect(templateContent).toContain(
+        '"type": "Microsoft.Insights/autoscaleSettings"',
+      );
+      expect(templateContent).toContain(
+        '"condition": "[and(parameters(\'enablePerformanceOptimization\')',
+      );
       expect(templateContent).toContain('"enabled": true');
     });
 
-    test('should include autoscale profiles with capacity', () => {
+    test("should include autoscale profiles with capacity", () => {
       expect(templateContent).toContain('"profiles"');
       expect(templateContent).toContain('"capacity"');
-      expect(templateContent).toContain('"minimum": "[string(parameters(\'autoscaleMinInstances\'))]"');
-      expect(templateContent).toContain('"maximum": "[string(parameters(\'autoscaleMaxInstances\'))]"');
+      expect(templateContent).toContain(
+        '"minimum": "[string(parameters(\'autoscaleMinInstances\'))]"',
+      );
+      expect(templateContent).toContain(
+        '"maximum": "[string(parameters(\'autoscaleMaxInstances\'))]"',
+      );
     });
 
-    test('should include autoscale rules for scale-out and scale-in', () => {
+    test("should include autoscale rules for scale-out and scale-in", () => {
       expect(templateContent).toContain('"rules"');
       expect(templateContent).toContain('"scaleAction"');
       expect(templateContent).toContain('"direction": "Increase"');
@@ -149,16 +176,18 @@ describe('Cost & Performance Template Integration', () => {
     });
   });
 
-  describe('Cost & Performance Outputs', () => {
-    test('should include costAnalysis output', () => {
+  describe("Cost & Performance Outputs", () => {
+    test("should include costAnalysis output", () => {
       expect(templateContent).toContain('"costAnalysis"');
       expect(templateContent).toContain('"estimatedMonthlyCost"');
       expect(templateContent).toContain('"budgetLimit"');
       expect(templateContent).toContain('"rightSizingEnabled"');
-      expect(templateContent).toContain('Cost analysis and optimization configuration');
+      expect(templateContent).toContain(
+        "Cost analysis and optimization configuration",
+      );
     });
 
-    test('should include performanceMetrics output', () => {
+    test("should include performanceMetrics output", () => {
       expect(templateContent).toContain('"performanceMetrics"');
       expect(templateContent).toContain('"performanceProfile"');
       expect(templateContent).toContain('"autoscaleEnabled"');
@@ -166,7 +195,7 @@ describe('Cost & Performance Template Integration', () => {
       expect(templateContent).toContain('"diskType"');
     });
 
-    test('should include optimizationStatus output', () => {
+    test("should include optimizationStatus output", () => {
       expect(templateContent).toContain('"optimizationStatus"');
       expect(templateContent).toContain('"costOptimizationEnabled"');
       expect(templateContent).toContain('"performanceOptimizationEnabled"');

@@ -16,34 +16,38 @@ export interface AlertActionDefinition {
 }
 
 export interface MetricAlertCondition {
-  type: 'metric';
+  type: "metric";
   metricName: string;
   metricNamespace?: string;
-  operator: 'GreaterThan' | 'GreaterThanOrEqual' | 'LessThan' | 'LessThanOrEqual';
+  operator:
+    | "GreaterThan"
+    | "GreaterThanOrEqual"
+    | "LessThan"
+    | "LessThanOrEqual";
   threshold: number;
-  timeAggregation: 'Average' | 'Minimum' | 'Maximum';
+  timeAggregation: "Average" | "Minimum" | "Maximum";
   dimensions?: Array<{
     name: string;
-    operator: 'Include' | 'Exclude';
+    operator: "Include" | "Exclude";
     values: string[];
   }>;
   evaluationPeriods?: number;
   dynamicThreshold?: {
     enabled: boolean;
-    sensitivity: 'High' | 'Medium' | 'Low';
+    sensitivity: "High" | "Medium" | "Low";
     failSettlingPeriod?: number;
     ignoreDataBefore?: string;
   };
 }
 
 export interface LogAlertCondition {
-  type: 'log';
+  type: "log";
   query: string;
   timeWindow: string; // e.g., PT1H
-  operator: 'GreaterThan' | 'LessThan';
+  operator: "GreaterThan" | "LessThan";
   threshold: number;
   frequency: string; // e.g., PT5M
-  alertSensitivity?: 'Low' | 'Medium' | 'High';
+  alertSensitivity?: "Low" | "Medium" | "High";
 }
 
 export type AlertConditionDefinition = MetricAlertCondition | LogAlertCondition;
@@ -53,7 +57,7 @@ export interface AlertRuleDefinition {
   displayName: string;
   description: string;
   severity: AlertSeverity;
-  signalType: 'Metric' | 'Log';
+  signalType: "Metric" | "Log";
   scopes: string[];
   evaluationFrequency: string;
   windowSize: string;
@@ -66,10 +70,10 @@ export interface AlertRuleDefinition {
 }
 
 export interface MetricAlertResource {
-  type: 'Microsoft.Insights/metricAlerts';
-  apiVersion: '2018-03-01';
+  type: "Microsoft.Insights/metricAlerts";
+  apiVersion: "2018-03-01";
   name: string;
-  location: 'global';
+  location: "global";
   properties: {
     description: string;
     severity: AlertSeverity;
@@ -82,11 +86,11 @@ export interface MetricAlertResource {
         name: string;
         metricName: string;
         metricNamespace?: string;
-        operator: MetricAlertCondition['operator'];
+        operator: MetricAlertCondition["operator"];
         threshold: number;
-        timeAggregation: MetricAlertCondition['timeAggregation'];
-        dimensions?: MetricAlertCondition['dimensions'];
-        dynamicThreshold?: MetricAlertCondition['dynamicThreshold'];
+        timeAggregation: MetricAlertCondition["timeAggregation"];
+        dimensions?: MetricAlertCondition["dimensions"];
+        dynamicThreshold?: MetricAlertCondition["dynamicThreshold"];
       }>;
     };
     autoMitigate: boolean;
@@ -99,17 +103,17 @@ export interface MetricAlertResource {
 }
 
 export interface ScheduledQueryResource {
-  type: 'Microsoft.Insights/scheduledQueryRules';
-  apiVersion: '2022-10-01';
+  type: "Microsoft.Insights/scheduledQueryRules";
+  apiVersion: "2022-10-01";
   name: string;
-  location: 'global';
+  location: "global";
   properties: {
     description: string;
-    enabled: 'Enabled' | 'Disabled';
+    enabled: "Enabled" | "Disabled";
     source: {
       query: string;
       dataSourceId: string;
-      queryType: 'ResultCount';
+      queryType: "ResultCount";
       authorizedResources?: string[];
     };
     schedule: {
@@ -125,7 +129,7 @@ export interface ScheduledQueryResource {
         properties?: Record<string, string>;
       };
       trigger: {
-        operator: 'GreaterThan' | 'LessThan';
+        operator: "GreaterThan" | "LessThan";
         threshold: number;
       };
     };
@@ -221,13 +225,15 @@ const durationToMinutes = (duration: string, fallback: number): number => {
 };
 
 export class MonitoringAlertEngine {
-  private static buildMetricAlertDefinition(options: MetricAlertBuildOptions): AlertRuleDefinition {
+  private static buildMetricAlertDefinition(
+    options: MetricAlertBuildOptions,
+  ): AlertRuleDefinition {
     return {
       name: options.name,
       displayName: options.displayName,
       description: options.description,
       severity: options.severity,
-      signalType: 'Metric',
+      signalType: "Metric",
       scopes: [options.resourceId],
       evaluationFrequency: options.evaluationFrequency,
       windowSize: options.windowSize,
@@ -236,17 +242,19 @@ export class MonitoringAlertEngine {
       condition: options.condition,
       actions: options.actions,
       insights: options.insights,
-      metadata: options.metadata
+      metadata: options.metadata,
     };
   }
 
-  private static buildLogAlertDefinition(options: LogAlertBuildOptions): AlertRuleDefinition {
+  private static buildLogAlertDefinition(
+    options: LogAlertBuildOptions,
+  ): AlertRuleDefinition {
     return {
       name: options.name,
       displayName: options.displayName,
       description: options.description,
       severity: options.severity,
-      signalType: 'Log',
+      signalType: "Log",
       scopes: [options.scopeId],
       evaluationFrequency: options.evaluationFrequency,
       windowSize: options.windowSize,
@@ -255,108 +263,118 @@ export class MonitoringAlertEngine {
       condition: options.condition,
       actions: options.actions,
       insights: options.insights,
-      metadata: options.metadata
+      metadata: options.metadata,
     };
   }
 
   public static createCpuAlert(options: CpuAlertOptions): AlertRuleDefinition {
     const threshold = options.threshold ?? 80;
-    const evaluationFrequency = options.evaluationFrequency ?? 'PT1M';
-    const windowSize = options.windowSize ?? 'PT5M';
+    const evaluationFrequency = options.evaluationFrequency ?? "PT1M";
+    const windowSize = options.windowSize ?? "PT5M";
     const severity: AlertSeverity = options.severity ?? 2;
 
     return this.buildMetricAlertDefinition({
-      name: options.name ?? 'cpu-high-alert',
-      displayName: options.displayName ?? 'High CPU Utilization',
-      description: options.description ?? 'Triggers when CPU utilization exceeds the target threshold.',
+      name: options.name ?? "cpu-high-alert",
+      displayName: options.displayName ?? "High CPU Utilization",
+      description:
+        options.description ??
+        "Triggers when CPU utilization exceeds the target threshold.",
       resourceId: options.resourceId,
       severity,
       evaluationFrequency,
       windowSize,
       autoMitigate: options.autoMitigate ?? true,
       condition: {
-        type: 'metric',
-        metricName: 'Percentage CPU',
-        metricNamespace: 'microsoft.compute/virtualmachines',
-        operator: 'GreaterThan',
+        type: "metric",
+        metricName: "Percentage CPU",
+        metricNamespace: "microsoft.compute/virtualmachines",
+        operator: "GreaterThan",
         threshold,
-        timeAggregation: 'Average',
-        evaluationPeriods: 3
+        timeAggregation: "Average",
+        evaluationPeriods: 3,
       },
       actions: {
         actionGroupIds: options.actionGroupIds,
-        emails: options.emails
+        emails: options.emails,
       },
       insights: [
         `Threshold set to ${threshold}% with ${windowSize} window`,
-        'Recommended to investigate workload spikes and consider scale-out policies'
+        "Recommended to investigate workload spikes and consider scale-out policies",
       ],
       metadata: {
-        signal: 'cpu',
-        version: '1.0.0'
-      }
+        signal: "cpu",
+        version: "1.0.0",
+      },
     });
   }
 
-  public static createMemoryAlert(options: MemoryAlertOptions): AlertRuleDefinition {
+  public static createMemoryAlert(
+    options: MemoryAlertOptions,
+  ): AlertRuleDefinition {
     const thresholdMb = options.thresholdMb ?? 512;
-    const evaluationFrequency = options.evaluationFrequency ?? 'PT5M';
-    const windowSize = options.windowSize ?? 'PT10M';
+    const evaluationFrequency = options.evaluationFrequency ?? "PT5M";
+    const windowSize = options.windowSize ?? "PT10M";
     const severity: AlertSeverity = options.severity ?? 3;
 
     return this.buildMetricAlertDefinition({
-      name: options.name ?? 'memory-low-alert',
-      displayName: options.displayName ?? 'Low Available Memory',
-      description: options.description ?? 'Triggers when available memory remains below the defined threshold.',
+      name: options.name ?? "memory-low-alert",
+      displayName: options.displayName ?? "Low Available Memory",
+      description:
+        options.description ??
+        "Triggers when available memory remains below the defined threshold.",
       resourceId: options.resourceId,
       severity,
       evaluationFrequency,
       windowSize,
       autoMitigate: options.autoMitigate ?? true,
       condition: {
-        type: 'metric',
-        metricName: 'Available Memory Bytes',
-        metricNamespace: 'microsoft.compute/virtualmachines',
-        operator: 'LessThan',
+        type: "metric",
+        metricName: "Available Memory Bytes",
+        metricNamespace: "microsoft.compute/virtualmachines",
+        operator: "LessThan",
         threshold: thresholdMb * 1024 * 1024,
-        timeAggregation: 'Minimum',
-        evaluationPeriods: 2
+        timeAggregation: "Minimum",
+        evaluationPeriods: 2,
       },
       actions: {
         actionGroupIds: options.actionGroupIds,
-        emails: options.emails
+        emails: options.emails,
       },
       insights: [
         `Alert triggers when available memory < ${thresholdMb} MB`,
-        'Consider scaling up memory or optimizing application memory usage'
+        "Consider scaling up memory or optimizing application memory usage",
       ],
       metadata: {
-        signal: 'memory',
-        version: '1.0.0'
-      }
+        signal: "memory",
+        version: "1.0.0",
+      },
     });
   }
 
-  public static createCostAnomalyAlert(options: CostAnomalyAlertOptions): AlertRuleDefinition {
+  public static createCostAnomalyAlert(
+    options: CostAnomalyAlertOptions,
+  ): AlertRuleDefinition {
     const thresholdPercent = options.thresholdPercent ?? 20;
-    const evaluationFrequency = options.evaluationFrequency ?? 'PT30M';
-    const windowSize = options.windowSize ?? 'P1D';
+    const evaluationFrequency = options.evaluationFrequency ?? "PT30M";
+    const windowSize = options.windowSize ?? "P1D";
     const severity: AlertSeverity = options.severity ?? 2;
 
     const logCondition: LogAlertCondition = {
-      type: 'log',
+      type: "log",
       query: `Usage\n| where TimeGenerated >= ago(2d)\n| summarize PreviousCost = sumif(PreTaxCost, TimeGenerated < ago(1d)),\n          CurrentCost = sumif(PreTaxCost, TimeGenerated >= ago(1d))\n| extend Growth = case(PreviousCost == 0, 0, ((CurrentCost - PreviousCost) / PreviousCost) * 100)\n| where Growth > ${thresholdPercent}\n| project Growth, CurrentCost, PreviousCost`,
-      timeWindow: 'PT24H',
-      operator: 'GreaterThan',
+      timeWindow: "PT24H",
+      operator: "GreaterThan",
       threshold: 0,
       frequency: evaluationFrequency,
-      alertSensitivity: thresholdPercent >= 30 ? 'High' : 'Medium'
+      alertSensitivity: thresholdPercent >= 30 ? "High" : "Medium",
     };
 
     return this.buildLogAlertDefinition({
-      name: options.name ?? 'cost-anomaly-alert',
-      displayName: options.displayName ?? 'Cost Anomaly Detected',
-      description: options.description ?? `Triggers when cost increases by more than ${thresholdPercent}% compared to the previous day.`,
+      name: options.name ?? "cost-anomaly-alert",
+      displayName: options.displayName ?? "Cost Anomaly Detected",
+      description:
+        options.description ??
+        `Triggers when cost increases by more than ${thresholdPercent}% compared to the previous day.`,
       scopeId: options.scopeId,
       severity,
       evaluationFrequency,
@@ -364,37 +382,39 @@ export class MonitoringAlertEngine {
       condition: logCondition,
       actions: {
         actionGroupIds: options.actionGroupIds,
-        emails: options.emails
+        emails: options.emails,
       },
       insights: [
         `Detects cost growth over ${thresholdPercent}% in the last 24 hours`,
-        'Investigate newly provisioned resources or unexpected usage spikes'
+        "Investigate newly provisioned resources or unexpected usage spikes",
       ],
       metadata: {
-        signal: 'cost',
-        version: '1.0.0'
-      }
+        signal: "cost",
+        version: "1.0.0",
+      },
     });
   }
 
-  public static createScalingHealthAlert(options: ScalingHealthAlertOptions): AlertRuleDefinition {
+  public static createScalingHealthAlert(
+    options: ScalingHealthAlertOptions,
+  ): AlertRuleDefinition {
     const failureThreshold = options.failureCountThreshold ?? 3;
-    const evaluationFrequency = options.evaluationFrequency ?? 'PT5M';
-    const windowSize = options.windowSize ?? 'PT30M';
+    const evaluationFrequency = options.evaluationFrequency ?? "PT5M";
+    const windowSize = options.windowSize ?? "PT30M";
     const severity: AlertSeverity = options.severity ?? 2;
 
     const logCondition: LogAlertCondition = {
-      type: 'log',
-      query: `AzureActivity\n| where ResourceId == '${options.resourceId}'\n| where CategoryValue == 'Autoscale' and Level == 'Error'\n| summarize FailureCount = count() by bin(TimeGenerated, ${windowSize.replace('PT', '')})\n| where FailureCount >= ${failureThreshold}\n| project FailureCount`,
+      type: "log",
+      query: `AzureActivity\n| where ResourceId == '${options.resourceId}'\n| where CategoryValue == 'Autoscale' and Level == 'Error'\n| summarize FailureCount = count() by bin(TimeGenerated, ${windowSize.replace("PT", "")})\n| where FailureCount >= ${failureThreshold}\n| project FailureCount`,
       timeWindow: windowSize,
-      operator: 'GreaterThan',
+      operator: "GreaterThan",
       threshold: 0,
-      frequency: evaluationFrequency
+      frequency: evaluationFrequency,
     };
 
     return this.buildLogAlertDefinition({
-      name: options.name ?? 'scaling-failure-alert',
-      displayName: options.displayName ?? 'Autoscale Failures Detected',
+      name: options.name ?? "scaling-failure-alert",
+      displayName: options.displayName ?? "Autoscale Failures Detected",
       description: `Triggers when ${failureThreshold}+ scaling failures occur within ${windowSize}.`,
       scopeId: options.resourceId,
       severity,
@@ -403,29 +423,31 @@ export class MonitoringAlertEngine {
       condition: logCondition,
       actions: {
         actionGroupIds: options.actionGroupIds,
-        emails: options.emails
+        emails: options.emails,
       },
       insights: [
-        'Investigate autoscale settings and VMSS health',
-        'Consider enabling predictive scaling for smoother scale-out'
+        "Investigate autoscale settings and VMSS health",
+        "Consider enabling predictive scaling for smoother scale-out",
       ],
       metadata: {
-        signal: 'scaling',
-        version: '1.0.0'
-      }
+        signal: "scaling",
+        version: "1.0.0",
+      },
     });
   }
 
-  public static toMetricAlertResource(definition: AlertRuleDefinition): MetricAlertResource {
-    if (definition.condition.type !== 'metric') {
-      throw new Error('Alert definition is not metric-based');
+  public static toMetricAlertResource(
+    definition: AlertRuleDefinition,
+  ): MetricAlertResource {
+    if (definition.condition.type !== "metric") {
+      throw new Error("Alert definition is not metric-based");
     }
 
     return {
-      type: 'Microsoft.Insights/metricAlerts',
-      apiVersion: '2018-03-01',
+      type: "Microsoft.Insights/metricAlerts",
+      apiVersion: "2018-03-01",
       name: definition.name,
-      location: 'global',
+      location: "global",
       properties: {
         description: definition.description,
         severity: definition.severity,
@@ -444,61 +466,72 @@ export class MonitoringAlertEngine {
               threshold: definition.condition.threshold,
               timeAggregation: definition.condition.timeAggregation,
               dimensions: definition.condition.dimensions,
-              dynamicThreshold: definition.condition.dynamicThreshold
-            }
-          ]
+              dynamicThreshold: definition.condition.dynamicThreshold,
+            },
+          ],
         },
-        targetResourceType: definition.condition.metricNamespace ? undefined : 'Microsoft.Compute/virtualMachines',
-        actions: (definition.actions.actionGroupIds || []).map((actionGroupId) => ({
-          actionGroupId,
-          webhookProperties: undefined
-        }))
-      }
+        targetResourceType: definition.condition.metricNamespace
+          ? undefined
+          : "Microsoft.Compute/virtualMachines",
+        actions: (definition.actions.actionGroupIds || []).map(
+          (actionGroupId) => ({
+            actionGroupId,
+            webhookProperties: undefined,
+          }),
+        ),
+      },
     };
   }
 
-  public static toScheduledQueryResource(definition: AlertRuleDefinition, workspaceId: string): ScheduledQueryResource {
-    if (definition.condition.type !== 'log') {
-      throw new Error('Alert definition is not log-based');
+  public static toScheduledQueryResource(
+    definition: AlertRuleDefinition,
+    workspaceId: string,
+  ): ScheduledQueryResource {
+    if (definition.condition.type !== "log") {
+      throw new Error("Alert definition is not log-based");
     }
 
-    const frequencyMinutes = durationToMinutes(definition.evaluationFrequency, 5);
+    const frequencyMinutes = durationToMinutes(
+      definition.evaluationFrequency,
+      5,
+    );
     const windowMinutes = durationToMinutes(definition.windowSize, 60);
 
     return {
-      type: 'Microsoft.Insights/scheduledQueryRules',
-      apiVersion: '2022-10-01',
+      type: "Microsoft.Insights/scheduledQueryRules",
+      apiVersion: "2022-10-01",
       name: definition.name,
-      location: 'global',
+      location: "global",
       properties: {
         description: definition.description,
-        enabled: definition.enabled ? 'Enabled' : 'Disabled',
+        enabled: definition.enabled ? "Enabled" : "Disabled",
         source: {
           query: definition.condition.query,
           dataSourceId: workspaceId,
-          queryType: 'ResultCount'
+          queryType: "ResultCount",
         },
         schedule: {
           frequencyInMinutes: frequencyMinutes,
-          timeWindowInMinutes: windowMinutes
+          timeWindowInMinutes: windowMinutes,
         },
         action: {
           severity: definition.severity,
           trigger: {
             operator: definition.condition.operator,
-            threshold: definition.condition.threshold
+            threshold: definition.condition.threshold,
           },
-          aznsAction: definition.actions.actionGroupIds || definition.actions.emails
-            ? {
-              actionGroup: definition.actions.actionGroupIds ?? [],
-              properties: definition.actions.emails
-                ? { emailAddresses: definition.actions.emails.join(',') }
-                : undefined
-            }
-            : undefined
+          aznsAction:
+            definition.actions.actionGroupIds || definition.actions.emails
+              ? {
+                  actionGroup: definition.actions.actionGroupIds ?? [],
+                  properties: definition.actions.emails
+                    ? { emailAddresses: definition.actions.emails.join(",") }
+                    : undefined,
+                }
+              : undefined,
         },
-        autoMitigate: definition.autoMitigate
-      }
+        autoMitigate: definition.autoMitigate,
+      },
     };
   }
 }

@@ -4,7 +4,7 @@
   "metadata": {
     "_generator": {
       "name": "azmp-plugin-vm",
-      "version": "1.6.0"
+      "version": "1.9.0"
     },
     "description": "{{description}}",
     "author": "{{author}}"
@@ -626,6 +626,71 @@
       "metadata": {
         "description": "Traffic Manager routing method"
       }
+    },
+    {{#if enableAcceleratedNetworking}}
+    "enableAcceleratedNetworking": {
+      "type": "bool",
+      "defaultValue": {{enableAcceleratedNetworking}},
+      "metadata": {
+        "description": "Enable accelerated networking for improved network performance (requires supported VM size)"
+      }
+    },
+    {{/if}}
+    {{#if securityType}}
+    "securityType": {
+      "type": "string",
+      "defaultValue": "{{securityType}}",
+      "allowedValues": [
+        "TrustedLaunch",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Security type for the virtual machine (TrustedLaunch requires Gen2 VM images)"
+      }
+    },
+    {{/if}}
+    {{#if secureBootEnabled}}
+    "secureBootEnabled": {
+      "type": "bool",
+      "defaultValue": {{secureBootEnabled}},
+      "metadata": {
+        "description": "Enable UEFI Secure Boot (requires TrustedLaunch security type)"
+      }
+    },
+    {{/if}}
+    {{#if vTpmEnabled}}
+    "vTpmEnabled": {
+      "type": "bool",
+      "defaultValue": {{vTpmEnabled}},
+      "metadata": {
+        "description": "Enable virtual TPM device (requires TrustedLaunch security type)"
+      }
+    },
+    {{/if}}
+    {{#if bootDiagnosticsEnabled}}
+    "bootDiagnosticsEnabled": {
+      "type": "bool",
+      "defaultValue": {{bootDiagnosticsEnabled}},
+      "metadata": {
+        "description": "Enable boot diagnostics for the virtual machine"
+      }
+    },
+    {{/if}}
+    {{#if bootDiagnosticsStorageUri}}
+    "bootDiagnosticsStorageUri": {
+      "type": "string",
+      "defaultValue": "{{bootDiagnosticsStorageUri}}",
+      "metadata": {
+        "description": "Storage URI for boot diagnostics. Leave empty to use managed storage account."
+      }
+    },
+    {{/if}}
+    "dummyLastParameter": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Internal parameter to handle trailing commas"
+      }
     }
   },
   "variables": {
@@ -944,6 +1009,9 @@
         {{/if}}
       ],
       "properties": {
+        {{#if enableAcceleratedNetworking}}
+        "enableAcceleratedNetworking": "[parameters('enableAcceleratedNetworking')]",
+        {{/if}}
         "ipConfigurations": [
           {
             "name": "ipconfig1",
@@ -1144,7 +1212,20 @@
               "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
             }
           ]
-        }{{#if enableBootDiagnostics}},
+        }{{#if securityType}},
+        "securityProfile": {
+          "securityType": "[parameters('securityType')]",
+          "uefiSettings": {
+            "secureBootEnabled": "[parameters('secureBootEnabled')]",
+            "vTpmEnabled": "[parameters('vTpmEnabled')]"
+          }
+        }{{/if}}{{#if bootDiagnosticsEnabled}},
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": "[parameters('bootDiagnosticsEnabled')]"{{#if bootDiagnosticsStorageUri}},
+            "storageUri": "[parameters('bootDiagnosticsStorageUri')]"{{/if}}
+          }
+        }{{/if}}{{#if enableBootDiagnostics}},
         "diagnosticsProfile": {
           "bootDiagnostics": {
             "enabled": true

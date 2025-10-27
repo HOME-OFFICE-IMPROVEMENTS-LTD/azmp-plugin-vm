@@ -3,17 +3,17 @@
  * Provides pre-built workbook templates and helpers for VM monitoring, performance analysis, and infrastructure insights
  */
 
-export { WorkbookTemplateManager } from './templates';
-export { registerWorkbookHelpers } from './helpers';
+export { WorkbookTemplateManager } from "./templates";
+export { registerWorkbookHelpers } from "./helpers";
 
 // Export types
 export type WorkbookCategory =
-  | 'vm-monitoring'
-  | 'application'
-  | 'infrastructure'
-  | 'advanced-monitoring'
-  | 'scaling-analytics'
-  | 'cost-optimization';
+  | "vm-monitoring"
+  | "application"
+  | "infrastructure"
+  | "advanced-monitoring"
+  | "scaling-analytics"
+  | "cost-optimization";
 
 export interface WorkbookTemplate {
   id: string;
@@ -23,7 +23,7 @@ export interface WorkbookTemplate {
   tags: string[];
   version: string;
   definition: any; // Azure Monitor Workbook JSON schema
-  complexity?: 'basic' | 'intermediate' | 'advanced' | 'expert';
+  complexity?: "basic" | "intermediate" | "advanced" | "expert";
   estimatedSetupTime?: string;
   prerequisites?: string[];
 }

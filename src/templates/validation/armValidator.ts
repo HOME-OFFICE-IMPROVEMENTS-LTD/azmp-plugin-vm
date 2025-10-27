@@ -1,5 +1,5 @@
-import * as https from 'https';
-import { IncomingMessage } from 'http';
+import * as https from "https";
+import { IncomingMessage } from "http";
 
 /**
  * ARM Template Validation Result
@@ -52,7 +52,7 @@ interface ArmValidationResponse {
 
 /**
  * ARM Template Validator
- * 
+ *
  * Validates ARM templates using Azure Resource Manager validation API
  */
 export class ArmValidator {
@@ -60,7 +60,11 @@ export class ArmValidator {
   private resourceGroupName: string;
   private accessToken: string;
 
-  constructor(subscriptionId: string, resourceGroupName: string, accessToken: string) {
+  constructor(
+    subscriptionId: string,
+    resourceGroupName: string,
+    accessToken: string,
+  ) {
     this.subscriptionId = subscriptionId;
     this.resourceGroupName = resourceGroupName;
     this.accessToken = accessToken;
@@ -68,19 +72,22 @@ export class ArmValidator {
 
   /**
    * Validate ARM template using Azure validation API
-   * 
+   *
    * @param template - The ARM template JSON
    * @param parameters - Template parameters
    * @returns Promise<ValidationResult>
    */
-  async validateTemplate(template: any, parameters: any = {}): Promise<ValidationResult> {
+  async validateTemplate(
+    template: any,
+    parameters: any = {},
+  ): Promise<ValidationResult> {
     try {
       const validationPayload = {
         properties: {
           template: template,
           parameters: parameters,
-          mode: 'Incremental'
-        }
+          mode: "Incremental",
+        },
       };
 
       const response = await this.callAzureValidationApi(validationPayload);
@@ -88,11 +95,13 @@ export class ArmValidator {
     } catch (error) {
       return {
         isValid: false,
-        errors: [{
-          code: 'VALIDATION_API_ERROR',
-          message: `Failed to validate template: ${error instanceof Error ? error.message : 'Unknown error'}`
-        }],
-        warnings: []
+        errors: [
+          {
+            code: "VALIDATION_API_ERROR",
+            message: `Failed to validate template: ${error instanceof Error ? error.message : "Unknown error"}`,
+          },
+        ],
+        warnings: [],
       };
     }
   }
@@ -100,30 +109,32 @@ export class ArmValidator {
   /**
    * Call Azure ARM validation API
    */
-  private async callAzureValidationApi(payload: any): Promise<ArmValidationResponse> {
+  private async callAzureValidationApi(
+    payload: any,
+  ): Promise<ArmValidationResponse> {
     return new Promise((resolve, reject) => {
       const postData = JSON.stringify(payload);
-      
+
       const options = {
-        hostname: 'management.azure.com',
+        hostname: "management.azure.com",
         port: 443,
         path: `/subscriptions/${this.subscriptionId}/resourceGroups/${this.resourceGroupName}/providers/Microsoft.Resources/deployments/validation/validate?api-version=2021-04-01`,
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData),
-          'Authorization': `Bearer ${this.accessToken}`
-        }
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(postData),
+          Authorization: `Bearer ${this.accessToken}`,
+        },
       };
 
       const req = https.request(options, (res: IncomingMessage) => {
-        let data = '';
+        let data = "";
 
-        res.on('data', (chunk) => {
+        res.on("data", (chunk) => {
           data += chunk;
         });
 
-        res.on('end', () => {
+        res.on("end", () => {
           try {
             const response = JSON.parse(data);
             resolve(response);
@@ -133,7 +144,7 @@ export class ArmValidator {
         });
       });
 
-      req.on('error', (error) => {
+      req.on("error", (error) => {
         reject(error);
       });
 
@@ -145,11 +156,13 @@ export class ArmValidator {
   /**
    * Parse Azure validation API response
    */
-  private parseValidationResponse(response: ArmValidationResponse): ValidationResult {
+  private parseValidationResponse(
+    response: ArmValidationResponse,
+  ): ValidationResult {
     const result: ValidationResult = {
       isValid: true,
       errors: [],
-      warnings: []
+      warnings: [],
     };
 
     if (response.error) {
@@ -157,11 +170,11 @@ export class ArmValidator {
       result.errors.push({
         code: response.error.code,
         message: response.error.message,
-        details: response.error.details?.map(detail => ({
+        details: response.error.details?.map((detail) => ({
           code: detail.code,
           message: detail.message,
-          target: detail.target
-        }))
+          target: detail.target,
+        })),
       });
     }
 
@@ -170,7 +183,7 @@ export class ArmValidator {
 
   /**
    * Validate template without Azure API (basic JSON validation)
-   * 
+   *
    * @param template - The ARM template JSON
    * @returns ValidationResult
    */
@@ -178,42 +191,44 @@ export class ArmValidator {
     const result: ValidationResult = {
       isValid: true,
       errors: [],
-      warnings: []
+      warnings: [],
     };
 
     // Check required ARM template properties
     if (!template.$schema) {
       result.errors.push({
-        code: 'MISSING_SCHEMA',
-        message: 'ARM template must have $schema property'
+        code: "MISSING_SCHEMA",
+        message: "ARM template must have $schema property",
       });
       result.isValid = false;
     }
 
     if (!template.contentVersion) {
       result.errors.push({
-        code: 'MISSING_CONTENT_VERSION',
-        message: 'ARM template must have contentVersion property'
+        code: "MISSING_CONTENT_VERSION",
+        message: "ARM template must have contentVersion property",
       });
       result.isValid = false;
     }
 
     if (!template.resources || !Array.isArray(template.resources)) {
       result.errors.push({
-        code: 'MISSING_RESOURCES',
-        message: 'ARM template must have resources array'
+        code: "MISSING_RESOURCES",
+        message: "ARM template must have resources array",
       });
       result.isValid = false;
     }
 
     // Validate parameters
     if (template.parameters) {
-      for (const [paramName, param] of Object.entries(template.parameters as any)) {
-        if (!param || typeof param !== 'object' || !(param as any).type) {
+      for (const [paramName, param] of Object.entries(
+        template.parameters as any,
+      )) {
+        if (!param || typeof param !== "object" || !(param as any).type) {
           result.errors.push({
-            code: 'INVALID_PARAMETER',
+            code: "INVALID_PARAMETER",
             message: `Parameter '${paramName}' must have a type property`,
-            target: paramName
+            target: paramName,
           });
           result.isValid = false;
         }
@@ -225,27 +240,27 @@ export class ArmValidator {
       template.resources.forEach((resource: any, index: number) => {
         if (!resource.type) {
           result.errors.push({
-            code: 'MISSING_RESOURCE_TYPE',
+            code: "MISSING_RESOURCE_TYPE",
             message: `Resource at index ${index} must have a type property`,
-            target: `resources[${index}]`
+            target: `resources[${index}]`,
           });
           result.isValid = false;
         }
 
         if (!resource.apiVersion) {
           result.errors.push({
-            code: 'MISSING_API_VERSION',
+            code: "MISSING_API_VERSION",
             message: `Resource at index ${index} must have an apiVersion property`,
-            target: `resources[${index}]`
+            target: `resources[${index}]`,
           });
           result.isValid = false;
         }
 
         if (!resource.name) {
           result.errors.push({
-            code: 'MISSING_RESOURCE_NAME',
+            code: "MISSING_RESOURCE_NAME",
             message: `Resource at index ${index} must have a name property`,
-            target: `resources[${index}]`
+            target: `resources[${index}]`,
           });
           result.isValid = false;
         }
@@ -258,27 +273,27 @@ export class ArmValidator {
 
 /**
  * Create ARM validator instance
- * 
+ *
  * @param subscriptionId - Azure subscription ID
  * @param resourceGroupName - Resource group name for validation
  * @param accessToken - Azure access token
  * @returns ArmValidator instance
  */
 export function createArmValidator(
-  subscriptionId: string, 
-  resourceGroupName: string, 
-  accessToken: string
+  subscriptionId: string,
+  resourceGroupName: string,
+  accessToken: string,
 ): ArmValidator {
   return new ArmValidator(subscriptionId, resourceGroupName, accessToken);
 }
 
 /**
  * Validate ARM template structure without Azure API
- * 
+ *
  * @param template - ARM template JSON
  * @returns ValidationResult
  */
 export function validateArmStructure(template: any): ValidationResult {
-  const validator = new ArmValidator('', '', '');
+  const validator = new ArmValidator("", "", "");
   return validator.validateTemplateStructure(template);
 }
