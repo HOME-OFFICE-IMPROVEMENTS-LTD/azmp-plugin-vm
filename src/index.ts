@@ -393,6 +393,10 @@ export class VmPlugin implements IPlugin {
       // Import and register HA commands
       const { registerHACommands } = require("./cli/ha-commands");
       registerHACommands(vmCommand);
+
+      // Register validate-vhd command (P0-1: VHD Validation)
+      const validateVhdCommand = require("./cli/commands/validate-vhd").default;
+      vmCommand.addCommand(validateVhdCommand);
     }
 
     vmCommand
