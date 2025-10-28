@@ -389,6 +389,10 @@ export class VmPlugin implements IPlugin {
       // Import and register cleanup commands
       const { registerCleanupCommands } = require("./cli/cleanup-commands");
       registerCleanupCommands(vmCommand, { context: this.context });
+
+      // Import and register HA commands
+      const { registerHACommands } = require("./cli/ha-commands");
+      registerHACommands(vmCommand);
     }
 
     vmCommand

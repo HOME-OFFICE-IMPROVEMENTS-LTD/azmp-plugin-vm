@@ -4,10 +4,19 @@
   "metadata": {
     "_generator": {
       "name": "azmp-plugin-vm",
-      "version": "1.9.0"
+      "version": "1.11.0"
     },
     "description": "{{description}}",
-    "author": "{{author}}"
+    "author": "{{author}}"{{#if haConfig}},
+    "highAvailability": {
+      "enabled": true,
+      "components": [
+        {{#if haConfig.proximityPlacementGroup.enabled}}"ProximityPlacementGroup"{{/if}}{{#if haConfig.loadBalancer.enabled}},{{/if}}
+        {{#if haConfig.loadBalancer.enabled}}"LoadBalancer"{{/if}}{{#if haConfig.vmss.enabled}},{{/if}}
+        {{#if haConfig.vmss.enabled}}"VirtualMachineScaleSet"{{/if}}{{#if haConfig.healthMonitoring.enabled}},{{/if}}
+        {{#if haConfig.healthMonitoring.enabled}}"HealthExtensions"{{/if}}
+      ]
+    }{{/if}}
   },
   "parameters": {
     {{#if vmName}}
@@ -627,6 +636,71 @@
         "description": "Traffic Manager routing method"
       }
     },
+    {{!-- HA Configuration Parameters --}}
+    {{#if haConfig}}
+    {{> partials/ha/health-parameters}}
+    {{#if haConfig.proximityPlacementGroup.enabled}}
+    "createProximityPlacementGroup": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to create a Proximity Placement Group for HA cluster"
+      }
+    },
+    "proximityPlacementGroupName": {
+      "type": "string",
+      "defaultValue": "{{default haConfig.proximityPlacementGroup.name '[concat(parameters(\"vmssName\"), \"-ppg\")]'}}",
+      "metadata": {
+        "description": "Name of the Proximity Placement Group"
+      }
+    },
+    {{/if}}
+    {{#if haConfig.vmss.enabled}}
+    "haVmssInstanceCount": {
+      "type": "int",
+      "defaultValue": {{default haConfig.vmss.instanceCount 3}},
+      "minValue": 2,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Number of instances in the HA VMSS cluster"
+      }
+    },
+    "haVmssZoneBalance": {
+      "type": "bool",
+      "defaultValue": {{default haConfig.vmss.zoneBalance true}},
+      "metadata": {
+        "description": "Whether to balance instances across availability zones"
+      }
+    },
+    "enableHAAutoScaling": {
+      "type": "bool",
+      "defaultValue": {{default haConfig.vmss.autoScaling.enabled false}},
+      "metadata": {
+        "description": "Whether to enable auto-scaling for the HA VMSS"
+      }
+    },
+    {{#if haConfig.vmss.autoScaling.enabled}}
+    "haAutoScaleMin": {
+      "type": "int",
+      "defaultValue": {{default haConfig.vmss.autoScaling.minInstances 2}},
+      "minValue": 2,
+      "maxValue": 50,
+      "metadata": {
+        "description": "Minimum number of instances in HA auto-scaling"
+      }
+    },
+    "haAutoScaleMax": {
+      "type": "int",
+      "defaultValue": {{default haConfig.vmss.autoScaling.maxInstances 10}},
+      "minValue": 3,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Maximum number of instances in HA auto-scaling"
+      }
+    },
+    {{/if}}
+    {{/if}}
+    {{/if}}
     {{#if enableAcceleratedNetworking}}
     "enableAcceleratedNetworking": {
       "type": "bool",
@@ -834,9 +908,40 @@
     "autoScaleName": "[concat(variables('vmssName'), '-autoscale')]",
     "trafficManagerProfileName": "[if(empty(parameters('trafficManagerProfileName')), concat(parameters('vmName'), '-tm'), parameters('trafficManagerProfileName'))]",
     "trafficManagerDnsName": "[if(empty(parameters('trafficManagerDnsName')), concat(parameters('vmName'), '-', take(replace(guid(), '-', ''), 6)), parameters('trafficManagerDnsName'))]",
-    "vmssTargetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('vmssName'))]"
+    "vmssTargetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('vmssName'))]",
+    {{!-- HA Variables --}}
+    {{#if haConfig}}
+    {{#if haConfig.proximityPlacementGroup.enabled}}
+    "proximityPlacementGroupName": "[if(parameters('createProximityPlacementGroup'), parameters('proximityPlacementGroupName'), '')]",
+    {{/if}}
+    {{#if haConfig.loadBalancer.enabled}}
+    "haLoadBalancerName": "[concat(variables('vmssName'), '-ha-lb')]",
+    "haBackendPoolName": "[concat(variables('haLoadBalancerName'), '-backend')]",
+    "haHealthProbeName": "[concat(variables('haLoadBalancerName'), '-probe')]",
+    {{/if}}
+    {{#if haConfig.vmss.enabled}}
+    "haVmssName": "[variables('vmssName')]",
+    "haAutoScaleName": "[concat(variables('haVmssName'), '-ha-autoscale')]",
+    {{/if}}
+    {{#if haConfig.healthMonitoring.enabled}}
+    {{> partials/ha/health-parameters variables=true}}
+    {{/if}}
+    {{/if}}
   },
   "resources": [
+    {{!-- HA Cluster Resources --}}
+    {{#if haConfig}}
+    {{#if haConfig.proximityPlacementGroup.enabled}}
+    {{> partials/ha/ppg-resources}},
+    {{/if}}
+    {{#if haConfig.loadBalancer.enabled}}
+    {{> partials/ha/load-balancer-resources}},
+    {{/if}}
+    {{#if haConfig.healthMonitoring.enabled}}
+    {{> partials/ha/health-resources}},
+    {{/if}}
+    {{/if}}
+    {{!-- Standard Resources --}}
     {{#if createNetworkSecurityGroup}}
     {
       "type": "Microsoft.Network/networkSecurityGroups",
@@ -1158,6 +1263,14 @@
     },
     {{/if}}
     {{#if createVmss}}
+    {{#if haConfig.vmss.enabled}}
+    {{!-- HA VMSS with enhanced configuration --}}
+    {{> partials/ha/vmss-resources}},
+    {{#if haConfig.vmss.autoScaling.enabled}}
+    {{> partials/ha/autoscaling-resources}},
+    {{/if}}
+    {{else}}
+    {{!-- Standard VMSS --}}
     {{{[scale:vmss.definition] 
       name=vmssName
       vmSize="[parameters('vmSize')]"
@@ -1176,6 +1289,7 @@
       zones="[if(parameters('useAvailabilityZones'), array(parameters('availabilityZone')), json('[]'))]"
       location="[parameters('location')]"
     }}},
+    {{/if}}
     {{/if}}
     {{#if enableAutoScaling}}
     {{{[scale:autoscale.cpu]
@@ -1566,6 +1680,90 @@
     "trafficManagerFqdn": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Network/trafficManagerProfiles', variables('trafficManagerProfileName'))).dnsConfig.fqdn]"
+    }{{/if}}{{#if haConfig}},
+    {{!-- HA Cluster Outputs --}}
+    "haClusterConfiguration": {
+      "type": "object",
+      "value": {
+        "enabled": true,
+        "version": "1.11.0",
+        {{#if haConfig.proximityPlacementGroup.enabled}}
+        "proximityPlacementGroup": {
+          "resourceId": "[resourceId('Microsoft.Compute/proximityPlacementGroups', variables('proximityPlacementGroupName'))]",
+          "name": "[variables('proximityPlacementGroupName')]"
+        },
+        {{/if}}
+        {{#if haConfig.loadBalancer.enabled}}
+        "loadBalancer": {
+          "resourceId": "[resourceId('Microsoft.Network/loadBalancers', variables('haLoadBalancerName'))]",
+          "name": "[variables('haLoadBalancerName')]",
+          {{#if haConfig.loadBalancer.createPublicIP}}
+          "publicIPAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('haLoadBalancerName'), '-pip'))).ipAddress]",
+          "fqdn": "[reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('haLoadBalancerName'), '-pip'))).dnsSettings.fqdn]",
+          {{/if}}
+          "backendPool": "[variables('haBackendPoolName')]"
+        },
+        {{/if}}
+        {{#if haConfig.vmss.enabled}}
+        "vmss": {
+          "resourceId": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]",
+          "name": "[variables('haVmssName')]",
+          "instanceCount": "[parameters('haVmssInstanceCount')]",
+          "orchestrationMode": "{{default haConfig.vmss.orchestrationMode 'Uniform'}}",
+          "upgradePolicy": "{{default haConfig.vmss.upgradePolicy.mode 'Rolling'}}",
+          {{#if haConfig.vmss.zones}}
+          "zones": [{{#each haConfig.vmss.zones}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+          {{else}}
+          "zones": ["1", "2", "3"],
+          {{/if}}
+          {{#if haConfig.vmss.autoScaling.enabled}}
+          "autoScaling": {
+            "enabled": true,
+            "resourceId": "[resourceId('Microsoft.Insights/autoscalesettings', variables('haAutoScaleName'))]",
+            "name": "[variables('haAutoScaleName')]",
+            "minInstances": "[parameters('haAutoScaleMin')]",
+            "maxInstances": "[parameters('haAutoScaleMax')]"
+          }
+          {{else}}
+          "autoScaling": {
+            "enabled": false
+          }
+          {{/if}}
+        },
+        {{/if}}
+        {{#if haConfig.healthMonitoring.enabled}}
+        "healthMonitoring": {
+          "enabled": true,
+          {{#if haConfig.healthMonitoring.applicationHealthExtension.enabled}}
+          "applicationHealthExtension": {
+            "enabled": true,
+            "protocol": "{{haConfig.healthMonitoring.applicationHealthExtension.protocol}}",
+            "port": {{haConfig.healthMonitoring.applicationHealthExtension.port}},
+            "gracePeriod": "{{default haConfig.healthMonitoring.applicationHealthExtension.gracePeriod 'PT30M'}}"
+          },
+          {{/if}}
+          {{#if haConfig.healthMonitoring.automaticRepairPolicy.enabled}}
+          "automaticRepairPolicy": {
+            "enabled": true,
+            "gracePeriod": "{{default haConfig.healthMonitoring.automaticRepairPolicy.gracePeriod 'PT30M'}}",
+            "maxInstanceRepairs": {{default haConfig.healthMonitoring.automaticRepairPolicy.maxInstanceRepairs 3}}
+          },
+          {{/if}}
+          {{#if haConfig.healthMonitoring.healthReporting.enabled}}
+          "healthReporting": {
+            "enabled": true,
+            {{#if haConfig.healthMonitoring.healthReporting.logAnalyticsWorkspaceId}}
+            "logAnalyticsWorkspace": "[resourceId('Microsoft.OperationalInsights/workspaces', concat(variables('haVmssName'), '-health-workspace'))]",
+            {{/if}}
+            {{#if haConfig.healthMonitoring.healthReporting.applicationInsightsInstrumentationKey}}
+            "applicationInsights": "[resourceId('Microsoft.Insights/components', concat(variables('haVmssName'), '-health-insights'))]",
+            {{/if}}
+            "diagnosticsStorage": "[resourceId('Microsoft.Storage/storageAccounts', variables('diagnosticsStorageAccountName'))]"
+          }
+          {{/if}}
+        }
+        {{/if}}
+      }
     }{{/if}}
   }{{/if}}
   }

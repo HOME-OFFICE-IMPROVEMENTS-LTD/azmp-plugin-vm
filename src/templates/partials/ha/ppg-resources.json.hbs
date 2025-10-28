@@ -1,0 +1,26 @@
+{{!-- Proximity Placement Group Resource --}}
+{{!-- Provides PPG resource for HA cluster infrastructure --}}
+
+{
+  "type": "Microsoft.Compute/proximityPlacementGroups",
+  "apiVersion": "2023-09-01",
+  "name": "[variables('proximityPlacementGroupName')]",
+  "location": "[parameters('location')]",
+  "properties": {
+    "proximityPlacementGroupType": "{{default haConfig.proximityPlacementGroup.type 'Standard'}}",
+    "colocationStatus": {
+      "code": "ColocationStatus/Aligned",
+      "displayStatus": "Aligned",
+      "message": "All resources in this proximity placement group are aligned for optimal latency"
+    }
+  },
+  "metadata": {
+    "description": "Proximity Placement Group for HA cluster to ensure low latency between resources"
+  },
+  "tags": {
+    "purpose": "HighAvailability",
+    "component": "ProximityPlacementGroup",
+    "cluster": "[variables('haVmssName')]",
+    "version": "1.11.0"
+  }
+}

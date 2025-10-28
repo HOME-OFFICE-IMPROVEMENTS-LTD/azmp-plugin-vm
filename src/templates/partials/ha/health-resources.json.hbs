@@ -1,0 +1,215 @@
+{{!-- Health Monitoring Resources for ARM Template --}}
+{{!-- Provides dedicated resources for health monitoring infrastructure --}}
+
+{{#if haConfig.healthMonitoring.healthReporting.enabled}}
+{{!-- Diagnostics Storage Account for Health Reporting --}}
+{
+  "type": "Microsoft.Storage/storageAccounts",
+  "apiVersion": "2021-09-01",
+  "name": "[variables('diagnosticsStorageAccountName')]",
+  "location": "[parameters('location')]",
+  "sku": {
+    "name": "Standard_LRS"
+  },
+  "kind": "StorageV2",
+  "properties": {
+    "accessTier": "Hot",
+    "minimumTlsVersion": "TLS1_2",
+    "supportsHttpsTrafficOnly": true,
+    "allowBlobPublicAccess": false,
+    "allowSharedKeyAccess": true,
+    "networkAcls": {
+      "bypass": "AzureServices",
+      "defaultAction": "Allow"
+    }
+  },
+  "metadata": {
+    "description": "Storage account for health monitoring diagnostics and logs"
+  }
+},
+{{#if haConfig.healthMonitoring.healthReporting.logAnalyticsWorkspaceId}}
+{{!-- Log Analytics Workspace for Health Reporting --}}
+{
+  "type": "Microsoft.OperationalInsights/workspaces",
+  "apiVersion": "2021-12-01-preview",
+  "name": "[concat(parameters('vmssName'), '-health-workspace')]",
+  "location": "[parameters('location')]",
+  "properties": {
+    "sku": {
+      "name": "{{default haConfig.healthMonitoring.healthReporting.logAnalyticsSku 'PerGB2018'}}"
+    },
+    "retentionInDays": {{default haConfig.healthMonitoring.healthReporting.logRetentionDays 30}},
+    "features": {
+      "searchVersion": 1,
+      "legacy": 0,
+      "enableLogAccessUsingOnlyResourcePermissions": true
+    }
+  },
+  "metadata": {
+    "description": "Log Analytics workspace for health monitoring and diagnostics"
+  }
+},
+{{/if}}
+{{#if haConfig.healthMonitoring.healthReporting.applicationInsightsInstrumentationKey}}
+{{!-- Application Insights for Health Reporting --}}
+{
+  "type": "Microsoft.Insights/components",
+  "apiVersion": "2020-02-02",
+  "name": "[concat(parameters('vmssName'), '-health-insights')]",
+  "location": "[parameters('location')]",
+  "kind": "web",
+  "properties": {
+    "Application_Type": "web",
+    "Flow_Type": "Redfield",
+    "Request_Source": "rest",
+    {{#if haConfig.healthMonitoring.healthReporting.logAnalyticsWorkspaceId}}
+    "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', concat(parameters('vmssName'), '-health-workspace'))]",
+    {{/if}}
+    "RetentionInDays": {{default haConfig.healthMonitoring.healthReporting.applicationInsightsRetentionDays 90}},
+    "publicNetworkAccessForIngestion": "Enabled",
+    "publicNetworkAccessForQuery": "Enabled"
+  },
+  {{#if haConfig.healthMonitoring.healthReporting.logAnalyticsWorkspaceId}}
+  "dependsOn": [
+    "[resourceId('Microsoft.OperationalInsights/workspaces', concat(parameters('vmssName'), '-health-workspace'))]"
+  ],
+  {{/if}}
+  "metadata": {
+    "description": "Application Insights for health monitoring and performance tracking"
+  }
+},
+{{/if}}
+{{/if}}
+
+{{#if haConfig.healthMonitoring.automaticRepairPolicy.enabled}}
+{{!-- Automatic Repair Policy for VMSS --}}
+{
+  "type": "Microsoft.Compute/virtualMachineScaleSets/extensions",
+  "apiVersion": "2021-11-01",
+  "name": "[concat(parameters('vmssName'), '/AutomaticRepairPolicy')]",
+  "dependsOn": [
+    "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
+  ],
+  "properties": {
+    "automaticRepairsPolicy": {
+      "enabled": true,
+      "gracePeriod": "{{default haConfig.healthMonitoring.automaticRepairPolicy.gracePeriod 'PT30M'}}",
+      "maxInstanceRepairs": {{default haConfig.healthMonitoring.automaticRepairPolicy.maxInstanceRepairs 3}},
+      "repairAction": "{{default haConfig.healthMonitoring.automaticRepairPolicy.repairAction 'Replace'}}"
+    }
+  },
+  "metadata": {
+    "description": "Automatic repair policy for unhealthy VMSS instances"
+  }
+},
+{{/if}}
+
+{{#if haConfig.healthMonitoring.customHealthProbes}}
+{{!-- Custom Health Check Script Storage --}}
+{
+  "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+  "apiVersion": "2021-09-01",
+  "name": "[concat(variables('diagnosticsStorageAccountName'), '/default/health-scripts')]",
+  "dependsOn": [
+    "[resourceId('Microsoft.Storage/storageAccounts', variables('diagnosticsStorageAccountName'))]"
+  ],
+  "properties": {
+    "publicAccess": "None",
+    "metadata": {
+      "description": "Container for custom health monitoring scripts"
+    }
+  }
+},
+{{/if}}
+
+{{!-- Action Group for Health Alerts --}}
+{{#if haConfig.healthMonitoring.healthReporting.alertNotifications}}
+{
+  "type": "Microsoft.Insights/actionGroups",
+  "apiVersion": "2023-01-01",
+  "name": "[concat(parameters('vmssName'), '-health-alerts')]",
+  "location": "Global",
+  "properties": {
+    "groupShortName": "HealthAlert",
+    "enabled": true,
+    "emailReceivers": [
+      {{#each haConfig.healthMonitoring.healthReporting.alertNotifications.emailReceivers}}
+      {
+        "name": "{{name}}",
+        "emailAddress": "{{emailAddress}}",
+        "useCommonAlertSchema": true
+      }{{#unless @last}},{{/unless}}
+      {{/each}}
+    ],
+    {{#if haConfig.healthMonitoring.healthReporting.alertNotifications.webhookReceivers}}
+    "webhookReceivers": [
+      {{#each haConfig.healthMonitoring.healthReporting.alertNotifications.webhookReceivers}}
+      {
+        "name": "{{name}}",
+        "serviceUri": "{{serviceUri}}",
+        "useCommonAlertSchema": true
+      }{{#unless @last}},{{/unless}}
+      {{/each}}
+    ],
+    {{/if}}
+    {{#if haConfig.healthMonitoring.healthReporting.alertNotifications.smsReceivers}}
+    "smsReceivers": [
+      {{#each haConfig.healthMonitoring.healthReporting.alertNotifications.smsReceivers}}
+      {
+        "name": "{{name}}",
+        "countryCode": "{{countryCode}}",
+        "phoneNumber": "{{phoneNumber}}"
+      }{{#unless @last}},{{/unless}}
+      {{/each}}
+    ]
+    {{/if}}
+  },
+  "metadata": {
+    "description": "Action group for health monitoring alerts and notifications"
+  }
+},
+
+{{!-- Health Monitoring Alert Rules --}}
+{
+  "type": "Microsoft.Insights/metricAlerts",
+  "apiVersion": "2018-03-01",
+  "name": "[concat(parameters('vmssName'), '-unhealthy-instances-alert')]",
+  "location": "global",
+  "dependsOn": [
+    "[resourceId('Microsoft.Insights/actionGroups', concat(parameters('vmssName'), '-health-alerts'))]",
+    "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
+  ],
+  "properties": {
+    "description": "Alert when VMSS has unhealthy instances",
+    "severity": {{default haConfig.healthMonitoring.healthReporting.alertNotifications.severity 2}},
+    "enabled": true,
+    "scopes": [
+      "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('vmssName'))]"
+    ],
+    "evaluationFrequency": "PT1M",
+    "windowSize": "PT5M",
+    "criteria": {
+      "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+      "allOf": [
+        {
+          "name": "UnhealthyInstanceCount",
+          "metricName": "VmAvailabilityMetric",
+          "operator": "LessThan",
+          "threshold": "[mul(parameters('instanceCount'), 0.8)]",
+          "timeAggregation": "Average",
+          "metricNamespace": "Microsoft.Compute/virtualMachineScaleSets",
+          "criterionType": "StaticThresholdCriterion"
+        }
+      ]
+    },
+    "actions": [
+      {
+        "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', concat(parameters('vmssName'), '-health-alerts'))]"
+      }
+    ]
+  },
+  "metadata": {
+    "description": "Metric alert for monitoring VMSS instance health"
+  }
+}
+{{/if}}

@@ -97,10 +97,73 @@ export class HighAvailabilityCLI {
     }
   }
   
+  /**
+   * List available HA configuration examples
+   */
   static listExamples(): void {
-    console.log('Available HA examples:');
-    console.log('  • ha-basic.json      - Public LB + 3 zones');
-    console.log('  • ha-private.json    - Internal LB + PPG');
-    console.log('  • ha-full-stack.json - HA + cost optimization');
+    console.log('\n🏗️  High Availability Examples');
+    console.log('='.repeat(50));
+
+    console.log('\n🔸 Basic 2-VM HA Cluster:');
+    console.log('   • 2 VMs in different availability zones');
+    console.log('   • Load balancer with health probe');
+    console.log('   • Shared storage with backup');
+    console.log('   • Basic monitoring and alerting');
+    
+    console.log('\n🔸 Enterprise 3-Tier HA:');
+    console.log('   • Frontend: 3+ VMs across zones with load balancer');
+    console.log('   • Application: VMSS with auto-scaling (2-10 instances)');
+    console.log('   • Database: Primary + standby with Azure SQL HA');
+    console.log('   • PPG for application tier performance');
+    
+    console.log('\n🔸 High-Performance Computing Cluster:');
+    console.log('   • VMSS with proximity placement groups');
+    console.log('   • InfiniBand networking');
+    console.log('   • Shared file systems (HPC Cache/Lustre)');
+    console.log('   • GPU-enabled compute nodes');
+    
+    console.log('\n🔸 Multi-Region DR Setup:');
+    console.log('   • Primary region: Full HA cluster');
+    console.log('   • Secondary region: Standby infrastructure');
+    console.log('   • Azure Site Recovery for VM replication');
+    console.log('   • Cross-region load balancing');
+    
+    console.log('\n💡 Next Steps:');
+    console.log('   1. Run azmp vm ha plan-ppg to start planning');
+    console.log('   2. Use azmp vm template generate with HA parameters');
+    console.log('   3. Validate configuration with azmp vm ha validate');
+    console.log('   4. Deploy and test failover scenarios');
+  }
+
+  /**
+   * Show HA best practices and recommendations
+   */
+  static showBestPractices(): void {
+    console.log('\n📋 High Availability Best Practices');
+    console.log('='.repeat(50));
+
+    console.log('\n🎯 Design Principles:');
+    console.log('   • Use availability zones for redundancy');
+    console.log('   • Implement load balancing for traffic distribution');
+    console.log('   • Design for graceful degradation');
+    console.log('   • Plan for maintenance windows');
+    
+    console.log('\n🏗️  Infrastructure Guidelines:');
+    console.log('   • Minimum 2 instances per tier');
+    console.log('   • Use managed disks with ZRS or GRS');
+    console.log('   • Implement network security groups');
+    console.log('   • Enable boot diagnostics and monitoring');
+    
+    console.log('\n🔧 Configuration Recommendations:');
+    console.log('   • Set up automated backups');
+    console.log('   • Configure health probes and alerts');
+    console.log('   • Use proximity placement groups for performance');
+    console.log('   • Implement proper logging and monitoring');
+    
+    console.log('\n🚨 Common Pitfalls:');
+    console.log('   • Single points of failure');
+    console.log('   • Insufficient monitoring');
+    console.log('   • Inadequate backup strategies');
+    console.log('   • Improper resource sizing');
   }
 }
