@@ -397,6 +397,10 @@ export class VmPlugin implements IPlugin {
       // Register validate-vhd command (P0-1: VHD Validation)
       const validateVhdCommand = require("./cli/commands/validate-vhd").default;
       vmCommand.addCommand(validateVhdCommand);
+
+      // Register configure-diagnostics command (P0-2: Diagnostics Auto-Enable)
+      const configureDiagnosticsCommand = require("./cli/commands/configure-diagnostics").default;
+      vmCommand.addCommand(configureDiagnosticsCommand);
     }
 
     vmCommand
