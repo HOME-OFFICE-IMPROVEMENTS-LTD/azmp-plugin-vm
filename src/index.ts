@@ -405,6 +405,10 @@ export class VmPlugin implements IPlugin {
       // Register configure-disk-types command (P1-1: Disk Type Selection)
       const configureDiskTypesCommand = require("./cli/commands/configure-disk-types").default;
       vmCommand.addCommand(configureDiskTypesCommand);
+
+      // Register configure-backup command (P1-2: Backup Auto-Enable)
+      const configureBackupCommand = require("./cli/commands/configure-backup").default;
+      vmCommand.addCommand(configureBackupCommand);
     }
 
     vmCommand
