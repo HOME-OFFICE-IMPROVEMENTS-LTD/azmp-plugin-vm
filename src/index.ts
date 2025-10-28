@@ -401,6 +401,10 @@ export class VmPlugin implements IPlugin {
       // Register configure-diagnostics command (P0-2: Diagnostics Auto-Enable)
       const configureDiagnosticsCommand = require("./cli/commands/configure-diagnostics").default;
       vmCommand.addCommand(configureDiagnosticsCommand);
+
+      // Register configure-disk-types command (P1-1: Disk Type Selection)
+      const configureDiskTypesCommand = require("./cli/commands/configure-disk-types").default;
+      vmCommand.addCommand(configureDiskTypesCommand);
     }
 
     vmCommand
