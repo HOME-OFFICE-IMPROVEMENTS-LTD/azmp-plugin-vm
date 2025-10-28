@@ -213,7 +213,7 @@ export function validateLoadBalancerConfiguration(config: LoadBalancerConfig): s
  * Generates ARM template for load balancer resource
  */
 export function generateLoadBalancerResource(config: LoadBalancerConfig): any {
-  const resource = {
+  const resource: any = {
     type: 'Microsoft.Network/loadBalancers',
     apiVersion: '2023-04-01',
     name: `[parameters('${config.name}Name')]`,
@@ -223,11 +223,11 @@ export function generateLoadBalancerResource(config: LoadBalancerConfig): any {
       tier: config.sku === 'Standard' ? 'Regional' : 'Regional'
     },
     properties: {
-      frontendIPConfigurations: [],
-      backendAddressPools: [],
-      probes: [],
-      loadBalancingRules: [],
-      inboundNatRules: []
+      frontendIPConfigurations: [] as any[],
+      backendAddressPools: [] as any[],
+      probes: [] as any[],
+      loadBalancingRules: [] as any[],
+      inboundNatRules: [] as any[]
     },
     tags: config.tags || {},
     zones: config.availabilityZones || undefined

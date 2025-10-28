@@ -4,9 +4,9 @@
  * load balancer backend pool integration, and auto-scaling policies
  */
 
-import { HAClusterConfig } from './cluster';
-import { LoadBalancerConfig } from './loadbalancer';
 import { ProximityPlacementGroupConfig } from './ppg';
+import { LoadBalancerConfig } from './loadbalancer';
+import { HighAvailabilityConfig } from './cluster';
 
 export interface VmssConfig {
   enabled: boolean;
@@ -184,7 +184,6 @@ export interface VmssAutoscaleConfig {
       properties?: Record<string, string>;
     }>;
   }>;
-  enabled: boolean;
   targetResourceUri?: string;
   tags?: Record<string, string>;
 }
@@ -194,7 +193,7 @@ export interface VmssAutoscaleConfig {
  */
 export function validateVmssConfiguration(
   vmssConfig: VmssConfig,
-  haConfig: HAClusterConfig,
+  haConfig: HighAvailabilityConfig,
   ppgConfig?: ProximityPlacementGroupConfig,
   lbConfig?: LoadBalancerConfig
 ): string[] {
@@ -241,9 +240,9 @@ export function validateVmssConfiguration(
 
   // PPG compatibility validation
   if (ppgConfig?.enabled && vmssConfig.zones && vmssConfig.zones.length > 1) {
-    if (ppgConfig.type === 'Standard') {
-      errors.push('Standard PPG does not support multi-zone VMSS deployments. Use Ultra PPG for zone-spanning deployments');
-    }
+    // Note: PPG proximity types are determined by Azure based on the intent and VM sizes
+    // Multi-zone deployments may have limitations with PPG colocation
+    errors.push('Multi-zone VMSS deployments with PPG may have colocation limitations across zones');
   }
 
   // Single placement group validation
@@ -263,7 +262,7 @@ export function validateVmssConfiguration(
   }
 
   // Load balancer integration validation
-  if (lbConfig?.enabled) {
+  if (lbConfig) {
     const networkConfig = vmssConfig.networkProfile.networkInterfaceConfigurations[0];
     const ipConfig = networkConfig?.ipConfigurations[0];
     
@@ -366,7 +365,7 @@ export function validateVmssAutoscaleConfiguration(
  */
 export function generateVmssResource(
   vmssConfig: VmssConfig,
-  haConfig: HAClusterConfig,
+  haConfig: HighAvailabilityConfig,
   ppgConfig?: ProximityPlacementGroupConfig,
   lbConfig?: LoadBalancerConfig
 ): any {
@@ -446,7 +445,7 @@ export function generateVmssResource(
   }
 
   // Add load balancer dependencies
-  if (lbConfig?.enabled) {
+  if (lbConfig) {
     resource.dependsOn.push('[resourceId(\'Microsoft.Network/loadBalancers\', variables(\'loadBalancerName\'))]');
   }
 
@@ -551,7 +550,7 @@ export function generateVmssParameters(vmssConfig: VmssConfig): any {
  * CLI helper for VMSS configuration
  */
 export class VmssCLI {
-  static async validateConfiguration(vmssConfig: VmssConfig, haConfig: HAClusterConfig): Promise<boolean> {
+  static async validateConfiguration(vmssConfig: VmssConfig, haConfig: HighAvailabilityConfig): Promise<boolean> {
     const errors = validateVmssConfiguration(vmssConfig, haConfig);
     
     if (errors.length > 0) {
@@ -633,6 +632,12 @@ export class VmssCLI {
           upgradePolicy: 'Rolling',
           zones: ['1', '2', '3'],
           storageProfile: {
+            imageReference: {
+              publisher: 'Canonical',
+              offer: 'UbuntuServer',
+              sku: '18.04-LTS',
+              version: 'latest'
+            },
             osDisk: {
               caching: 'ReadWrite',
               createOption: 'FromImage',

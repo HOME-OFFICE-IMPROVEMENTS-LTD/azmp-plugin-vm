@@ -4,9 +4,8 @@
  * and health signal correlation between load balancer probes and application health
  */
 
-import { HAClusterConfig } from './cluster';
-import { VmssConfig } from './vmss';
 import { LoadBalancerConfig } from './loadbalancer';
+import { VmssConfig } from './vmss';
 
 export interface ApplicationHealthExtensionConfig {
   enabled: boolean;
@@ -147,7 +146,7 @@ export function validateHealthExtensionConfiguration(
   }
 
   // Load balancer correlation validation
-  if (healthConfig.healthSignalCorrelation?.loadBalancerProbeCorrelation && lbConfig?.enabled) {
+  if (healthConfig.healthSignalCorrelation?.loadBalancerProbeCorrelation && lbConfig) {
     // Verify health probe port matches load balancer probe port
     const lbHealthProbes = lbConfig.healthProbes || [];
     const matchingProbe = lbHealthProbes.find(probe => probe.port === appHealth.port);
