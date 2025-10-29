@@ -417,6 +417,10 @@ export class VmPlugin implements IPlugin {
       // Register configure-monitoring command (P1-4: Monitoring & Alerts Support)
       const configureMonitoringCommand = require("./cli/commands/configure-monitoring").default;
       vmCommand.addCommand(configureMonitoringCommand);
+
+      // Register configure-hybrid-benefit command (P1-5: Azure Hybrid Benefit Support)
+      const configureHybridBenefitCommand = require("./cli/commands/configure-hybrid-benefit").default;
+      vmCommand.addCommand(configureHybridBenefitCommand);
     }
 
     vmCommand

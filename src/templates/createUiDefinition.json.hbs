@@ -1040,7 +1040,129 @@
             ]
           }
         ]
-      }
+      }{{#if licenseType}},
+      {
+        "name": "hybridBenefitConfig",
+        "label": "Azure Hybrid Benefit",
+        "subLabel": {
+          "preValidation": "Configure licensing",
+          "postValidation": "Licensing configured"
+        },
+        "bladeTitle": "Azure Hybrid Benefit Configuration",
+        "elements": [
+          {
+            "name": "hybridBenefitInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "Azure Hybrid Benefit allows you to use your existing Windows Server and SQL Server licenses with Software Assurance in Azure, reducing costs by up to 100% on software license fees."
+            }
+          },
+          {
+            "name": "licenseSection",
+            "type": "Microsoft.Common.Section",
+            "label": "License Configuration",
+            "elements": [
+              {
+                "name": "licenseType",
+                "type": "Microsoft.Common.DropDown",
+                "label": "License Type",
+                "defaultValue": "None",
+                "toolTip": "Select the type of Azure Hybrid Benefit license to apply",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "None (Pay-as-you-go)",
+                      "value": "None"
+                    },
+                    {
+                      "label": "Windows Server",
+                      "value": "Windows_Server"
+                    },
+                    {
+                      "label": "Windows Client",
+                      "value": "Windows_Client"
+                    }
+                  ],
+                  "required": true
+                },
+                "visible": "[equals(basics('osType'), 'Windows')]"
+              },
+              {
+                "name": "licenseInfo",
+                "type": "Microsoft.Common.InfoBox",
+                "visible": "[and(equals(basics('osType'), 'Windows'), not(equals(steps('hybridBenefitConfig').licenseSection.licenseType, 'None')))]",
+                "options": {
+                  "icon": "Info",
+                  "text": "[concat('With Azure Hybrid Benefit, you can save on licensing costs. Your ', basics('vmSize'), ' VM will use your existing licenses with Software Assurance.')]"
+                }
+              }
+            ]
+          },
+          {
+            "name": "sqlServerSection",
+            "type": "Microsoft.Common.Section",
+            "label": "SQL Server License",
+            "elements": [
+              {
+                "name": "enableSqlServer",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Apply SQL Server Azure Hybrid Benefit",
+                "toolTip": "Use existing SQL Server licenses with Software Assurance",
+                "defaultValue": false,
+                "visible": "[equals(basics('osType'), 'Windows')]"
+              },
+              {
+                "name": "sqlEdition",
+                "type": "Microsoft.Common.DropDown",
+                "label": "SQL Server Edition",
+                "defaultValue": "Enterprise",
+                "toolTip": "Select the SQL Server edition for licensing",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "Enterprise",
+                      "value": "Enterprise"
+                    },
+                    {
+                      "label": "Standard",
+                      "value": "Standard"
+                    }
+                  ],
+                  "required": true
+                },
+                "visible": "[steps('hybridBenefitConfig').sqlServerSection.enableSqlServer]"
+              },
+              {
+                "name": "sqlInfo",
+                "type": "Microsoft.Common.InfoBox",
+                "visible": "[steps('hybridBenefitConfig').sqlServerSection.enableSqlServer]",
+                "options": {
+                  "icon": "Info",
+                  "text": "[concat('SQL Server Azure Hybrid Benefit will be applied using your existing ', steps('hybridBenefitConfig').sqlServerSection.sqlEdition, ' licenses with Software Assurance.')]"
+                }
+              }
+            ]
+          },
+          {
+            "name": "savingsEstimate",
+            "type": "Microsoft.Common.Section",
+            "label": "Estimated Savings",
+            "elements": [
+              {
+                "name": "savingsInfo",
+                "type": "Microsoft.Common.InfoBox",
+                "visible": "[or(not(equals(steps('hybridBenefitConfig').licenseSection.licenseType, 'None')), steps('hybridBenefitConfig').sqlServerSection.enableSqlServer)]",
+                "options": {
+                  "icon": "Success",
+                  "text": "By using Azure Hybrid Benefit, you can save significantly on your monthly Azure costs. Compute costs remain the same, but software license costs are eliminated."
+                }
+              }
+            ]
+          }
+        ]
+      }{{/if}}
     ],
     "outputs": {
       "location": "[location()]",
@@ -1103,7 +1225,8 @@
       "alertSeverity": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.alertSeverity, 'Warning')]",
       "enableAutoShutdown": "[steps('monitoringConfig').autoShutdownSection.enableAutoShutdown]",
       "shutdownTime": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTime, '')]",
-      "shutdownTimezone": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTimezone, 'UTC')]"
+      "shutdownTimezone": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTimezone, 'UTC')]"{{#if licenseType}},
+      "licenseType": "[if(equals(basics('osType'), 'Windows'), if(steps('hybridBenefitConfig').sqlServerSection.enableSqlServer, 'AHUB', steps('hybridBenefitConfig').licenseSection.licenseType), 'None')]"{{/if}}
     }
   }
 }

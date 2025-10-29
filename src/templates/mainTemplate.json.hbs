@@ -952,6 +952,21 @@
       }
     },
     {{/if}}
+    {{#if licenseType}}
+    "licenseType": {
+      "type": "string",
+      "defaultValue": "{{licenseType}}",
+      "allowedValues": [
+        "None",
+        "Windows_Server",
+        "Windows_Client",
+        "AHUB"
+      ],
+      "metadata": {
+        "description": "Azure Hybrid Benefit license type for Windows Server or SQL Server"
+      }
+    },
+    {{/if}}
     "dummyLastParameter": {
       "type": "string",
       "defaultValue": "",
@@ -1504,7 +1519,9 @@
           {{/unless}}
           {{/if}}
           {{/unless}}
-        },
+        },{{#if licenseType}}
+        "licenseType": "[if(not(equals(parameters('licenseType'), 'None')), parameters('licenseType'), json('null'))]",
+        {{/if}}
         "storageProfile": {
           "imageReference": "[parameters('osImageReference')]",
           "osDisk": {
