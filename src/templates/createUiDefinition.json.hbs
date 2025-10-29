@@ -304,6 +304,153 @@
         ]
       },
       {
+        "name": "storageConfig",
+        "label": "Storage & Data Disks",
+        "subLabel": {
+          "preValidation": "Configure storage",
+          "postValidation": "Storage configured"
+        },
+        "bladeTitle": "Storage Configuration",
+        "elements": [
+          {
+            "name": "storageInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "💾 Configure data disks for your VM. Add up to 32 data disks with customizable size, type, and caching policies."
+            }
+          },
+          {
+            "name": "dataDiskSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Data Disks",
+            "elements": [
+              {
+                "name": "dataDiskCount",
+                "type": "Microsoft.Common.Slider",
+                "min": 0,
+                "max": 32,
+                "label": "Number of Data Disks",
+                "defaultValue": 0,
+                "showStepMarkers": false,
+                "toolTip": "Number of data disks to attach (0-32, limited by VM size)",
+                "constraints": {
+                  "required": true
+                }
+              },
+              {
+                "name": "dataDiskSizeGB",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Data Disk Size",
+                "defaultValue": "128 GB",
+                "toolTip": "Size of each data disk",
+                "visible": "[greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0)]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "32 GB",
+                      "value": "32"
+                    },
+                    {
+                      "label": "64 GB",
+                      "value": "64"
+                    },
+                    {
+                      "label": "128 GB",
+                      "value": "128"
+                    },
+                    {
+                      "label": "256 GB",
+                      "value": "256"
+                    },
+                    {
+                      "label": "512 GB",
+                      "value": "512"
+                    },
+                    {
+                      "label": "1 TB (1024 GB)",
+                      "value": "1024"
+                    },
+                    {
+                      "label": "2 TB (2048 GB)",
+                      "value": "2048"
+                    },
+                    {
+                      "label": "4 TB (4096 GB)",
+                      "value": "4096"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "dataDiskType",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Data Disk Type",
+                "defaultValue": "Premium SSD (Premium_LRS)",
+                "toolTip": "Storage account type for data disks (Premium requires premium-capable VM)",
+                "visible": "[greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0)]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "Standard HDD (Standard_LRS)",
+                      "value": "Standard_LRS"
+                    },
+                    {
+                      "label": "Standard SSD (StandardSSD_LRS)",
+                      "value": "StandardSSD_LRS"
+                    },
+                    {
+                      "label": "Premium SSD (Premium_LRS)",
+                      "value": "Premium_LRS"
+                    },
+                    {
+                      "label": "Ultra SSD (UltraSSD_LRS)",
+                      "value": "UltraSSD_LRS"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "dataDiskCaching",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Data Disk Caching",
+                "defaultValue": "ReadOnly",
+                "toolTip": "Caching strategy for data disks",
+                "visible": "[greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0)]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "None",
+                      "value": "None"
+                    },
+                    {
+                      "label": "ReadOnly (recommended for database workloads)",
+                      "value": "ReadOnly"
+                    },
+                    {
+                      "label": "ReadWrite (recommended for application data)",
+                      "value": "ReadWrite"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "estimatedCost",
+                "type": "Microsoft.Common.TextBlock",
+                "visible": "[greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0)]",
+                "options": {
+                  "text": "[concat('💰 Estimated monthly cost: $', string(mul(mul(steps('storageConfig').dataDiskSection.dataDiskCount, int(steps('storageConfig').dataDiskSection.dataDiskSizeGB)), if(equals(steps('storageConfig').dataDiskSection.dataDiskType, 'Standard_LRS'), 0.04, if(equals(steps('storageConfig').dataDiskSection.dataDiskType, 'StandardSSD_LRS'), 0.10, if(equals(steps('storageConfig').dataDiskSection.dataDiskType, 'Premium_LRS'), 0.135, 0.25))))))]"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
         "name": "scalingConfig",
         "label": "Scaling & Load Balancing",
         "subLabel": {
@@ -696,6 +843,10 @@
       "adminUsername": "[basics('adminUsername')]",
       "adminPasswordOrKey": "[if(equals(basics('authenticationType'), 'password'), basics('adminPassword'), basics('adminSshKey'))]",
       "vmSize": "[basics('vmSize')]",
+      "dataDiskCount": "[steps('storageConfig').dataDiskSection.dataDiskCount]",
+      "dataDiskSizeGB": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), int(steps('storageConfig').dataDiskSection.dataDiskSizeGB), '')]",
+      "dataDiskType": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), steps('storageConfig').dataDiskSection.dataDiskType, '')]",
+      "dataDiskCaching": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), steps('storageConfig').dataDiskSection.dataDiskCaching, '')]",
       "virtualNetworkName": "[steps('networkingConfig').virtualNetwork.name]",
       "virtualNetworkNewOrExisting": "[steps('networkingConfig').virtualNetwork.newOrExisting]",
       "virtualNetworkResourceGroup": "[steps('networkingConfig').virtualNetwork.resourceGroup]",

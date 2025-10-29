@@ -409,6 +409,10 @@ export class VmPlugin implements IPlugin {
       // Register configure-backup command (P1-2: Backup Auto-Enable)
       const configureBackupCommand = require("./cli/commands/configure-backup").default;
       vmCommand.addCommand(configureBackupCommand);
+
+      // Register configure-data-disks command (P1-3: Data Disk Support)
+      const configureDataDisksCommand = require("./cli/commands/configure-data-disks").default;
+      vmCommand.addCommand(configureDataDisksCommand);
     }
 
     vmCommand

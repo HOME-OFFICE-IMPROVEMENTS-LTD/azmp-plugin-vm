@@ -254,19 +254,19 @@ export class DiskTypeManager {
    */
   private static readonly PERFORMANCE_TIERS: Record<PremiumSSDPerformanceTier, PerformanceTierSpec> = {
     [PremiumSSDPerformanceTier.P1]: { tier: PremiumSSDPerformanceTier.P1, minDiskSizeGB: 4, maxDiskSizeGB: 4, iops: 120, throughputMBps: 25 },
-    [PremiumSSDPerformanceTier.P2]: { tier: PremiumSSDPerformanceTier.P2, minDiskSizeGB: 4, maxDiskSizeGB: 8, iops: 120, throughputMBps: 25 },
-    [PremiumSSDPerformanceTier.P3]: { tier: PremiumSSDPerformanceTier.P3, minDiskSizeGB: 8, maxDiskSizeGB: 16, iops: 120, throughputMBps: 25 },
-    [PremiumSSDPerformanceTier.P4]: { tier: PremiumSSDPerformanceTier.P4, minDiskSizeGB: 16, maxDiskSizeGB: 32, iops: 120, throughputMBps: 25 },
-    [PremiumSSDPerformanceTier.P6]: { tier: PremiumSSDPerformanceTier.P6, minDiskSizeGB: 32, maxDiskSizeGB: 64, iops: 240, throughputMBps: 50 },
-    [PremiumSSDPerformanceTier.P10]: { tier: PremiumSSDPerformanceTier.P10, minDiskSizeGB: 64, maxDiskSizeGB: 128, iops: 500, throughputMBps: 100 },
-    [PremiumSSDPerformanceTier.P15]: { tier: PremiumSSDPerformanceTier.P15, minDiskSizeGB: 128, maxDiskSizeGB: 256, iops: 1100, throughputMBps: 125 },
-    [PremiumSSDPerformanceTier.P20]: { tier: PremiumSSDPerformanceTier.P20, minDiskSizeGB: 256, maxDiskSizeGB: 512, iops: 2300, throughputMBps: 150 },
-    [PremiumSSDPerformanceTier.P30]: { tier: PremiumSSDPerformanceTier.P30, minDiskSizeGB: 512, maxDiskSizeGB: 1024, iops: 5000, throughputMBps: 200 },
+    [PremiumSSDPerformanceTier.P2]: { tier: PremiumSSDPerformanceTier.P2, minDiskSizeGB: 5, maxDiskSizeGB: 8, iops: 120, throughputMBps: 25 },
+    [PremiumSSDPerformanceTier.P3]: { tier: PremiumSSDPerformanceTier.P3, minDiskSizeGB: 9, maxDiskSizeGB: 16, iops: 120, throughputMBps: 25 },
+    [PremiumSSDPerformanceTier.P4]: { tier: PremiumSSDPerformanceTier.P4, minDiskSizeGB: 17, maxDiskSizeGB: 32, iops: 120, throughputMBps: 25 },
+    [PremiumSSDPerformanceTier.P6]: { tier: PremiumSSDPerformanceTier.P6, minDiskSizeGB: 33, maxDiskSizeGB: 64, iops: 240, throughputMBps: 50 },
+    [PremiumSSDPerformanceTier.P10]: { tier: PremiumSSDPerformanceTier.P10, minDiskSizeGB: 65, maxDiskSizeGB: 128, iops: 500, throughputMBps: 100 },
+    [PremiumSSDPerformanceTier.P15]: { tier: PremiumSSDPerformanceTier.P15, minDiskSizeGB: 129, maxDiskSizeGB: 256, iops: 1100, throughputMBps: 125 },
+    [PremiumSSDPerformanceTier.P20]: { tier: PremiumSSDPerformanceTier.P20, minDiskSizeGB: 257, maxDiskSizeGB: 511, iops: 2300, throughputMBps: 150 },
+    [PremiumSSDPerformanceTier.P30]: { tier: PremiumSSDPerformanceTier.P30, minDiskSizeGB: 512, maxDiskSizeGB: 1023, iops: 5000, throughputMBps: 200 },
     [PremiumSSDPerformanceTier.P40]: { tier: PremiumSSDPerformanceTier.P40, minDiskSizeGB: 1024, maxDiskSizeGB: 2048, iops: 7500, throughputMBps: 250 },
-    [PremiumSSDPerformanceTier.P50]: { tier: PremiumSSDPerformanceTier.P50, minDiskSizeGB: 2048, maxDiskSizeGB: 4096, iops: 7500, throughputMBps: 250 },
-    [PremiumSSDPerformanceTier.P60]: { tier: PremiumSSDPerformanceTier.P60, minDiskSizeGB: 4096, maxDiskSizeGB: 8192, iops: 16000, throughputMBps: 500 },
-    [PremiumSSDPerformanceTier.P70]: { tier: PremiumSSDPerformanceTier.P70, minDiskSizeGB: 8192, maxDiskSizeGB: 16384, iops: 18000, throughputMBps: 750 },
-    [PremiumSSDPerformanceTier.P80]: { tier: PremiumSSDPerformanceTier.P80, minDiskSizeGB: 16384, maxDiskSizeGB: 32767, iops: 20000, throughputMBps: 900 }
+    [PremiumSSDPerformanceTier.P50]: { tier: PremiumSSDPerformanceTier.P50, minDiskSizeGB: 2049, maxDiskSizeGB: 4096, iops: 7500, throughputMBps: 250 },
+    [PremiumSSDPerformanceTier.P60]: { tier: PremiumSSDPerformanceTier.P60, minDiskSizeGB: 4097, maxDiskSizeGB: 8192, iops: 16000, throughputMBps: 500 },
+    [PremiumSSDPerformanceTier.P70]: { tier: PremiumSSDPerformanceTier.P70, minDiskSizeGB: 8193, maxDiskSizeGB: 16384, iops: 18000, throughputMBps: 750 },
+    [PremiumSSDPerformanceTier.P80]: { tier: PremiumSSDPerformanceTier.P80, minDiskSizeGB: 16385, maxDiskSizeGB: 32767, iops: 20000, throughputMBps: 900 }
   };
   
   constructor(config: DiskConfiguration) {
@@ -323,10 +323,20 @@ export class DiskTypeManager {
   
   /**
    * Check if VM size supports premium storage
+   * Handles both legacy (DS/ES/FS/GS/LS/MS series) and modern ('s' suffix before version: D4s_v3, E8s_v3)
    */
   static isPremiumCapableVMSize(vmSize: string): boolean {
-    const premiumIndicators = ['s', 'S', 'ds', 'DS', 'es', 'ES', 'fs', 'FS', 'gs', 'GS', 'ls', 'LS', 'ms', 'MS'];
-    return premiumIndicators.some(indicator => vmSize.includes(indicator));
+    const normalized = vmSize.toLowerCase();
+    
+    // Modern pattern: 's' suffix before version number (D4s_v3, E8s_v3, B4ms)
+    const modernPattern = /s(_v\d+)?$/;
+    if (modernPattern.test(normalized)) {
+      return true;
+    }
+    
+    // Legacy series: DS, ES, FS, GS, LS, MS
+    const legacySeries = ['ds', 'es', 'fs', 'gs', 'ls', 'ms'];
+    return legacySeries.some(series => normalized.includes(series));
   }
   
   /**

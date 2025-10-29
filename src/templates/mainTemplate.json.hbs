@@ -817,6 +817,57 @@
       }
     },
     {{/if}}
+    {{#if dataDiskCount}}
+    "dataDiskCount": {
+      "type": "int",
+      "defaultValue": {{dataDiskCount}},
+      "minValue": 0,
+      "maxValue": 32,
+      "metadata": {
+        "description": "Number of data disks to attach (0-32, limited by VM size)"
+      }
+    },
+    {{/if}}
+    {{#if dataDiskSizeGB}}
+    "dataDiskSizeGB": {
+      "type": "int",
+      "defaultValue": {{dataDiskSizeGB}},
+      "minValue": 4,
+      "maxValue": 32767,
+      "metadata": {
+        "description": "Size of each data disk in GB (4-32767)"
+      }
+    },
+    {{/if}}
+    {{#if dataDiskType}}
+    "dataDiskType": {
+      "type": "string",
+      "defaultValue": "{{dataDiskType}}",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS",
+        "UltraSSD_LRS"
+      ],
+      "metadata": {
+        "description": "Storage account type for data disks (Premium requires premium-capable VM)"
+      }
+    },
+    {{/if}}
+    {{#if dataDiskCaching}}
+    "dataDiskCaching": {
+      "type": "string",
+      "defaultValue": "{{dataDiskCaching}}",
+      "allowedValues": [
+        "None",
+        "ReadOnly",
+        "ReadWrite"
+      ],
+      "metadata": {
+        "description": "Caching strategy for data disks"
+      }
+    },
+    {{/if}}
     "dummyLastParameter": {
       "type": "string",
       "defaultValue": "",
@@ -927,6 +978,9 @@
     {{> partials/ha/health-parameters variables=true}}
     {{/if}}
     {{/if}}
+    {{#if dataDiskCount}}
+    "dataDiskNamePrefix": "[concat(parameters('vmName'), '-datadisk-')]",
+    "lunStart": 0{{/if}}
   },
   "resources": [
     {{!-- HA Cluster Resources --}}
@@ -1380,7 +1434,25 @@
               "option": "Local",
               "placement": "[parameters('ephemeralDiskPlacement')]"
             }{{/if}}
-          }
+          }{{#if dataDiskCount}},
+          "dataDisks": {
+            "copy": [
+              {
+                "name": "dataDisks",
+                "count": "[parameters('dataDiskCount')]",
+                "input": {
+                  "lun": "[copyIndex('dataDisks')]",
+                  "name": "[concat(variables('dataDiskNamePrefix'), copyIndex('dataDisks'))]",
+                  "createOption": "Empty",
+                  "diskSizeGB": "[parameters('dataDiskSizeGB')]",
+                  "caching": "[parameters('dataDiskCaching')]",
+                  "managedDisk": {
+                    "storageAccountType": "[parameters('dataDiskType')]"
+                  }
+                }
+              }
+            ]
+          }{{/if}}
         },
         "networkProfile": {
           "networkInterfaces": [
