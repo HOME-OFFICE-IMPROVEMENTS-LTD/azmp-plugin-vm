@@ -421,6 +421,36 @@ export class VmPlugin implements IPlugin {
       // Register configure-hybrid-benefit command (P1-5: Azure Hybrid Benefit Support)
       const configureHybridBenefitCommand = require("./cli/commands/configure-hybrid-benefit").default;
       vmCommand.addCommand(configureHybridBenefitCommand);
+
+      // Register run-certification command (P1-6: Marketplace Certification Tooling)
+      const { runCertificationCommand } = require("./cli/commands/run-certification");
+      const runCertificationCmd = vmCommand
+        .command("run-certification")
+        .description("Run Azure VM certification tests on VHD files")
+        .option("--vhd-path, -v <path>", "Path to VHD file or directory (required)")
+        .option("--vm-size <size>", "Azure VM size (e.g., Standard_D2s_v3)")
+        .option("--region, -r <region>", "Azure region (e.g., eastus, westus2)")
+        .option("--output-dir, -o <dir>", "Output directory for reports", "./certification-results")
+        .option("--formats, -f <formats>", "Report formats: html,json,xml,markdown", "html,json")
+        .option("--company <name>", "Company name for report header")
+        .option("--project <name>", "Project name for report header")
+        .option("--skip-security", "Skip security scan")
+        .option("--skip-performance", "Skip performance tests")
+        .option("--quick, -q", "Quick validation mode (VHD format only)")
+        .option("--batch, -b", "Batch mode (process all VHDs in directory)")
+        .option("--verbose", "Verbose output")
+        .option("--open", "Open HTML report after generation")
+        .action(async (options) => {
+          try {
+            const { runCertification } = require("./cli/commands/run-certification");
+            await runCertification(options);
+          } catch (error) {
+            if (this.context) {
+              this.context.logger.error(`Certification test failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            process.exit(1);
+          }
+        });
     }
 
     vmCommand

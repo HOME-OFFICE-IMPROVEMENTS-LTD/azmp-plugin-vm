@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    /* Header styles */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 50px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') bottom center no-repeat;
+      background-size: cover;
+      opacity: 0.3;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header h1 {
+      font-size: 42px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .header-meta {
+      opacity: 0.95;
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .header-meta p {
+      margin: 5px 0;
+    }
+
+    /* Content area */
+    .content {
+      padding: 50px;
+    }
+
+    /* Executive Summary */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 25px;
+      margin-bottom: 50px;
+    }
+
+    .summary-card {
+      padding: 30px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-left: 5px solid #667eea;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .summary-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary-card h3 {
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .summary-card .value {
+      font-size: 48px;
+      font-weight: 700;
+      color: #333;
+      line-height: 1;
+    }
+
+    .summary-card .subtitle {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* Status-specific colors */
+    .status-passed {
+      border-left-color: #28a745;
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    }
+
+    .status-failed {
+      border-left-color: #dc3545;
+      background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    }
+
+    .status-warning {
+      border-left-color: #ffc107;
+      background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+    }
+
+    /* Section styles */
+    .section {
+      margin-bottom: 50px;
+    }
+
+    .section h2 {
+      font-size: 28px;
+      margin-bottom: 25px;
+      color: #333;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 15px 20px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+    }
+
+    .category-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .category-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+    }
+
+    .category-stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Test list styles */
+    .test-list {
+      list-style: none;
+    }
+
+    .test-item {
+      padding: 20px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      background: #f8f9fa;
+      border-left: 5px solid #667eea;
+      transition: all 0.3s ease;
+    }
+
+    .test-item:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+
+    .test-item.passed {
+      border-left-color: #28a745;
+      background: #f1f9f3;
+    }
+
+    .test-item.passed:hover {
+      background: #e7f5ea;
+    }
+
+    .test-item.failed {
+      border-left-color: #dc3545;
+      background: #fff5f5;
+    }
+
+    .test-item.failed:hover {
+      background: #ffe9e9;
+    }
+
+    .test-item.warning {
+      border-left-color: #ffc107;
+      background: #fffcf5;
+    }
+
+    .test-item.warning:hover {
+      background: #fff9e6;
+    }
+
+    .test-item.skipped {
+      border-left-color: #6c757d;
+      background: #f8f9fa;
+      opacity: 0.7;
+    }
+
+    .test-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    .test-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: #333;
+      flex: 1;
+    }
+
+    .test-message {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-top: 10px;
+      padding-left: 25px;
+    }
+
+    .test-duration {
+      font-size: 12px;
+      color: #999;
+      font-style: italic;
+    }
+
+    /* Badge styles */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-passed {
+      background: #28a745;
+      color: white;
+    }
+
+    .badge-failed {
+      background: #dc3545;
+      color: white;
+    }
+
+    .badge-warning {
+      background: #ffc107;
+      color: #333;
+    }
+
+    .badge-skipped {
+      background: #6c757d;
+      color: white;
+    }
+
+    .badge-running {
+      background: #007bff;
+      color: white;
+    }
+
+    /* Recommendations section */
+    .recommendations {
+      background: linear-gradient(135deg, #e7f3ff 0%, #d4e9ff 100%);
+      border: 2px solid #b3d9ff;
+      border-radius: 10px;
+      padding: 30px;
+    }
+
+    .recommendations h3 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #0056b3;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .recommendations ul {
+      margin-left: 30px;
+      line-height: 2;
+    }
+
+    .recommendations li {
+      margin-bottom: 12px;
+      font-size: 15px;
+      color: #004085;
+    }
+
+    /* Errors section */
+    .errors {
+      background: linear-gradient(135deg, #ffe7e7 0%, #ffd4d4 100%);
+      border: 2px solid #ffb3b3;
+      border-radius: 10px;
+      padding: 30px;
+    }
+
+    .errors h3 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #dc3545;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .errors ul {
+      margin-left: 30px;
+      line-height: 2;
+    }
+
+    .errors li {
+      margin-bottom: 12px;
+      font-size: 15px;
+      color: #721c24;
+    }
+
+    /* Status icons */
+    .status-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    /* Footer styles */
+    .footer {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+      font-size: 14px;
+      border-top: 2px solid #e9ecef;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    .footer-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .footer-links {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer-link {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .footer-link:hover {
+      color: #764ba2;
+      text-decoration: underline;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .container {
+        box-shadow: none;
+        border-radius: 0;
+      }
+
+      .summary-card,
+      .test-item {
+        break-inside: avoid;
+      }
+
+      .header {
+        background: #667eea;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .header {
+        padding: 30px;
+      }
+
+      .header h1 {
+        font-size: 32px;
+      }
+
+      .content {
+        padding: 30px 20px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card .value {
+        font-size: 36px;
+      }
+
+      .category-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .test-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header Section -->
+    <div class="header">
+      <div class="header-content">
+        <h1>{{title}}</h1>
+        <div class="header-meta">
+          <p><strong>Generated:</strong> {{helpers.formatDate generatedDate}}</p>
+          {{#if companyName}}<p><strong>Company:</strong> {{companyName}}</p>{{/if}}
+          {{#if projectName}}<p><strong>Project:</strong> {{projectName}}</p>{{/if}}
+          <p><strong>VHD Path:</strong> {{vhdPath}}</p>
+          {{#if vmSize}}<p><strong>VM Size:</strong> {{vmSize}}</p>{{/if}}
+          {{#if region}}<p><strong>Region:</strong> {{region}}</p>{{/if}}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Executive Summary -->
+      <div class="summary">
+        <div class="summary-card status-{{results.overallStatus}}">
+          <h3>Overall Status</h3>
+          <div class="value">
+            <span class="status-icon">{{helpers.statusIcon results.overallStatus}}</span>
+            {{results.overallStatus}}
+          </div>
+          <div class="subtitle">Certification Result</div>
+        </div>
+        
+        <div class="summary-card">
+          <h3>Score</h3>
+          <div class="value">{{results.score}}/100</div>
+          <div class="subtitle">
+            {{#if (gte results.score 90)}}
+            ✓ Ready for Submission
+            {{else if (gte results.score 70)}}
+            ⚠ Review Recommendations
+            {{else}}
+            ✗ Needs Improvement
+            {{/if}}
+          </div>
+        </div>
+        
+        <div class="summary-card status-passed">
+          <h3>Passed Tests</h3>
+          <div class="value">{{results.passedTests}}</div>
+          <div class="subtitle">of {{results.totalTests}} tests</div>
+        </div>
+        
+        <div class="summary-card status-failed">
+          <h3>Failed Tests</h3>
+          <div class="value">{{results.failedTests}}</div>
+          <div class="subtitle">
+            {{#if (eq results.failedTests 0)}}
+            ✓ No failures
+            {{else}}
+            ⚠ Requires attention
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="summary-card status-warning">
+          <h3>Warning Tests</h3>
+          <div class="value">{{results.warningTests}}</div>
+          <div class="subtitle">
+            {{#if (eq results.warningTests 0)}}
+            ✓ No warnings
+            {{else}}
+            ⚠ Review recommended
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3>Duration</h3>
+          <div class="value">{{helpers.formatDuration results.duration}}</div>
+          <div class="subtitle">Test execution time</div>
+        </div>
+      </div>
+
+      <!-- Test Results by Category -->
+      {{#each testsByCategory}}
+      <div class="section">
+        <div class="category-header">
+          <div class="category-title">{{@key}}</div>
+          <div class="category-stats">
+            <div class="category-stat">
+              <span style="color: #28a745;">✓ {{statusSummary.[@key].passed}}</span>
+            </div>
+            <div class="category-stat">
+              <span style="color: #dc3545;">✗ {{statusSummary.[@key].failed}}</span>
+            </div>
+            <div class="category-stat">
+              <span style="color: #ffc107;">⚠ {{statusSummary.[@key].warning}}</span>
+            </div>
+          </div>
+        </div>
+        
+        <ul class="test-list">
+          {{#each this}}
+          <li class="test-item {{status}}">
+            <div class="test-header">
+              <span class="badge badge-{{status}}">
+                <span class="status-icon">{{../helpers.statusIcon status}}</span>
+                {{status}}
+              </span>
+              <div class="test-name">{{name}}</div>
+              {{#if duration}}
+              <span class="test-duration">{{../helpers.formatDuration duration}}</span>
+              {{/if}}
+            </div>
+            {{#if ../../includeDetails}}
+            {{#if message}}
+            <div class="test-message">{{message}}</div>
+            {{/if}}
+            {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+      </div>
+      {{/each}}
+
+      <!-- Recommendations Section -->
+      {{#if includeRecommendations}}
+      {{#if results.recommendations.length}}
+      <div class="section">
+        <h2>Recommendations</h2>
+        <div class="recommendations">
+          <h3>
+            <span>💡</span>
+            <span>Suggested Improvements</span>
+          </h3>
+          <ul>
+            {{#each results.recommendations}}
+            <li>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+      </div>
+      {{/if}}
+      {{/if}}
+
+      <!-- Errors Section -->
+      {{#if results.errors.length}}
+      <div class="section">
+        <h2>Errors</h2>
+        <div class="errors">
+          <h3>
+            <span>⚠</span>
+            <span>Critical Issues</span>
+          </h3>
+          <ul>
+            {{#each results.errors}}
+            <li>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+      </div>
+      {{/if}}
+    </div>
+
+    <!-- Footer Section -->
+    <div class="footer">
+      <div class="footer-content">
+        <p><strong>Azure VM Certification Report</strong></p>
+        <p>Test Duration: {{helpers.formatDuration results.duration}} | Generated: {{helpers.formatDate generatedDate}}</p>
+        <div class="footer-links">
+          <a href="https://docs.microsoft.com/azure/marketplace/" class="footer-link" target="_blank">Azure Marketplace Documentation</a>
+          <a href="https://docs.microsoft.com/azure/marketplace/azure-vm-certification" class="footer-link" target="_blank">VM Certification Guide</a>
+          <a href="https://partner.microsoft.com/dashboard/marketplace" class="footer-link" target="_blank">Partner Center</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
