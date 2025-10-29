@@ -868,6 +868,90 @@
       }
     },
     {{/if}}
+    {{#if enableMonitoring}}
+    "enableMonitoring": {
+      "type": "bool",
+      "defaultValue": {{enableMonitoring}},
+      "metadata": {
+        "description": "Enable monitoring and alerting for the VM"
+      }
+    },
+    {{/if}}
+    {{#if monitoringActionGroupName}}
+    "monitoringActionGroupName": {
+      "type": "string",
+      "defaultValue": "{{monitoringActionGroupName}}",
+      "metadata": {
+        "description": "Name of the action group for alert notifications"
+      }
+    },
+    {{/if}}
+    {{#if monitoringActionGroupShortName}}
+    "monitoringActionGroupShortName": {
+      "type": "string",
+      "defaultValue": "{{monitoringActionGroupShortName}}",
+      "maxLength": 12,
+      "metadata": {
+        "description": "Short name for the action group (max 12 characters)"
+      }
+    },
+    {{/if}}
+    {{#if monitoringNotificationEmail}}
+    "monitoringNotificationEmail": {
+      "type": "string",
+      "defaultValue": "{{monitoringNotificationEmail}}",
+      "metadata": {
+        "description": "Email address for monitoring alert notifications"
+      }
+    },
+    {{/if}}
+    {{#if monitoringMetricAlerts}}
+    "monitoringMetricAlerts": {
+      "type": "array",
+      "defaultValue": {{{monitoringMetricAlerts}}},
+      "metadata": {
+        "description": "Array of metric alert configurations"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownEnabled}}
+    "autoShutdownEnabled": {
+      "type": "bool",
+      "defaultValue": {{autoShutdownEnabled}},
+      "metadata": {
+        "description": "Enable scheduled auto-shutdown for cost savings"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownTime}}
+    "autoShutdownTime": {
+      "type": "string",
+      "defaultValue": "{{autoShutdownTime}}",
+      "metadata": {
+        "description": "Daily shutdown time in HH:MM format (24-hour)"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownTimezone}}
+    "autoShutdownTimezone": {
+      "type": "string",
+      "defaultValue": "{{autoShutdownTimezone}}",
+      "metadata": {
+        "description": "Timezone for shutdown schedule (e.g., UTC, Pacific Standard Time)"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownNotificationMinutesBefore}}
+    "autoShutdownNotificationMinutesBefore": {
+      "type": "int",
+      "defaultValue": {{autoShutdownNotificationMinutesBefore}},
+      "minValue": 0,
+      "maxValue": 120,
+      "metadata": {
+        "description": "Send notification this many minutes before shutdown"
+      }
+    },
+    {{/if}}
     "dummyLastParameter": {
       "type": "string",
       "defaultValue": "",
@@ -1616,7 +1700,70 @@
     {{/unless}}
     {{/if}}
     {{/if}}
-    {{/unless}}{{#if enableAutoShutdown}},
+    {{/unless}}{{#if enableMonitoring}},
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('monitoringActionGroupName')]",
+      "location": "global",
+      "properties": {
+        "groupShortName": "[parameters('monitoringActionGroupShortName')]",
+        "enabled": true,
+        "emailReceivers": [
+          {
+            "name": "AdminEmail",
+            "emailAddress": "[parameters('monitoringNotificationEmail')]",
+            "useCommonAlertSchema": true
+          }
+        ]
+      }
+    }{{/if}}{{#if monitoringMetricAlerts}},
+    {
+      "copy": {
+        "name": "metricAlertCopy",
+        "count": "[length(parameters('monitoringMetricAlerts'))]"
+      },
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('vmName'), '-alert-', parameters('monitoringMetricAlerts')[copyIndex()].name)]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"{{#if enableMonitoring}},
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('monitoringActionGroupName'))]"{{/if}}
+      ],
+      "properties": {
+        "description": "[parameters('monitoringMetricAlerts')[copyIndex()].description]",
+        "severity": "[parameters('monitoringMetricAlerts')[copyIndex()].severity]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        ],
+        "evaluationFrequency": "[parameters('monitoringMetricAlerts')[copyIndex()].evaluationFrequency]",
+        "windowSize": "[parameters('monitoringMetricAlerts')[copyIndex()].windowSize]",
+        "criteria": {
+          "allOf": [
+            {
+              "criterionType": "StaticThresholdCriterion",
+              "name": "[parameters('monitoringMetricAlerts')[copyIndex()].name]",
+              "metricName": "[parameters('monitoringMetricAlerts')[copyIndex()].metricName]",
+              "metricNamespace": "Microsoft.Compute/virtualMachines",
+              "operator": "[parameters('monitoringMetricAlerts')[copyIndex()].operator]",
+              "threshold": "[parameters('monitoringMetricAlerts')[copyIndex()].threshold]",
+              "timeAggregation": "[parameters('monitoringMetricAlerts')[copyIndex()].timeAggregation]"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.Compute/virtualMachines",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [{{#if enableMonitoring}}
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('monitoringActionGroupName'))]"
+          }{{/if}}
+        ]
+      }
+    }{{/if}}{{#if autoShutdownEnabled}},
     {
       "type": "Microsoft.DevTestLab/schedules",
       "apiVersion": "2018-09-15",
@@ -1631,12 +1778,12 @@
         "dailyRecurrence": {
           "time": "[parameters('autoShutdownTime')]"
         },
-        "timeZoneId": "[parameters('autoShutdownTimeZone')]",
-        "targetResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"{{#if autoShutdownNotificationEmail}},
+        "timeZoneId": "[parameters('autoShutdownTimezone')]",
+        "targetResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"{{#if monitoringNotificationEmail}},
         "notificationSettings": {
           "status": "Enabled",
-          "timeInMinutes": 30,
-          "emailRecipient": "[parameters('autoShutdownNotificationEmail')]",
+          "timeInMinutes": "[parameters('autoShutdownNotificationMinutesBefore')]",
+          "emailRecipient": "[parameters('monitoringNotificationEmail')]",
           "notificationLocale": "en"
         }{{/if}}
       }

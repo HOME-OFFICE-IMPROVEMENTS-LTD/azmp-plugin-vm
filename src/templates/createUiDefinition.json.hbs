@@ -834,6 +834,212 @@
             ]
           }
         ]
+      },
+      {
+        "name": "monitoringConfig",
+        "label": "Monitoring & Alerts",
+        "subLabel": {
+          "preValidation": "Configure monitoring",
+          "postValidation": "Monitoring configured"
+        },
+        "bladeTitle": "Monitoring & Alerts Configuration",
+        "elements": [
+          {
+            "name": "monitoringInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "📊 Configure automated monitoring, metric alerts, and auto-shutdown schedules for your VM."
+            }
+          },
+          {
+            "name": "alertSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Metric Alerts",
+            "elements": [
+              {
+                "name": "enableMonitoring",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Monitoring & Alerts",
+                "defaultValue": true,
+                "toolTip": "Enable automated monitoring with Azure Monitor metric alerts"
+              },
+              {
+                "name": "monitoringEmail",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Notification Email",
+                "placeholder": "ops@example.com",
+                "toolTip": "Email address for alert notifications",
+                "visible": "[steps('monitoringConfig').alertSection.enableMonitoring]",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+                  "validationMessage": "Must be a valid email address"
+                }
+              },
+              {
+                "name": "monitoringPreset",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Monitoring Preset",
+                "defaultValue": "Production",
+                "toolTip": "Choose a preset configuration or select Custom for manual configuration",
+                "visible": "[steps('monitoringConfig').alertSection.enableMonitoring]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "Production (Comprehensive monitoring, aggressive thresholds)",
+                      "value": "Production"
+                    },
+                    {
+                      "label": "Development (Balanced monitoring, moderate thresholds)",
+                      "value": "Development"
+                    },
+                    {
+                      "label": "Testing (Minimal monitoring, relaxed thresholds)",
+                      "value": "Testing"
+                    },
+                    {
+                      "label": "Custom (Manual configuration)",
+                      "value": "Custom"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "enableCpuAlert",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "CPU Utilization Alert",
+                "defaultValue": true,
+                "toolTip": "Alert when CPU usage exceeds threshold",
+                "visible": "[and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom'))]"
+              },
+              {
+                "name": "enableMemoryAlert",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Memory Utilization Alert",
+                "defaultValue": true,
+                "toolTip": "Alert when memory usage exceeds threshold",
+                "visible": "[and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom'))]"
+              },
+              {
+                "name": "enableDiskAlert",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Disk I/O Alerts",
+                "defaultValue": true,
+                "toolTip": "Alert on high disk read/write operations",
+                "visible": "[and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom'))]"
+              },
+              {
+                "name": "enableNetworkAlert",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Network I/O Alerts",
+                "defaultValue": false,
+                "toolTip": "Alert on high network in/out traffic",
+                "visible": "[and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom'))]"
+              },
+              {
+                "name": "alertSeverity",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Alert Severity",
+                "defaultValue": "Warning",
+                "toolTip": "Severity level for alerts",
+                "visible": "[and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom'))]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "Critical (Sev 0)",
+                      "value": "Critical"
+                    },
+                    {
+                      "label": "Error (Sev 1)",
+                      "value": "Error"
+                    },
+                    {
+                      "label": "Warning (Sev 2)",
+                      "value": "Warning"
+                    },
+                    {
+                      "label": "Informational (Sev 3)",
+                      "value": "Informational"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "name": "autoShutdownSection",
+            "type": "Microsoft.Common.Section",
+            "label": "Auto-Shutdown Configuration",
+            "elements": [
+              {
+                "name": "enableAutoShutdown",
+                "type": "Microsoft.Common.CheckBox",
+                "label": "Enable Auto-Shutdown",
+                "defaultValue": false,
+                "toolTip": "Automatically shutdown VM at a scheduled time to save costs"
+              },
+              {
+                "name": "shutdownTime",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Shutdown Time",
+                "defaultValue": "19:00",
+                "placeholder": "HH:MM (e.g., 19:00)",
+                "toolTip": "Time to shutdown the VM in 24-hour format",
+                "visible": "[steps('monitoringConfig').autoShutdownSection.enableAutoShutdown]",
+                "constraints": {
+                  "required": true,
+                  "regex": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
+                  "validationMessage": "Must be in HH:MM format (e.g., 19:00)"
+                }
+              },
+              {
+                "name": "shutdownTimezone",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Timezone",
+                "defaultValue": "UTC",
+                "toolTip": "Timezone for the shutdown schedule",
+                "visible": "[steps('monitoringConfig').autoShutdownSection.enableAutoShutdown]",
+                "constraints": {
+                  "required": true,
+                  "allowedValues": [
+                    {
+                      "label": "UTC",
+                      "value": "UTC"
+                    },
+                    {
+                      "label": "Eastern Time",
+                      "value": "Eastern Standard Time"
+                    },
+                    {
+                      "label": "Central Time",
+                      "value": "Central Standard Time"
+                    },
+                    {
+                      "label": "Mountain Time",
+                      "value": "Mountain Standard Time"
+                    },
+                    {
+                      "label": "Pacific Time",
+                      "value": "Pacific Standard Time"
+                    },
+                    {
+                      "label": "GMT",
+                      "value": "GMT Standard Time"
+                    },
+                    {
+                      "label": "Central European Time",
+                      "value": "Central European Standard Time"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
     ],
     "outputs": {
@@ -886,7 +1092,18 @@
       "backupVaultName": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupVaultName, '')]",
       "enableSnapshots": "[steps('hadrConfig').snapshotSection.enableSnapshots]",
       "snapshotFrequency": "[if(steps('hadrConfig').snapshotSection.enableSnapshots, steps('hadrConfig').snapshotSection.snapshotFrequency, 'daily')]",
-      "snapshotRetention": "[if(steps('hadrConfig').snapshotSection.enableSnapshots, steps('hadrConfig').snapshotSection.snapshotRetention, 30)]"
+      "snapshotRetention": "[if(steps('hadrConfig').snapshotSection.enableSnapshots, steps('hadrConfig').snapshotSection.snapshotRetention, 30)]",
+      "enableMonitoring": "[steps('monitoringConfig').alertSection.enableMonitoring]",
+      "monitoringEmail": "[if(steps('monitoringConfig').alertSection.enableMonitoring, steps('monitoringConfig').alertSection.monitoringEmail, '')]",
+      "monitoringPreset": "[if(steps('monitoringConfig').alertSection.enableMonitoring, steps('monitoringConfig').alertSection.monitoringPreset, 'Production')]",
+      "enableCpuAlert": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.enableCpuAlert, bool('false'))]",
+      "enableMemoryAlert": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.enableMemoryAlert, bool('false'))]",
+      "enableDiskAlert": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.enableDiskAlert, bool('false'))]",
+      "enableNetworkAlert": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.enableNetworkAlert, bool('false'))]",
+      "alertSeverity": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.alertSeverity, 'Warning')]",
+      "enableAutoShutdown": "[steps('monitoringConfig').autoShutdownSection.enableAutoShutdown]",
+      "shutdownTime": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTime, '')]",
+      "shutdownTimezone": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTimezone, 'UTC')]"
     }
   }
 }

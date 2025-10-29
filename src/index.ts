@@ -413,6 +413,10 @@ export class VmPlugin implements IPlugin {
       // Register configure-data-disks command (P1-3: Data Disk Support)
       const configureDataDisksCommand = require("./cli/commands/configure-data-disks").default;
       vmCommand.addCommand(configureDataDisksCommand);
+
+      // Register configure-monitoring command (P1-4: Monitoring & Alerts Support)
+      const configureMonitoringCommand = require("./cli/commands/configure-monitoring").default;
+      vmCommand.addCommand(configureMonitoringCommand);
     }
 
     vmCommand
