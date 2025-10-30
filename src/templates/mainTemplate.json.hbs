@@ -1469,7 +1469,11 @@
     {{/if}}
     {{#if dataDiskCount}}
     "dataDiskNamePrefix": "[concat(parameters('vmName'), '-datadisk-')]",
-    "lunStart": 0{{/if}}
+    "lunStart": 0{{/if}},
+    "virtualNetworkNewOrExisting": "[parameters('virtualNetworkNewOrExisting')]",
+    "virtualNetworkResourceGroup": "[parameters('virtualNetworkResourceGroup')]",
+    "publicIPAddressNewOrExisting": "[parameters('publicIPAddressNewOrExisting')]",
+    "publicIPAddressResourceGroup": "[parameters('publicIPAddressResourceGroup')]"
   },
   "resources": [
     {{!-- HA Cluster Resources --}}
