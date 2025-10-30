@@ -129,7 +129,20 @@ export function registerTemplateCommands(
             const source = await fs.readFile(mainTemplatePath, "utf-8");
             const template = Handlebars.compile(source);
             const rawOutput = template(config);
-            const prunedResult = pruneTemplate(rawOutput, context.logger);
+            
+            // Preserve UI selector parameters that have corresponding outputs in createUiDefinition
+            // These parameters are not directly referenced in resources but are required by ARM-TTK
+            const uiSelectorParameters = [
+              'virtualNetworkNewOrExisting',
+              'virtualNetworkResourceGroup',
+              'publicIPAddressNewOrExisting',
+              'publicIPAddressResourceGroup'
+            ];
+            
+            const prunedResult = pruneTemplate(rawOutput, {
+              logger: context.logger,
+              preserveParameters: uiSelectorParameters
+            });
             
             // Store active parameters for createUiDefinition
             activeParameters = prunedResult.activeParameters;

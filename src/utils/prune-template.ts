@@ -32,10 +32,29 @@ export interface PrunedTemplateResult {
   activeParameters: string[];
 }
 
+export interface PruneOptions {
+  preserveParameters?: string[];
+  logger?: Logger;
+}
+
 export const pruneTemplate = (
   templateText: string,
-  logger?: Logger,
+  loggerOrOptions?: Logger | PruneOptions,
 ): PrunedTemplateResult => {
+  // Handle backwards compatibility: logger param or options object
+  let logger: Logger | undefined;
+  let preserveParameters: Set<string>;
+  
+  if (!loggerOrOptions || typeof (loggerOrOptions as any).info === 'function') {
+    // Old API: logger passed directly
+    logger = loggerOrOptions as Logger | undefined;
+    preserveParameters = new Set();
+  } else {
+    // New API: options object
+    const options = loggerOrOptions as PruneOptions;
+    logger = options.logger;
+    preserveParameters = new Set(options.preserveParameters || []);
+  }
   try {
     const template: ArmTemplate = JSON.parse(templateText);
     let workingText = templateText;
@@ -66,10 +85,15 @@ export const pruneTemplate = (
         PARAM_REF_PREFIX,
       );
       for (const key of Object.keys(template.parameters)) {
-        if (!usedParameters.has(key)) {
+        // Preserve parameter if it's in the whitelist OR if it's actually used
+        if (!usedParameters.has(key) && !preserveParameters.has(key)) {
           delete template.parameters[key];
           logger?.debug?.(
             `Pruned unused parameter from template: ${key}`,
+          );
+        } else if (preserveParameters.has(key) && !usedParameters.has(key)) {
+          logger?.debug?.(
+            `Preserved parameter (whitelisted): ${key}`,
           );
         }
       }
