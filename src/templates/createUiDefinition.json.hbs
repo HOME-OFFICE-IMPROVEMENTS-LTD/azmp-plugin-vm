@@ -295,7 +295,9 @@
                 "toolTip": "Optional arguments to pass to the script",
                 "visible": "[steps('extensionsConfig').extensionsSection.runCustomScript]",
                 "constraints": {
-                  "required": false
+                  "required": false,
+                  "regex": "^[a-zA-Z0-9\\s\\-_=/.,;:@#$%&*()\\[\\]{}]*$",
+                  "validationMessage": "Only alphanumeric characters and common symbols are allowed"
                 }
               }
             ]
@@ -1174,6 +1176,8 @@
       {{#if (includesParam "dataDiskSizeGB")}}"dataDiskSizeGB": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), int(steps('storageConfig').dataDiskSection.dataDiskSizeGB), '')]",{{/if}}
       {{#if (includesParam "dataDiskType")}}"dataDiskType": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), steps('storageConfig').dataDiskSection.dataDiskType, '')]",{{/if}}
       {{#if (includesParam "dataDiskCaching")}}"dataDiskCaching": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), steps('storageConfig').dataDiskSection.dataDiskCaching, '')]",{{/if}}
+      {{#if (includesParam "alertSeverity")}}"alertSeverity": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.alertSeverity, 'Warning')]",{{/if}}
+      {{#if (includesParam "shutdownTimezone")}}"shutdownTimezone": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTimezone, 'UTC')]",{{/if}}
       {{#if (includesParam "virtualNetworkName")}}"virtualNetworkName": "[steps('networkingConfig').virtualNetwork.name]",{{/if}}
       {{#if (includesParam "virtualNetworkNewOrExisting")}}"virtualNetworkNewOrExisting": "[steps('networkingConfig').virtualNetwork.newOrExisting]",{{/if}}
       {{#if (includesParam "virtualNetworkResourceGroup")}}"virtualNetworkResourceGroup": "[steps('networkingConfig').virtualNetwork.resourceGroup]",{{/if}}
