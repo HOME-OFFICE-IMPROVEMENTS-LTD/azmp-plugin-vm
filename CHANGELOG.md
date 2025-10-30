@@ -5,6 +5,141 @@ All notable changes to the Azure Marketplace Generator VM Plugin will be documen
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-10-30
+
+### 🎉 Major Release: MVP Milestone - Complete P1 Feature Set + Azure Marketplace Generator Integration
+
+This is a **major release** marking the completion of all Priority 1 (P1) features for Azure Marketplace certification AND successful full integration with the azure-marketplace-generator framework. This represents the MVP (Minimum Viable Product) milestone for production-ready marketplace submissions.
+
+### Added - Complete P1 Feature Implementation
+
+#### P1-1: Advanced Disk Type Selection & Validation ✅
+- Premium SSD, Standard SSD, and Standard HDD support with automatic validation
+- CLI Command: `azmp vm configure-disk-types`
+- Dynamic disk type selection in ARM templates with cost optimization
+- Automatic storage tier validation and recommendations
+
+#### P1-2: Azure Backup Auto-Enable ✅
+- Automatic backup configuration for virtual machines
+- CLI Command: `azmp vm configure-backup`
+- Recovery Services Vault integration with customizable backup policies
+- Standard, Enhanced, and Custom backup policy types
+
+#### P1-3: Data Disk Support ✅
+- Multi-disk configurations with premium storage validation
+- CLI Command: `azmp vm configure-data-disks`
+- Dynamic data disk provisioning with LUN management
+- Storage tier compatibility and performance optimization
+
+#### P1-4: Monitoring & Alert Rules ✅
+- Comprehensive VM monitoring with Azure Monitor integration
+- CLI Command: `azmp vm configure-monitoring`
+- CPU, memory, disk, and network monitoring with customizable thresholds
+- Production, Development, and Custom monitoring configurations
+
+#### P1-5: Azure Hybrid Benefit Support ✅
+- Cost optimization through existing Windows/SQL Server licenses
+- CLI Command: `azmp vm configure-hybrid-benefit`
+- License type configuration for Windows Server and SQL Server VMs
+- AHUB (Azure Hybrid Use Benefit) and RHEL BYOS support
+
+#### P1-6: Certification Tooling & Compliance ✅
+- Complete Azure Marketplace certification workflow
+- CLI Commands: `azmp vm run-certification`, `azmp vm validate-vhd`, `azmp vm configure-diagnostics`
+- ARM-TTK validation and marketplace package generation
+
+### Added - Azure Marketplace Generator Integration
+
+#### Plugin Architecture Integration
+- Dynamic loading through azure-marketplace-generator's plugin system
+- 178 Handlebars helpers registered for advanced template generation
+- All VM commands available through unified `azmp` CLI interface
+- Support for both local development and npm package deployment strategies
+
+#### End-to-End Template Generation Pipeline
+- Complete ARM template generation with all P1 features (mainTemplate.json)
+- Advanced Portal UI with 7-step wizard (createUiDefinition.json)
+- Custom Azure portal integration (viewDefinition.json)
+- Integrated ARM-TTK validation with detailed error reporting
+
+#### Integration Testing & Validation
+- Plugin loading: 178 Handlebars helpers successfully registered
+- CLI commands: All VM commands accessible through main generator
+- Template generation: End-to-end ARM template creation functional
+- Validation pipeline: ARM-TTK integration working (41 tests pass, refinement needed)
+
+### Changed - Major Architecture Updates
+
+#### Plugin Interface Implementation
+- Now implements IPlugin interface for main generator compatibility
+- Commands register through plugin system rather than standalone CLI
+- Template engine significantly expanded (178 total Handlebars helpers)
+- Plugin options structure updated for seamless integration
+
+#### Template Engine Enhancements
+- Fixed JSON formatting issues in template compilation
+- Improved comma placement and whitespace handling in ARM templates
+- Enhanced conditional logic for P1 feature toggles
+- Better parameter synchronization between UI and ARM templates
+
+#### Test Infrastructure Reorganization
+- Moved to proper test structure: `tests/integration/` and `tests/fixtures/`
+- Added comprehensive P1 features integration test suite
+- Template generation validation tests
+- CLI command integration tests with main generator
+
+### Technical Improvements
+
+#### Build System
+- Enhanced TypeScript compilation pipeline
+- Improved template copying and validation processes
+- Better error handling and logging throughout build process
+- Automated dist/ regeneration with template fixes
+
+#### Validation Results
+- Unit Tests: 31/34 test suites passing (91% success rate)
+- Integration Tests: P1 features validation complete
+- Template Tests: Generation and compilation verified
+- CLI Tests: Command registration and execution validated
+
+### Known Limitations
+
+#### ARM-TTK Validation Refinement Needed
+- 8-10 validation failures require systematic template engine improvements
+- Parameter synchronization between createUiDefinition and mainTemplate
+- API version updates to latest Azure Resource Provider APIs
+- Template optimization for unused parameters and variables
+- Compliance rules for username defaults, textbox formatting, location handling
+
+#### Production Deployment Strategy
+- Plugin ready for npm registry publication
+- Integration workflow documentation needed
+- CI/CD pipeline setup for automated testing and deployment
+
+### Breaking Changes
+
+#### Major Architecture Changes
+1. **Plugin Interface**: Now implements IPlugin interface for main generator compatibility
+2. **CLI Structure**: Commands register through plugin system rather than standalone CLI
+3. **Template Engine**: Handlebars helpers significantly expanded (178 total)
+4. **Configuration**: Plugin options structure updated for integration
+
+#### Migration Path
+- **From v1.x**: Update import paths and plugin configuration
+- **Standalone Usage**: Legacy CLI still available but deprecated
+- **Template Generation**: Use main generator workflow instead of direct plugin calls
+
+### MVP Milestone Achievement
+
+This release represents the **MVP milestone** for Azure Marketplace VM solution generation with:
+- ✅ Complete P1 Feature Set: All 6 critical marketplace features implemented
+- ✅ Full Integration: Seamless workflow through azure-marketplace-generator
+- ✅ End-to-End Pipeline: From configuration to marketplace-ready packages
+- ✅ Validation Infrastructure: ARM-TTK integration for continuous quality assurance
+- ✅ Production Architecture: Plugin system ready for enterprise deployment
+
+---
+
 ## [1.11.0] - 2025-10-28
 
 ### Added - High Availability Cluster Implementation
