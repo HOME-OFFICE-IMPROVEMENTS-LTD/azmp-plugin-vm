@@ -19,7 +19,6 @@
     }{{/if}}
   },
   "parameters": {
-    {{#if vmName}}
     "vmName": {
       "type": "string",
       "defaultValue": "{{vmName}}",
@@ -27,17 +26,13 @@
         "description": "Name of the virtual machine"
       }
     },
-    {{/if}}
-    {{#if adminUsername}}
     "adminUsername": {
-      "type": "string",
+      "type": "string", 
       "defaultValue": "{{adminUsername}}",
       "metadata": {
         "description": "Administrator username for the VM"
       }
     },
-    {{/if}}
-    {{#if authenticationType}}
     "authenticationType": {
       "type": "string",
       "defaultValue": "{{authenticationType}}",
@@ -49,25 +44,19 @@
         "description": "Type of authentication to use on the Virtual Machine"
       }
     },
-    {{/if}}
-    {{#if adminPasswordOrKey}}
     "adminPasswordOrKey": {
       "type": "securestring",
       "metadata": {
         "description": "SSH Key or password for the Virtual Machine"
       }
     },
-    {{/if}}
-    {{#if location}}
     "location": {
       "type": "string",
-      "defaultValue": "{{location}}",
+      "defaultValue": "[resourceGroup().location]",
       "metadata": {
         "description": "Location for all resources"
       }
     },
-    {{/if}}
-    {{#if vmSize}}
     "vmSize": {
       "type": "string",
       "defaultValue": "{{vmSize}}",
@@ -75,7 +64,406 @@
         "description": "Size of the virtual machine"
       }
     },
-    {{/if}}
+    "dataDiskCount": {
+      "type": "int",
+      "defaultValue": 0,
+      "minValue": 0,
+      "maxValue": 32,
+      "metadata": {
+        "description": "Number of data disks to attach"
+      }
+    },
+    "dataDiskSizeGB": {
+      "type": "int", 
+      "defaultValue": 128,
+      "allowedValues": [32, 64, 128, 256, 512, 1024, 2048, 4096],
+      "metadata": {
+        "description": "Size of each data disk in GB"
+      }
+    },
+    "dataDiskType": {
+      "type": "string",
+      "defaultValue": "Premium_LRS",
+      "allowedValues": ["Standard_LRS", "StandardSSD_LRS", "Premium_LRS", "UltraSSD_LRS"],
+      "metadata": {
+        "description": "Storage account type for data disks"
+      }
+    },
+    "dataDiskCaching": {
+      "type": "string",
+      "defaultValue": "ReadOnly",
+      "allowedValues": ["None", "ReadOnly", "ReadWrite"],
+      "metadata": {
+        "description": "Caching strategy for data disks"
+      }
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('vmName'), '-vnet')]",
+      "metadata": {
+        "description": "Name of the virtual network"
+      }
+    },
+    "virtualNetworkNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": ["new", "existing"],
+      "metadata": {
+        "description": "Whether to create new or use existing virtual network"
+      }
+    },
+    "virtualNetworkResourceGroup": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of the virtual network"
+      }
+    },
+    "virtualNetworkAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16", 
+      "metadata": {
+        "description": "Address prefix for the virtual network"
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "default",
+      "metadata": {
+        "description": "Name of the subnet"
+      }
+    },
+    "subnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "Address prefix for the subnet"
+      }
+    },
+    "publicIPAddressName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('vmName'), '-pip')]",
+      "metadata": {
+        "description": "Name of the public IP address"
+      }
+    },
+    "publicIPAddressNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": ["new", "existing", "none"],
+      "metadata": {
+        "description": "Whether to create new, use existing, or no public IP"
+      }
+    },
+    "publicIPAddressResourceGroup": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of the public IP address"
+      }
+    },
+    "domainNameLabel": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "DNS name label for the public IP"
+      }
+    },
+    "allowSshRdp": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Allow SSH/RDP from specific source"
+      }
+    },
+    "sshRdpSourceAddressPrefix": {
+      "type": "string",
+      "defaultValue": "*",
+      "metadata": {
+        "description": "Source address prefix for SSH/RDP access"
+      }
+    },
+    "installMonitoring": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Install monitoring extensions"
+      }
+    },
+    "workspaceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Log Analytics workspace ID for monitoring"
+      }
+    },
+    "installSecurity": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Install security extensions"
+      }
+    },
+    "enableVulnerabilityAssessment": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable vulnerability assessment"
+      }
+    },
+    "runCustomScript": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Run custom script extension"
+      }
+    },
+    "customScriptUri": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "URI of custom script to run"
+      }
+    },
+    "customScriptArgs": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Arguments for custom script"
+      }
+    },
+    "createVmss": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Create VM Scale Set"
+      }
+    },
+    "vmssName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the VM Scale Set"
+      }
+    },
+    "vmssInstanceCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 1,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Number of VM instances in the scale set"
+      }
+    },
+    "enableAutoScale": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable auto-scaling for VMSS"
+      }
+    },
+    "autoScaleMinInstances": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Minimum instances for auto-scaling"
+      }
+    },
+    "autoScaleMaxInstances": {
+      "type": "int",
+      "defaultValue": 10,
+      "metadata": {
+        "description": "Maximum instances for auto-scaling"
+      }
+    },
+    "cpuThresholdScaleOut": {
+      "type": "int",
+      "defaultValue": 75,
+      "metadata": {
+        "description": "CPU threshold for scaling out"
+      }
+    },
+    "cpuThresholdScaleIn": {
+      "type": "int",
+      "defaultValue": 25,
+      "metadata": {
+        "description": "CPU threshold for scaling in"
+      }
+    },
+    "createLoadBalancer": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Create load balancer for VMSS"
+      }
+    },
+    "loadBalancerSku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": ["Basic", "Standard"],
+      "metadata": {
+        "description": "Load balancer SKU"
+      }
+    },
+    "enableMultiRegion": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable multi-region deployment"
+      }
+    },
+    "secondaryRegion": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Secondary region for multi-region deployment"
+      }
+    },
+    "availabilityOption": {
+      "type": "string",
+      "defaultValue": "none",
+      "allowedValues": ["none", "availabilitySet", "availabilityZone"],
+      "metadata": {
+        "description": "Availability option for the VM"
+      }
+    },
+    "availabilitySetName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the availability set"
+      }
+    },
+    "availabilityZone": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Availability zone for the VM"
+      }
+    },
+    "enableBackup": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable backup for the VM"
+      }
+    },
+    "backupPolicyType": {
+      "type": "string",
+      "defaultValue": "standard",
+      "allowedValues": ["standard", "enhanced"],
+      "metadata": {
+        "description": "Backup policy type"
+      }
+    },
+    "backupVaultName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the backup vault"
+      }
+    },
+    "enableSnapshots": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable disk snapshots"
+      }
+    },
+    "snapshotFrequency": {
+      "type": "string",
+      "defaultValue": "daily",
+      "allowedValues": ["daily", "weekly"],
+      "metadata": {
+        "description": "Frequency of snapshots"
+      }
+    },
+    "snapshotRetention": {
+      "type": "int",
+      "defaultValue": 30,
+      "metadata": {
+        "description": "Snapshot retention in days"
+      }
+    },
+    "enableMonitoring": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable monitoring and alerts"
+      }
+    },
+    "monitoringEmail": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Email address for monitoring alerts"
+      }
+    },
+    "monitoringPreset": {
+      "type": "string",
+      "defaultValue": "Production",
+      "allowedValues": ["Development", "Production", "Custom"],
+      "metadata": {
+        "description": "Monitoring preset configuration"
+      }
+    },
+    "enableCpuAlert": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable CPU utilization alerts"
+      }
+    },
+    "enableMemoryAlert": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable memory utilization alerts"
+      }
+    },
+    "enableDiskAlert": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable disk utilization alerts"
+      }
+    },
+    "enableNetworkAlert": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable network utilization alerts"
+      }
+    },
+    "alertSeverity": {
+      "type": "string",
+      "defaultValue": "Warning",
+      "allowedValues": ["Critical", "Error", "Warning", "Informational"],
+      "metadata": {
+        "description": "Alert severity level"
+      }
+    },
+    "enableAutoShutdown": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable auto-shutdown for the VM"
+      }
+    },
+    "shutdownTime": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Time for auto-shutdown (HH:MM format)"
+      }
+    },
+    "shutdownTimezone": {
+      "type": "string",
+      "defaultValue": "UTC",
+      "metadata": {
+        "description": "Timezone for auto-shutdown"
+      }
+    },
     {{#if osImageReference}}
     "osImageReference": {
       "type": "object",
@@ -504,6 +892,7 @@
         "description": "Number of days to retain disk snapshots"
       }
     },
+    {{#if createVmss}}
     "createVmss": {
       "type": "bool",
       "defaultValue": false,
@@ -636,6 +1025,7 @@
         "description": "Traffic Manager routing method"
       }
     },
+    {{/if}}
     {{!-- HA Configuration Parameters --}}
     {{#if haConfig}}
     {{> partials/ha/health-parameters}}
@@ -1045,7 +1435,7 @@
     "securityExtensionName": "[if(equals(parameters('osType'), 'Windows'), 'IaaSAntimalware', 'LinuxDiagnostic')]",
     "antimalwareExtensionName": "IaaSAntimalware",
     "azureMonitorExtensionName": "AzureMonitorWindowsAgent",
-    "extensionApiVersion": "2021-03-01",
+    "extensionApiVersion": "2023-07-01",
     "managedIdentityType": "[if(empty(parameters('userAssignedIdentities')), 'SystemAssigned', 'SystemAssigned,UserAssigned')]",
     "userAssignedIdentityConfig": "[if(empty(parameters('userAssignedIdentities')), json('{}'), json(concat('{\"', string(parameters('userAssignedIdentities')[0]), '\": {}}')))]",
     "customScriptFileUris": "[if(empty(parameters('customScriptUrl')), json('[]'), array(parameters('customScriptUrl')))]",
@@ -1053,12 +1443,12 @@
     "backupVaultName": "[if(empty(parameters('backupVaultName')), concat(parameters('vmName'), '-vault'), parameters('backupVaultName'))]",
     "backupPolicyName": "[if(equals(parameters('backupPolicyName'), 'DefaultPolicy'), concat('policy-', parameters('vmName')), parameters('backupPolicyName'))]",
     "snapshotName": "[concat(parameters('vmName'), '-snapshot')]",
-    "backupScheduleTimestamp": "[concat('2025-01-01T', parameters('backupScheduleTime'), ':00Z')]",
+    "backupScheduleTimestamp": "[concat('2025-01-01T', parameters('backupScheduleTime'), ':00Z')]"{{#if createVmss}},
     "vmssName": "[if(empty(parameters('vmssName')), concat(parameters('vmName'), '-vmss'), parameters('vmssName'))]",
     "autoScaleName": "[concat(variables('vmssName'), '-autoscale')]",
     "trafficManagerProfileName": "[if(empty(parameters('trafficManagerProfileName')), concat(parameters('vmName'), '-tm'), parameters('trafficManagerProfileName'))]",
     "trafficManagerDnsName": "[if(empty(parameters('trafficManagerDnsName')), concat(parameters('vmName'), '-', take(replace(guid(), '-', ''), 6)), parameters('trafficManagerDnsName'))]",
-    "vmssTargetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('vmssName'))]"{{#if haConfig}},{{/if}}{{#if dataDiskCount}},{{/if}}
+    "vmssTargetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('vmssName'))]"{{/if}}{{#if haConfig}},{{/if}}{{#if dataDiskCount}},{{/if}}
     {{!-- HA Variables --}}
     {{#if haConfig}}
     {{#if haConfig.proximityPlacementGroup.enabled}}
@@ -1098,7 +1488,7 @@
     {{#if createNetworkSecurityGroup}}
     {
       "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('networkSecurityGroupName')]",
       "location": "[parameters('location')]",
       "properties": {
@@ -1125,7 +1515,7 @@
     {{#if createVirtualNetwork}}
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('virtualNetworkName')]",
       "location": "[parameters('location')]",
       {{#if createNetworkSecurityGroup}}
@@ -1257,7 +1647,7 @@
     {{#if createBastion}}
     {
       "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[concat(variables('bastionHostName'), '-pip')]",
       "location": "[parameters('location')]",
       "sku": {
@@ -1269,7 +1659,7 @@
     },
     {
       "type": "Microsoft.Network/bastionHosts",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('bastionHostName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
@@ -1297,7 +1687,7 @@
     {{#if createPublicIP}}
     {
       "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('publicIPAddressName')]",
       "location": "[parameters('location')]",
       "properties": {
@@ -1313,7 +1703,7 @@
     {{/if}}
     {
       "type": "Microsoft.Network/networkInterfaces",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('networkInterfaceName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
@@ -1471,7 +1861,7 @@
     {{#unless createVmss}}
     {
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2021-03-01",
+      "apiVersion": "2023-04-01",
       "name": "[variables('vmName')]",
       "location": "[parameters('location')]",
       {{#if useAvailabilityZones}}
@@ -1739,7 +2129,7 @@
         "count": "[length(parameters('monitoringMetricAlerts'))]"
       },
       "type": "Microsoft.Insights/metricAlerts",
-      "apiVersion": "2018-03-01",
+      "apiVersion": "2023-01-01-preview",
       "name": "[concat(variables('vmName'), '-alert-', parameters('monitoringMetricAlerts')[copyIndex()].name)]",
       "location": "global",
       "dependsOn": [
@@ -1781,7 +2171,7 @@
     }{{/if}}{{#if autoShutdownEnabled}},
     {
       "type": "Microsoft.DevTestLab/schedules",
-      "apiVersion": "2018-09-15",
+      "apiVersion": "2022-08-01",
       "name": "[concat('shutdown-computevm-', variables('vmName'))]",
       "location": "[parameters('location')]",
       "dependsOn": [
