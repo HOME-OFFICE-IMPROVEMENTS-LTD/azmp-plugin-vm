@@ -1058,7 +1058,7 @@
     "autoScaleName": "[concat(variables('vmssName'), '-autoscale')]",
     "trafficManagerProfileName": "[if(empty(parameters('trafficManagerProfileName')), concat(parameters('vmName'), '-tm'), parameters('trafficManagerProfileName'))]",
     "trafficManagerDnsName": "[if(empty(parameters('trafficManagerDnsName')), concat(parameters('vmName'), '-', take(replace(guid(), '-', ''), 6)), parameters('trafficManagerDnsName'))]",
-    "vmssTargetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('vmssName'))]",
+    "vmssTargetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('vmssName'))]"{{#if haConfig}},{{/if}}{{#if dataDiskCount}},{{/if}}
     {{!-- HA Variables --}}
     {{#if haConfig}}
     {{#if haConfig.proximityPlacementGroup.enabled}}
@@ -1485,10 +1485,8 @@
       ],
       {{#if enableManagedIdentity}}
       "identity": {
-        "type": "{{{managedIdentityType}}}",
-        {{#if userAssignedIdentities}}
-        "userAssignedIdentities": "{{{userAssignedIdentityConfig}}}"
-        {{/if}}
+        "type": "{{{managedIdentityType}}}"{{#if userAssignedIdentities}},
+        "userAssignedIdentities": "{{{userAssignedIdentityConfig}}}"{{/if}}
       },
       {{/if}}
       "properties": {
@@ -1826,7 +1824,8 @@
     "extensionsInstalled": {
       "type": "array",
       "value": "[if(parameters('installExtensions'), union(if(parameters('installCustomScriptExtension'), array('CustomScript'), createArray()), if(parameters('installMonitoringExtension'), array('MonitoringAgent'), createArray()), if(parameters('installSecurityExtension'), array('SecurityAgent'), createArray()), if(and(parameters('installAntimalwareExtension'), equals(parameters('osType'), 'Windows')), array('Antimalware'), createArray())), createArray())]"
-    }{{#if installExtensions}},
+    },
+    {{#if installExtensions}}
     {{#if installCustomScriptExtension}}
     "customScriptExtensionStatus": {
       "type": "string",
