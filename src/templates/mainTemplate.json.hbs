@@ -4,13 +4,21 @@
   "metadata": {
     "_generator": {
       "name": "azmp-plugin-vm",
-      "version": "1.9.0"
+      "version": "2.0.0"
     },
     "description": "{{description}}",
-    "author": "{{author}}"
+    "author": "{{author}}"{{#if haConfig}},
+    "highAvailability": {
+      "enabled": true,
+      "components": [
+        {{#if haConfig.proximityPlacementGroup.enabled}}"ProximityPlacementGroup"{{/if}}{{#if haConfig.loadBalancer.enabled}},{{/if}}
+        {{#if haConfig.loadBalancer.enabled}}"LoadBalancer"{{/if}}{{#if haConfig.vmss.enabled}},{{/if}}
+        {{#if haConfig.vmss.enabled}}"VirtualMachineScaleSet"{{/if}}{{#if haConfig.healthMonitoring.enabled}},{{/if}}
+        {{#if haConfig.healthMonitoring.enabled}}"HealthExtensions"{{/if}}
+      ]
+    }{{/if}}
   },
   "parameters": {
-    {{#if vmName}}
     "vmName": {
       "type": "string",
       "defaultValue": "{{vmName}}",
@@ -18,17 +26,13 @@
         "description": "Name of the virtual machine"
       }
     },
-    {{/if}}
-    {{#if adminUsername}}
     "adminUsername": {
-      "type": "string",
+      "type": "string", 
       "defaultValue": "{{adminUsername}}",
       "metadata": {
         "description": "Administrator username for the VM"
       }
     },
-    {{/if}}
-    {{#if authenticationType}}
     "authenticationType": {
       "type": "string",
       "defaultValue": "{{authenticationType}}",
@@ -40,25 +44,19 @@
         "description": "Type of authentication to use on the Virtual Machine"
       }
     },
-    {{/if}}
-    {{#if adminPasswordOrKey}}
     "adminPasswordOrKey": {
       "type": "securestring",
       "metadata": {
         "description": "SSH Key or password for the Virtual Machine"
       }
     },
-    {{/if}}
-    {{#if location}}
     "location": {
       "type": "string",
-      "defaultValue": "{{location}}",
+      "defaultValue": "[resourceGroup().location]",
       "metadata": {
         "description": "Location for all resources"
       }
     },
-    {{/if}}
-    {{#if vmSize}}
     "vmSize": {
       "type": "string",
       "defaultValue": "{{vmSize}}",
@@ -66,7 +64,406 @@
         "description": "Size of the virtual machine"
       }
     },
-    {{/if}}
+    "dataDiskCount": {
+      "type": "int",
+      "defaultValue": 0,
+      "minValue": 0,
+      "maxValue": 32,
+      "metadata": {
+        "description": "Number of data disks to attach"
+      }
+    },
+    "dataDiskSizeGB": {
+      "type": "int", 
+      "defaultValue": 128,
+      "allowedValues": [32, 64, 128, 256, 512, 1024, 2048, 4096],
+      "metadata": {
+        "description": "Size of each data disk in GB"
+      }
+    },
+    "dataDiskType": {
+      "type": "string",
+      "defaultValue": "Premium_LRS",
+      "allowedValues": ["Standard_LRS", "StandardSSD_LRS", "Premium_LRS", "UltraSSD_LRS"],
+      "metadata": {
+        "description": "Storage account type for data disks"
+      }
+    },
+    "dataDiskCaching": {
+      "type": "string",
+      "defaultValue": "ReadOnly",
+      "allowedValues": ["None", "ReadOnly", "ReadWrite"],
+      "metadata": {
+        "description": "Caching strategy for data disks"
+      }
+    },
+    "virtualNetworkName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('vmName'), '-vnet')]",
+      "metadata": {
+        "description": "Name of the virtual network"
+      }
+    },
+    "virtualNetworkNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": ["new", "existing"],
+      "metadata": {
+        "description": "Whether to create new or use existing virtual network"
+      }
+    },
+    "virtualNetworkResourceGroup": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of the virtual network"
+      }
+    },
+    "virtualNetworkAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16", 
+      "metadata": {
+        "description": "Address prefix for the virtual network"
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "default",
+      "metadata": {
+        "description": "Name of the subnet"
+      }
+    },
+    "subnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "Address prefix for the subnet"
+      }
+    },
+    "publicIPAddressName": {
+      "type": "string",
+      "defaultValue": "[concat(parameters('vmName'), '-pip')]",
+      "metadata": {
+        "description": "Name of the public IP address"
+      }
+    },
+    "publicIPAddressNewOrExisting": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": ["new", "existing", "none"],
+      "metadata": {
+        "description": "Whether to create new, use existing, or no public IP"
+      }
+    },
+    "publicIPAddressResourceGroup": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group of the public IP address"
+      }
+    },
+    "domainNameLabel": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "DNS name label for the public IP"
+      }
+    },
+    "allowSshRdp": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Allow SSH/RDP from specific source"
+      }
+    },
+    "sshRdpSourceAddressPrefix": {
+      "type": "string",
+      "defaultValue": "*",
+      "metadata": {
+        "description": "Source address prefix for SSH/RDP access"
+      }
+    },
+    "installMonitoring": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Install monitoring extensions"
+      }
+    },
+    "workspaceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Log Analytics workspace ID for monitoring"
+      }
+    },
+    "installSecurity": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Install security extensions"
+      }
+    },
+    "enableVulnerabilityAssessment": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable vulnerability assessment"
+      }
+    },
+    "runCustomScript": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Run custom script extension"
+      }
+    },
+    "customScriptUri": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "URI of custom script to run"
+      }
+    },
+    "customScriptArgs": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Arguments for custom script"
+      }
+    },
+    "createVmss": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Create VM Scale Set"
+      }
+    },
+    "vmssName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the VM Scale Set"
+      }
+    },
+    "vmssInstanceCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 1,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Number of VM instances in the scale set"
+      }
+    },
+    "enableAutoScale": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable auto-scaling for VMSS"
+      }
+    },
+    "autoScaleMinInstances": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Minimum instances for auto-scaling"
+      }
+    },
+    "autoScaleMaxInstances": {
+      "type": "int",
+      "defaultValue": 10,
+      "metadata": {
+        "description": "Maximum instances for auto-scaling"
+      }
+    },
+    "cpuThresholdScaleOut": {
+      "type": "int",
+      "defaultValue": 75,
+      "metadata": {
+        "description": "CPU threshold for scaling out"
+      }
+    },
+    "cpuThresholdScaleIn": {
+      "type": "int",
+      "defaultValue": 25,
+      "metadata": {
+        "description": "CPU threshold for scaling in"
+      }
+    },
+    "createLoadBalancer": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Create load balancer for VMSS"
+      }
+    },
+    "loadBalancerSku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": ["Basic", "Standard"],
+      "metadata": {
+        "description": "Load balancer SKU"
+      }
+    },
+    "enableMultiRegion": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable multi-region deployment"
+      }
+    },
+    "secondaryRegion": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Secondary region for multi-region deployment"
+      }
+    },
+    "availabilityOption": {
+      "type": "string",
+      "defaultValue": "none",
+      "allowedValues": ["none", "availabilitySet", "availabilityZone"],
+      "metadata": {
+        "description": "Availability option for the VM"
+      }
+    },
+    "availabilitySetName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the availability set"
+      }
+    },
+    "availabilityZone": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Availability zone for the VM"
+      }
+    },
+    "enableBackup": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable backup for the VM"
+      }
+    },
+    "backupPolicyType": {
+      "type": "string",
+      "defaultValue": "standard",
+      "allowedValues": ["standard", "enhanced"],
+      "metadata": {
+        "description": "Backup policy type"
+      }
+    },
+    "backupVaultName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the backup vault"
+      }
+    },
+    "enableSnapshots": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable disk snapshots"
+      }
+    },
+    "snapshotFrequency": {
+      "type": "string",
+      "defaultValue": "daily",
+      "allowedValues": ["daily", "weekly"],
+      "metadata": {
+        "description": "Frequency of snapshots"
+      }
+    },
+    "snapshotRetention": {
+      "type": "int",
+      "defaultValue": 30,
+      "metadata": {
+        "description": "Snapshot retention in days"
+      }
+    },
+    "enableMonitoring": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable monitoring and alerts"
+      }
+    },
+    "monitoringEmail": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Email address for monitoring alerts"
+      }
+    },
+    "monitoringPreset": {
+      "type": "string",
+      "defaultValue": "Production",
+      "allowedValues": ["Development", "Production", "Custom"],
+      "metadata": {
+        "description": "Monitoring preset configuration"
+      }
+    },
+    "enableCpuAlert": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable CPU utilization alerts"
+      }
+    },
+    "enableMemoryAlert": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable memory utilization alerts"
+      }
+    },
+    "enableDiskAlert": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable disk utilization alerts"
+      }
+    },
+    "enableNetworkAlert": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable network utilization alerts"
+      }
+    },
+    "alertSeverity": {
+      "type": "string",
+      "defaultValue": "Warning",
+      "allowedValues": ["Critical", "Error", "Warning", "Informational"],
+      "metadata": {
+        "description": "Alert severity level"
+      }
+    },
+    "enableAutoShutdown": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable auto-shutdown for the VM"
+      }
+    },
+    "shutdownTime": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Time for auto-shutdown (HH:MM format)"
+      }
+    },
+    "shutdownTimezone": {
+      "type": "string",
+      "defaultValue": "UTC",
+      "metadata": {
+        "description": "Timezone for auto-shutdown"
+      }
+    },
     {{#if osImageReference}}
     "osImageReference": {
       "type": "object",
@@ -495,6 +892,7 @@
         "description": "Number of days to retain disk snapshots"
       }
     },
+    {{#if createVmss}}
     "createVmss": {
       "type": "bool",
       "defaultValue": false,
@@ -627,6 +1025,72 @@
         "description": "Traffic Manager routing method"
       }
     },
+    {{/if}}
+    {{!-- HA Configuration Parameters --}}
+    {{#if haConfig}}
+    {{> partials/ha/health-parameters}}
+    {{#if haConfig.proximityPlacementGroup.enabled}}
+    "createProximityPlacementGroup": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Whether to create a Proximity Placement Group for HA cluster"
+      }
+    },
+    "proximityPlacementGroupName": {
+      "type": "string",
+      "defaultValue": "{{default haConfig.proximityPlacementGroup.name '[concat(parameters(\"vmssName\"), \"-ppg\")]'}}",
+      "metadata": {
+        "description": "Name of the Proximity Placement Group"
+      }
+    },
+    {{/if}}
+    {{#if haConfig.vmss.enabled}}
+    "haVmssInstanceCount": {
+      "type": "int",
+      "defaultValue": {{default haConfig.vmss.instanceCount 3}},
+      "minValue": 2,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Number of instances in the HA VMSS cluster"
+      }
+    },
+    "haVmssZoneBalance": {
+      "type": "bool",
+      "defaultValue": {{default haConfig.vmss.zoneBalance true}},
+      "metadata": {
+        "description": "Whether to balance instances across availability zones"
+      }
+    },
+    "enableHAAutoScaling": {
+      "type": "bool",
+      "defaultValue": {{default haConfig.vmss.autoScaling.enabled false}},
+      "metadata": {
+        "description": "Whether to enable auto-scaling for the HA VMSS"
+      }
+    },
+    {{#if haConfig.vmss.autoScaling.enabled}}
+    "haAutoScaleMin": {
+      "type": "int",
+      "defaultValue": {{default haConfig.vmss.autoScaling.minInstances 2}},
+      "minValue": 2,
+      "maxValue": 50,
+      "metadata": {
+        "description": "Minimum number of instances in HA auto-scaling"
+      }
+    },
+    "haAutoScaleMax": {
+      "type": "int",
+      "defaultValue": {{default haConfig.vmss.autoScaling.maxInstances 10}},
+      "minValue": 3,
+      "maxValue": 1000,
+      "metadata": {
+        "description": "Maximum number of instances in HA auto-scaling"
+      }
+    },
+    {{/if}}
+    {{/if}}
+    {{/if}}
     {{#if enableAcceleratedNetworking}}
     "enableAcceleratedNetworking": {
       "type": "bool",
@@ -743,6 +1207,156 @@
       }
     },
     {{/if}}
+    {{#if dataDiskCount}}
+    "dataDiskCount": {
+      "type": "int",
+      "defaultValue": {{dataDiskCount}},
+      "minValue": 0,
+      "maxValue": 32,
+      "metadata": {
+        "description": "Number of data disks to attach (0-32, limited by VM size)"
+      }
+    },
+    {{/if}}
+    {{#if dataDiskSizeGB}}
+    "dataDiskSizeGB": {
+      "type": "int",
+      "defaultValue": {{dataDiskSizeGB}},
+      "minValue": 4,
+      "maxValue": 32767,
+      "metadata": {
+        "description": "Size of each data disk in GB (4-32767)"
+      }
+    },
+    {{/if}}
+    {{#if dataDiskType}}
+    "dataDiskType": {
+      "type": "string",
+      "defaultValue": "{{dataDiskType}}",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS",
+        "UltraSSD_LRS"
+      ],
+      "metadata": {
+        "description": "Storage account type for data disks (Premium requires premium-capable VM)"
+      }
+    },
+    {{/if}}
+    {{#if dataDiskCaching}}
+    "dataDiskCaching": {
+      "type": "string",
+      "defaultValue": "{{dataDiskCaching}}",
+      "allowedValues": [
+        "None",
+        "ReadOnly",
+        "ReadWrite"
+      ],
+      "metadata": {
+        "description": "Caching strategy for data disks"
+      }
+    },
+    {{/if}}
+    {{#if enableMonitoring}}
+    "enableMonitoring": {
+      "type": "bool",
+      "defaultValue": {{enableMonitoring}},
+      "metadata": {
+        "description": "Enable monitoring and alerting for the VM"
+      }
+    },
+    {{/if}}
+    {{#if monitoringActionGroupName}}
+    "monitoringActionGroupName": {
+      "type": "string",
+      "defaultValue": "{{monitoringActionGroupName}}",
+      "metadata": {
+        "description": "Name of the action group for alert notifications"
+      }
+    },
+    {{/if}}
+    {{#if monitoringActionGroupShortName}}
+    "monitoringActionGroupShortName": {
+      "type": "string",
+      "defaultValue": "{{monitoringActionGroupShortName}}",
+      "maxLength": 12,
+      "metadata": {
+        "description": "Short name for the action group (max 12 characters)"
+      }
+    },
+    {{/if}}
+    {{#if monitoringNotificationEmail}}
+    "monitoringNotificationEmail": {
+      "type": "string",
+      "defaultValue": "{{monitoringNotificationEmail}}",
+      "metadata": {
+        "description": "Email address for monitoring alert notifications"
+      }
+    },
+    {{/if}}
+    {{#if monitoringMetricAlerts}}
+    "monitoringMetricAlerts": {
+      "type": "array",
+      "defaultValue": {{{monitoringMetricAlerts}}},
+      "metadata": {
+        "description": "Array of metric alert configurations"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownEnabled}}
+    "autoShutdownEnabled": {
+      "type": "bool",
+      "defaultValue": {{autoShutdownEnabled}},
+      "metadata": {
+        "description": "Enable scheduled auto-shutdown for cost savings"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownTime}}
+    "autoShutdownTime": {
+      "type": "string",
+      "defaultValue": "{{autoShutdownTime}}",
+      "metadata": {
+        "description": "Daily shutdown time in HH:MM format (24-hour)"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownTimezone}}
+    "autoShutdownTimezone": {
+      "type": "string",
+      "defaultValue": "{{autoShutdownTimezone}}",
+      "metadata": {
+        "description": "Timezone for shutdown schedule (e.g., UTC, Pacific Standard Time)"
+      }
+    },
+    {{/if}}
+    {{#if autoShutdownNotificationMinutesBefore}}
+    "autoShutdownNotificationMinutesBefore": {
+      "type": "int",
+      "defaultValue": {{autoShutdownNotificationMinutesBefore}},
+      "minValue": 0,
+      "maxValue": 120,
+      "metadata": {
+        "description": "Send notification this many minutes before shutdown"
+      }
+    },
+    {{/if}}
+    {{#if licenseType}}
+    "licenseType": {
+      "type": "string",
+      "defaultValue": "{{licenseType}}",
+      "allowedValues": [
+        "None",
+        "Windows_Server",
+        "Windows_Client",
+        "AHUB"
+      ],
+      "metadata": {
+        "description": "Azure Hybrid Benefit license type for Windows Server or SQL Server"
+      }
+    },
+    {{/if}}
     "dummyLastParameter": {
       "type": "string",
       "defaultValue": "",
@@ -821,7 +1435,7 @@
     "securityExtensionName": "[if(equals(parameters('osType'), 'Windows'), 'IaaSAntimalware', 'LinuxDiagnostic')]",
     "antimalwareExtensionName": "IaaSAntimalware",
     "azureMonitorExtensionName": "AzureMonitorWindowsAgent",
-    "extensionApiVersion": "2021-03-01",
+    "extensionApiVersion": "2023-07-01",
     "managedIdentityType": "[if(empty(parameters('userAssignedIdentities')), 'SystemAssigned', 'SystemAssigned,UserAssigned')]",
     "userAssignedIdentityConfig": "[if(empty(parameters('userAssignedIdentities')), json('{}'), json(concat('{\"', string(parameters('userAssignedIdentities')[0]), '\": {}}')))]",
     "customScriptFileUris": "[if(empty(parameters('customScriptUrl')), json('[]'), array(parameters('customScriptUrl')))]",
@@ -829,18 +1443,52 @@
     "backupVaultName": "[if(empty(parameters('backupVaultName')), concat(parameters('vmName'), '-vault'), parameters('backupVaultName'))]",
     "backupPolicyName": "[if(equals(parameters('backupPolicyName'), 'DefaultPolicy'), concat('policy-', parameters('vmName')), parameters('backupPolicyName'))]",
     "snapshotName": "[concat(parameters('vmName'), '-snapshot')]",
-    "backupScheduleTimestamp": "[concat('2025-01-01T', parameters('backupScheduleTime'), ':00Z')]",
+    "backupScheduleTimestamp": "[concat('2025-01-01T', parameters('backupScheduleTime'), ':00Z')]"{{#if createVmss}},
     "vmssName": "[if(empty(parameters('vmssName')), concat(parameters('vmName'), '-vmss'), parameters('vmssName'))]",
     "autoScaleName": "[concat(variables('vmssName'), '-autoscale')]",
     "trafficManagerProfileName": "[if(empty(parameters('trafficManagerProfileName')), concat(parameters('vmName'), '-tm'), parameters('trafficManagerProfileName'))]",
     "trafficManagerDnsName": "[if(empty(parameters('trafficManagerDnsName')), concat(parameters('vmName'), '-', take(replace(guid(), '-', ''), 6)), parameters('trafficManagerDnsName'))]",
-    "vmssTargetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('vmssName'))]"
+    "vmssTargetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('vmssName'))]"{{/if}}{{#if haConfig}},{{/if}}{{#if dataDiskCount}},{{/if}}
+    {{!-- HA Variables --}}
+    {{#if haConfig}}
+    {{#if haConfig.proximityPlacementGroup.enabled}}
+    "proximityPlacementGroupName": "[if(parameters('createProximityPlacementGroup'), parameters('proximityPlacementGroupName'), '')]",
+    {{/if}}
+    {{#if haConfig.loadBalancer.enabled}}
+    "haLoadBalancerName": "[concat(variables('vmssName'), '-ha-lb')]",
+    "haBackendPoolName": "[concat(variables('haLoadBalancerName'), '-backend')]",
+    "haHealthProbeName": "[concat(variables('haLoadBalancerName'), '-probe')]",
+    {{/if}}
+    {{#if haConfig.vmss.enabled}}
+    "haVmssName": "[variables('vmssName')]",
+    "haAutoScaleName": "[concat(variables('haVmssName'), '-ha-autoscale')]",
+    {{/if}}
+    {{#if haConfig.healthMonitoring.enabled}}
+    {{> partials/ha/health-parameters variables=true}}
+    {{/if}}
+    {{/if}}
+    {{#if dataDiskCount}}
+    "dataDiskNamePrefix": "[concat(parameters('vmName'), '-datadisk-')]",
+    "lunStart": 0{{/if}}
   },
   "resources": [
+    {{!-- HA Cluster Resources --}}
+    {{#if haConfig}}
+    {{#if haConfig.proximityPlacementGroup.enabled}}
+    {{> partials/ha/ppg-resources}},
+    {{/if}}
+    {{#if haConfig.loadBalancer.enabled}}
+    {{> partials/ha/load-balancer-resources}},
+    {{/if}}
+    {{#if haConfig.healthMonitoring.enabled}}
+    {{> partials/ha/health-resources}},
+    {{/if}}
+    {{/if}}
+    {{!-- Standard Resources --}}
     {{#if createNetworkSecurityGroup}}
     {
       "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('networkSecurityGroupName')]",
       "location": "[parameters('location')]",
       "properties": {
@@ -867,7 +1515,7 @@
     {{#if createVirtualNetwork}}
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('virtualNetworkName')]",
       "location": "[parameters('location')]",
       {{#if createNetworkSecurityGroup}}
@@ -999,7 +1647,7 @@
     {{#if createBastion}}
     {
       "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[concat(variables('bastionHostName'), '-pip')]",
       "location": "[parameters('location')]",
       "sku": {
@@ -1011,7 +1659,7 @@
     },
     {
       "type": "Microsoft.Network/bastionHosts",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('bastionHostName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
@@ -1039,7 +1687,7 @@
     {{#if createPublicIP}}
     {
       "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('publicIPAddressName')]",
       "location": "[parameters('location')]",
       "properties": {
@@ -1055,7 +1703,7 @@
     {{/if}}
     {
       "type": "Microsoft.Network/networkInterfaces",
-      "apiVersion": "2021-02-01",
+      "apiVersion": "2023-05-01",
       "name": "[variables('networkInterfaceName')]",
       "location": "[parameters('location')]",
       "dependsOn": [
@@ -1158,6 +1806,14 @@
     },
     {{/if}}
     {{#if createVmss}}
+    {{#if haConfig.vmss.enabled}}
+    {{!-- HA VMSS with enhanced configuration --}}
+    {{> partials/ha/vmss-resources}},
+    {{#if haConfig.vmss.autoScaling.enabled}}
+    {{> partials/ha/autoscaling-resources}},
+    {{/if}}
+    {{else}}
+    {{!-- Standard VMSS --}}
     {{{[scale:vmss.definition] 
       name=vmssName
       vmSize="[parameters('vmSize')]"
@@ -1176,6 +1832,7 @@
       zones="[if(parameters('useAvailabilityZones'), array(parameters('availabilityZone')), json('[]'))]"
       location="[parameters('location')]"
     }}},
+    {{/if}}
     {{/if}}
     {{#if enableAutoScaling}}
     {{{[scale:autoscale.cpu]
@@ -1204,7 +1861,7 @@
     {{#unless createVmss}}
     {
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2021-03-01",
+      "apiVersion": "2023-04-01",
       "name": "[variables('vmName')]",
       "location": "[parameters('location')]",
       {{#if useAvailabilityZones}}
@@ -1218,10 +1875,8 @@
       ],
       {{#if enableManagedIdentity}}
       "identity": {
-        "type": "{{{managedIdentityType}}}",
-        {{#if userAssignedIdentities}}
-        "userAssignedIdentities": "{{{userAssignedIdentityConfig}}}"
-        {{/if}}
+        "type": "{{{managedIdentityType}}}"{{#if userAssignedIdentities}},
+        "userAssignedIdentities": "{{{userAssignedIdentityConfig}}}"{{/if}}
       },
       {{/if}}
       "properties": {
@@ -1252,7 +1907,9 @@
           {{/unless}}
           {{/if}}
           {{/unless}}
-        },
+        },{{#if licenseType}}
+        "licenseType": "[if(not(equals(parameters('licenseType'), 'None')), parameters('licenseType'), json('null'))]",
+        {{/if}}
         "storageProfile": {
           "imageReference": "[parameters('osImageReference')]",
           "osDisk": {
@@ -1266,7 +1923,25 @@
               "option": "Local",
               "placement": "[parameters('ephemeralDiskPlacement')]"
             }{{/if}}
-          }
+          }{{#if dataDiskCount}},
+          "dataDisks": {
+            "copy": [
+              {
+                "name": "dataDisks",
+                "count": "[parameters('dataDiskCount')]",
+                "input": {
+                  "lun": "[copyIndex('dataDisks')]",
+                  "name": "[concat(variables('dataDiskNamePrefix'), copyIndex('dataDisks'))]",
+                  "createOption": "Empty",
+                  "diskSizeGB": "[parameters('dataDiskSizeGB')]",
+                  "caching": "[parameters('dataDiskCaching')]",
+                  "managedDisk": {
+                    "storageAccountType": "[parameters('dataDiskType')]"
+                  }
+                }
+              }
+            ]
+          }{{/if}}
         },
         "networkProfile": {
           "networkInterfaces": [
@@ -1430,10 +2105,73 @@
     {{/unless}}
     {{/if}}
     {{/if}}
-    {{/unless}}{{#if enableAutoShutdown}},
+    {{/unless}}{{#if enableMonitoring}},
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('monitoringActionGroupName')]",
+      "location": "global",
+      "properties": {
+        "groupShortName": "[parameters('monitoringActionGroupShortName')]",
+        "enabled": true,
+        "emailReceivers": [
+          {
+            "name": "AdminEmail",
+            "emailAddress": "[parameters('monitoringNotificationEmail')]",
+            "useCommonAlertSchema": true
+          }
+        ]
+      }
+    }{{/if}}{{#if monitoringMetricAlerts}},
+    {
+      "copy": {
+        "name": "metricAlertCopy",
+        "count": "[length(parameters('monitoringMetricAlerts'))]"
+      },
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2023-01-01-preview",
+      "name": "[concat(variables('vmName'), '-alert-', parameters('monitoringMetricAlerts')[copyIndex()].name)]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"{{#if enableMonitoring}},
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('monitoringActionGroupName'))]"{{/if}}
+      ],
+      "properties": {
+        "description": "[parameters('monitoringMetricAlerts')[copyIndex()].description]",
+        "severity": "[parameters('monitoringMetricAlerts')[copyIndex()].severity]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        ],
+        "evaluationFrequency": "[parameters('monitoringMetricAlerts')[copyIndex()].evaluationFrequency]",
+        "windowSize": "[parameters('monitoringMetricAlerts')[copyIndex()].windowSize]",
+        "criteria": {
+          "allOf": [
+            {
+              "criterionType": "StaticThresholdCriterion",
+              "name": "[parameters('monitoringMetricAlerts')[copyIndex()].name]",
+              "metricName": "[parameters('monitoringMetricAlerts')[copyIndex()].metricName]",
+              "metricNamespace": "Microsoft.Compute/virtualMachines",
+              "operator": "[parameters('monitoringMetricAlerts')[copyIndex()].operator]",
+              "threshold": "[parameters('monitoringMetricAlerts')[copyIndex()].threshold]",
+              "timeAggregation": "[parameters('monitoringMetricAlerts')[copyIndex()].timeAggregation]"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.Compute/virtualMachines",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [{{#if enableMonitoring}}
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('monitoringActionGroupName'))]"
+          }{{/if}}
+        ]
+      }
+    }{{/if}}{{#if autoShutdownEnabled}},
     {
       "type": "Microsoft.DevTestLab/schedules",
-      "apiVersion": "2018-09-15",
+      "apiVersion": "2022-08-01",
       "name": "[concat('shutdown-computevm-', variables('vmName'))]",
       "location": "[parameters('location')]",
       "dependsOn": [
@@ -1445,12 +2183,12 @@
         "dailyRecurrence": {
           "time": "[parameters('autoShutdownTime')]"
         },
-        "timeZoneId": "[parameters('autoShutdownTimeZone')]",
-        "targetResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"{{#if autoShutdownNotificationEmail}},
+        "timeZoneId": "[parameters('autoShutdownTimezone')]",
+        "targetResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"{{#if monitoringNotificationEmail}},
         "notificationSettings": {
           "status": "Enabled",
-          "timeInMinutes": 30,
-          "emailRecipient": "[parameters('autoShutdownNotificationEmail')]",
+          "timeInMinutes": "[parameters('autoShutdownNotificationMinutesBefore')]",
+          "emailRecipient": "[parameters('monitoringNotificationEmail')]",
           "notificationLocale": "en"
         }{{/if}}
       }
@@ -1476,7 +2214,8 @@
     "extensionsInstalled": {
       "type": "array",
       "value": "[if(parameters('installExtensions'), union(if(parameters('installCustomScriptExtension'), array('CustomScript'), createArray()), if(parameters('installMonitoringExtension'), array('MonitoringAgent'), createArray()), if(parameters('installSecurityExtension'), array('SecurityAgent'), createArray()), if(and(parameters('installAntimalwareExtension'), equals(parameters('osType'), 'Windows')), array('Antimalware'), createArray())), createArray())]"
-    }{{#if installExtensions}},
+    },
+    {{#if installExtensions}}
     {{#if installCustomScriptExtension}}
     "customScriptExtensionStatus": {
       "type": "string",
@@ -1566,6 +2305,90 @@
     "trafficManagerFqdn": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Network/trafficManagerProfiles', variables('trafficManagerProfileName'))).dnsConfig.fqdn]"
+    }{{/if}}{{#if haConfig}},
+    {{!-- HA Cluster Outputs --}}
+    "haClusterConfiguration": {
+      "type": "object",
+      "value": {
+        "enabled": true,
+        "version": "1.11.0",
+        {{#if haConfig.proximityPlacementGroup.enabled}}
+        "proximityPlacementGroup": {
+          "resourceId": "[resourceId('Microsoft.Compute/proximityPlacementGroups', variables('proximityPlacementGroupName'))]",
+          "name": "[variables('proximityPlacementGroupName')]"
+        },
+        {{/if}}
+        {{#if haConfig.loadBalancer.enabled}}
+        "loadBalancer": {
+          "resourceId": "[resourceId('Microsoft.Network/loadBalancers', variables('haLoadBalancerName'))]",
+          "name": "[variables('haLoadBalancerName')]",
+          {{#if haConfig.loadBalancer.createPublicIP}}
+          "publicIPAddress": "[reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('haLoadBalancerName'), '-pip'))).ipAddress]",
+          "fqdn": "[reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('haLoadBalancerName'), '-pip'))).dnsSettings.fqdn]",
+          {{/if}}
+          "backendPool": "[variables('haBackendPoolName')]"
+        },
+        {{/if}}
+        {{#if haConfig.vmss.enabled}}
+        "vmss": {
+          "resourceId": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]",
+          "name": "[variables('haVmssName')]",
+          "instanceCount": "[parameters('haVmssInstanceCount')]",
+          "orchestrationMode": "{{default haConfig.vmss.orchestrationMode 'Uniform'}}",
+          "upgradePolicy": "{{default haConfig.vmss.upgradePolicy.mode 'Rolling'}}",
+          {{#if haConfig.vmss.zones}}
+          "zones": [{{#each haConfig.vmss.zones}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+          {{else}}
+          "zones": ["1", "2", "3"],
+          {{/if}}
+          {{#if haConfig.vmss.autoScaling.enabled}}
+          "autoScaling": {
+            "enabled": true,
+            "resourceId": "[resourceId('Microsoft.Insights/autoscalesettings', variables('haAutoScaleName'))]",
+            "name": "[variables('haAutoScaleName')]",
+            "minInstances": "[parameters('haAutoScaleMin')]",
+            "maxInstances": "[parameters('haAutoScaleMax')]"
+          }
+          {{else}}
+          "autoScaling": {
+            "enabled": false
+          }
+          {{/if}}
+        },
+        {{/if}}
+        {{#if haConfig.healthMonitoring.enabled}}
+        "healthMonitoring": {
+          "enabled": true,
+          {{#if haConfig.healthMonitoring.applicationHealthExtension.enabled}}
+          "applicationHealthExtension": {
+            "enabled": true,
+            "protocol": "{{haConfig.healthMonitoring.applicationHealthExtension.protocol}}",
+            "port": {{haConfig.healthMonitoring.applicationHealthExtension.port}},
+            "gracePeriod": "{{default haConfig.healthMonitoring.applicationHealthExtension.gracePeriod 'PT30M'}}"
+          },
+          {{/if}}
+          {{#if haConfig.healthMonitoring.automaticRepairPolicy.enabled}}
+          "automaticRepairPolicy": {
+            "enabled": true,
+            "gracePeriod": "{{default haConfig.healthMonitoring.automaticRepairPolicy.gracePeriod 'PT30M'}}",
+            "maxInstanceRepairs": {{default haConfig.healthMonitoring.automaticRepairPolicy.maxInstanceRepairs 3}}
+          },
+          {{/if}}
+          {{#if haConfig.healthMonitoring.healthReporting.enabled}}
+          "healthReporting": {
+            "enabled": true,
+            {{#if haConfig.healthMonitoring.healthReporting.logAnalyticsWorkspaceId}}
+            "logAnalyticsWorkspace": "[resourceId('Microsoft.OperationalInsights/workspaces', concat(variables('haVmssName'), '-health-workspace'))]",
+            {{/if}}
+            {{#if haConfig.healthMonitoring.healthReporting.applicationInsightsInstrumentationKey}}
+            "applicationInsights": "[resourceId('Microsoft.Insights/components', concat(variables('haVmssName'), '-health-insights'))]",
+            {{/if}}
+            "diagnosticsStorage": "[resourceId('Microsoft.Storage/storageAccounts', variables('diagnosticsStorageAccountName'))]"
+          }
+          {{/if}}
+        }
+        {{/if}}
+      }
     }{{/if}}
   }{{/if}}
   }

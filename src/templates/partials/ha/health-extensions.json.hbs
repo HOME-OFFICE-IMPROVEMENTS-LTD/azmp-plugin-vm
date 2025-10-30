@@ -1,0 +1,120 @@
+{{!-- Health Extension ARM Template Partial --}}
+{{!-- Provides Application Health extension and custom health monitoring for VMSS --}}
+
+{{#if haConfig.healthMonitoring.applicationHealthExtension.enabled}}
+{{!-- Application Health Extension integrated into VMSS extensionProfile --}}
+{
+  "name": "ApplicationHealthExtension",
+  "properties": {
+    "publisher": "Microsoft.ManagedServices",
+    "type": "{{#if osProfile.isLinux}}ApplicationHealthLinux{{else}}ApplicationHealthWindows{{/if}}",
+    "typeHandlerVersion": "1.0",
+    "autoUpgradeMinorVersion": {{default haConfig.healthMonitoring.applicationHealthExtension.autoUpgradeMinorVersion true}},
+    "settings": {
+      "protocol": "{{haConfig.healthMonitoring.applicationHealthExtension.protocol}}",
+      "port": {{haConfig.healthMonitoring.applicationHealthExtension.port}},
+      {{#if haConfig.healthMonitoring.applicationHealthExtension.requestPath}}
+      "requestPath": "{{haConfig.healthMonitoring.applicationHealthExtension.requestPath}}",
+      {{/if}}
+      "intervalInSeconds": {{default haConfig.healthMonitoring.applicationHealthExtension.intervalInSeconds 30}},
+      "numberOfProbes": {{default haConfig.healthMonitoring.applicationHealthExtension.numberOfProbes 1}},
+      "gracePeriod": "{{default haConfig.healthMonitoring.applicationHealthExtension.gracePeriod 'PT30M'}}"{{#if haConfig.healthMonitoring.applicationHealthExtension.settings}},
+      {{#each haConfig.healthMonitoring.applicationHealthExtension.settings}}
+      "{{@key}}": {{#if (isString this)}}"{{this}}"{{else}}{{this}}{{/if}}{{#unless @last}},{{/unless}}
+      {{/each}}{{/if}}
+    }{{#if haConfig.healthMonitoring.applicationHealthExtension.protectedSettings}},
+    "protectedSettings": {{{json haConfig.healthMonitoring.applicationHealthExtension.protectedSettings}}}{{/if}}
+  }
+}{{#if haConfig.healthMonitoring.customHealthProbes}},
+{{!-- Custom Health Monitoring Extension --}}
+{
+  "name": "CustomHealthMonitoring",
+  "properties": {
+    "publisher": "Microsoft.Azure.Extensions",
+    "type": "{{#if osProfile.isLinux}}CustomScript{{else}}CustomScriptExtension{{/if}}",
+    "typeHandlerVersion": "{{#if osProfile.isLinux}}2.1{{else}}1.10{{/if}}",
+    "autoUpgradeMinorVersion": true,
+    "settings": {
+      {{#if osProfile.isLinux}}
+      "skipDos2Unix": false,
+      {{/if}}
+      "timestamp": "[parameters('extensionTimestamp')]"
+    },
+    "protectedSettings": {
+      {{#if osProfile.isLinux}}
+      "commandToExecute": "{{generateHealthMonitoringScript haConfig.healthMonitoring.customHealthProbes.[0]}}",
+      {{else}}
+      "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File health-monitor.ps1",
+      {{/if}}
+      {{#if haConfig.healthMonitoring.customHealthProbes.[0].script.scriptPath}}
+      "fileUris": ["{{haConfig.healthMonitoring.customHealthProbes.[0].script.scriptPath}}"]
+      {{/if}}
+    }
+  }
+}{{/if}}{{#if haConfig.healthMonitoring.healthReporting.enabled}},
+{{!-- Health Reporting Extension (Log Analytics Agent) --}}
+{
+  "name": "HealthReportingExtension",
+  "properties": {
+    "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+    "type": "{{#if osProfile.isLinux}}OmsAgentForLinux{{else}}MicrosoftMonitoringAgent{{/if}}",
+    "typeHandlerVersion": "{{#if osProfile.isLinux}}1.14{{else}}1.0{{/if}}",
+    "autoUpgradeMinorVersion": true,
+    "settings": {
+      {{#if haConfig.healthMonitoring.healthReporting.logAnalyticsWorkspaceId}}
+      "workspaceId": "{{haConfig.healthMonitoring.healthReporting.logAnalyticsWorkspaceId}}",
+      {{/if}}
+      "stopOnMultipleConnections": false
+    },
+    "protectedSettings": {
+      {{#if haConfig.healthMonitoring.healthReporting.logAnalyticsWorkspaceId}}
+      "workspaceKey": "[parameters('logAnalyticsWorkspaceKey')]"
+      {{/if}}
+    }
+  }
+}{{#if haConfig.healthMonitoring.healthReporting.applicationInsightsInstrumentationKey}},
+{{!-- Application Insights Extension --}}
+{
+  "name": "ApplicationInsightsExtension",
+  "properties": {
+    "publisher": "Microsoft.Azure.Diagnostics",
+    "type": "{{#if osProfile.isLinux}}LinuxDiagnostic{{else}}IaaSDiagnostics{{/if}}",
+    "typeHandlerVersion": "{{#if osProfile.isLinux}}3.0{{else}}1.5{{/if}}",
+    "autoUpgradeMinorVersion": true,
+    "settings": {
+      "StorageAccount": "[variables('diagnosticsStorageAccountName')]",
+      {{#if osProfile.isLinux}}
+      "ladCfg": {
+        "diagnosticMonitorConfiguration": {
+          "performanceCounters": {
+            "performanceCounterConfiguration": [
+              {
+                "annotation": [
+                  {
+                    "displayName": "CPU utilization",
+                    "locale": "en-us"
+                  }
+                ],
+                "class": "processor",
+                "condition": "IsAggregate=TRUE",
+                "counter": "percentprocessortime",
+                "counterSpecifier": "/builtin/processor/percentprocessortime",
+                "type": "builtin",
+                "unit": "percent"
+              }
+            ]
+          }
+        }
+      },
+      {{else}}
+      "xmlCfg": "[base64(concat(variables('wadcfgxstart'), variables('wadmetricsresourceid'), variables('wadcfgxend')))]",
+      {{/if}}
+      "applicationInsightsInstrumentationKey": "[parameters('applicationInsightsInstrumentationKey')]"
+    },
+    "protectedSettings": {
+      "storageAccountName": "[variables('diagnosticsStorageAccountName')]",
+      "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('diagnosticsStorageAccountName')), '2021-09-01').keys[0].value]"
+    }
+  }
+}{{/if}}{{/if}}
+{{/if}}

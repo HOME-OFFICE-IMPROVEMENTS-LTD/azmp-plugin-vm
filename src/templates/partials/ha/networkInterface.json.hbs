@@ -1,0 +1,48 @@
+{{!-- Network Interface Configuration for Load Balancer Integration --}}
+{{!-- Provides network interface with backend pool associations --}}
+
+{
+  "type": "Microsoft.Network/networkInterfaces",
+  "apiVersion": "2023-04-01",
+  "name": "[concat(parameters('vmName'), '-nic-', copyIndex())]",
+  "location": "[parameters('location')]",
+  "copy": {
+    "name": "nicLoop",
+    "count": "[parameters('instanceCount')]"
+  },
+  {{#if haConfig.loadBalancer.enabled}}
+  "dependsOn": [
+    "[resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName'))]"
+  ],
+  {{/if}}
+  "properties": {
+    "ipConfigurations": [
+      {
+        "name": "ipconfig1",
+        "properties": {
+          "subnet": {
+            "id": "[variables('subnetRef')]"
+          },
+          "privateIPAllocationMethod": "Dynamic"{{#if haConfig.loadBalancer.enabled}},
+          "loadBalancerBackendAddressPools": [
+            {{#each haConfig.loadBalancer.backendPools}}
+            {
+              "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('loadBalancerName'), '{{this.name}}')]"
+            }{{#unless @last}},{{/unless}}
+            {{/each}}
+          ]{{#if haConfig.loadBalancer.natRules}},
+          "loadBalancerInboundNatRules": [
+            {{#each haConfig.loadBalancer.natRules}}
+            {
+              "id": "[resourceId('Microsoft.Network/loadBalancers/inboundNatRules', variables('loadBalancerName'), '{{this.name}}')]"
+            }{{#unless @last}},{{/unless}}
+            {{/each}}
+          ]{{/if}}{{/if}}
+        }
+      }
+    ]{{#if haConfig.loadBalancer.enableAcceleratedNetworking}},
+    "enableAcceleratedNetworking": true{{/if}}{{#if haConfig.loadBalancer.enableIPForwarding}},
+    "enableIPForwarding": true{{/if}}
+  },
+  "tags": "[parameters('tags')]"
+}
