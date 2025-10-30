@@ -1,0 +1,225 @@
+{{!-- Auto-scaling Resources for HA VMSS --}}
+{{!-- Provides auto-scaling configuration for HA cluster --}}
+
+{
+  "type": "Microsoft.Insights/autoscalesettings",
+  "apiVersion": "2022-10-01",
+  "name": "[variables('haAutoScaleName')]",
+  "location": "[parameters('location')]",
+  "dependsOn": [
+    "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]"
+  ],
+  "properties": {
+    "name": "[variables('haAutoScaleName')]",
+    "targetResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]",
+    "enabled": true,
+    "targetResourceLocation": "[parameters('location')]",
+    "profiles": [
+      {
+        "name": "DefaultProfile",
+        "capacity": {
+          "minimum": "[parameters('haAutoScaleMin')]",
+          "maximum": "[parameters('haAutoScaleMax')]",
+          "default": "[parameters('haVmssInstanceCount')]"
+        },
+        "rules": [
+          {{!-- CPU Scale Out Rule --}}
+          {
+            "metricTrigger": {
+              "metricName": "Percentage CPU",
+              "metricNamespace": "Microsoft.Compute/virtualMachineScaleSets",
+              "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]",
+              "timeGrain": "PT1M",
+              "statistic": "Average",
+              "timeWindow": "{{default haConfig.vmss.autoScaling.scaleOutRule.timeWindow 'PT5M'}}",
+              "timeAggregation": "Average",
+              "operator": "GreaterThan",
+              "threshold": {{default haConfig.vmss.autoScaling.scaleOutRule.cpuThreshold 70}},
+              "dimensions": [],
+              "dividePerInstance": false
+            },
+            "scaleAction": {
+              "direction": "Increase",
+              "type": "{{default haConfig.vmss.autoScaling.scaleOutRule.type 'ChangeCount'}}",
+              "value": "{{default haConfig.vmss.autoScaling.scaleOutRule.value 1}}",
+              "cooldown": "{{default haConfig.vmss.autoScaling.scaleOutRule.cooldown 'PT5M'}}"
+            }
+          },
+          {{!-- CPU Scale In Rule --}}
+          {
+            "metricTrigger": {
+              "metricName": "Percentage CPU",
+              "metricNamespace": "Microsoft.Compute/virtualMachineScaleSets",
+              "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]",
+              "timeGrain": "PT1M",
+              "statistic": "Average",
+              "timeWindow": "{{default haConfig.vmss.autoScaling.scaleInRule.timeWindow 'PT5M'}}",
+              "timeAggregation": "Average",
+              "operator": "LessThan",
+              "threshold": {{default haConfig.vmss.autoScaling.scaleInRule.cpuThreshold 25}},
+              "dimensions": [],
+              "dividePerInstance": false
+            },
+            "scaleAction": {
+              "direction": "Decrease",
+              "type": "{{default haConfig.vmss.autoScaling.scaleInRule.type 'ChangeCount'}}",
+              "value": "{{default haConfig.vmss.autoScaling.scaleInRule.value 1}}",
+              "cooldown": "{{default haConfig.vmss.autoScaling.scaleInRule.cooldown 'PT5M'}}"
+            }
+          }{{#if haConfig.vmss.autoScaling.memoryRules}},
+          {{!-- Memory Scale Out Rule --}}
+          {
+            "metricTrigger": {
+              "metricName": "Available Memory Bytes",
+              "metricNamespace": "Microsoft.Compute/virtualMachineScaleSets",
+              "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]",
+              "timeGrain": "PT1M",
+              "statistic": "Average",
+              "timeWindow": "{{default haConfig.vmss.autoScaling.memoryRules.scaleOutRule.timeWindow 'PT5M'}}",
+              "timeAggregation": "Average",
+              "operator": "LessThan",
+              "threshold": {{default haConfig.vmss.autoScaling.memoryRules.scaleOutRule.threshold 1073741824}},
+              "dimensions": [],
+              "dividePerInstance": false
+            },
+            "scaleAction": {
+              "direction": "Increase",
+              "type": "{{default haConfig.vmss.autoScaling.memoryRules.scaleOutRule.type 'ChangeCount'}}",
+              "value": "{{default haConfig.vmss.autoScaling.memoryRules.scaleOutRule.value 1}}",
+              "cooldown": "{{default haConfig.vmss.autoScaling.memoryRules.scaleOutRule.cooldown 'PT5M'}}"
+            }
+          },
+          {{!-- Memory Scale In Rule --}}
+          {
+            "metricTrigger": {
+              "metricName": "Available Memory Bytes",
+              "metricNamespace": "Microsoft.Compute/virtualMachineScaleSets",
+              "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]",
+              "timeGrain": "PT1M",
+              "statistic": "Average",
+              "timeWindow": "{{default haConfig.vmss.autoScaling.memoryRules.scaleInRule.timeWindow 'PT5M'}}",
+              "timeAggregation": "Average",
+              "operator": "GreaterThan",
+              "threshold": {{default haConfig.vmss.autoScaling.memoryRules.scaleInRule.threshold 2147483648}},
+              "dimensions": [],
+              "dividePerInstance": false
+            },
+            "scaleAction": {
+              "direction": "Decrease",
+              "type": "{{default haConfig.vmss.autoScaling.memoryRules.scaleInRule.type 'ChangeCount'}}",
+              "value": "{{default haConfig.vmss.autoScaling.memoryRules.scaleInRule.value 1}}",
+              "cooldown": "{{default haConfig.vmss.autoScaling.memoryRules.scaleInRule.cooldown 'PT10M'}}"
+            }
+          }{{/if}}{{#if haConfig.vmss.autoScaling.customMetrics}},
+          {{!-- Custom Metric Rules --}}
+          {{#each haConfig.vmss.autoScaling.customMetrics}}
+          {
+            "metricTrigger": {
+              "metricName": "{{metricName}}",
+              "metricNamespace": "{{metricNamespace}}",
+              "metricResourceUri": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('haVmssName'))]",
+              "timeGrain": "PT1M",
+              "statistic": "{{default statistic 'Average'}}",
+              "timeWindow": "{{default timeWindow 'PT5M'}}",
+              "timeAggregation": "{{default timeAggregation 'Average'}}",
+              "operator": "{{operator}}",
+              "threshold": {{threshold}},
+              "dimensions": [
+                {{#each dimensions}}
+                {
+                  "name": "{{name}}",
+                  "operator": "{{operator}}",
+                  "values": [{{#each values}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}]
+                }{{#unless @last}},{{/unless}}
+                {{/each}}
+              ],
+              "dividePerInstance": {{default dividePerInstance false}}
+            },
+            "scaleAction": {
+              "direction": "{{scaleAction.direction}}",
+              "type": "{{default scaleAction.type 'ChangeCount'}}",
+              "value": "{{default scaleAction.value 1}}",
+              "cooldown": "{{default scaleAction.cooldown 'PT5M'}}"
+            }
+          }{{#unless @last}},{{/unless}}
+          {{/each}}{{/if}}
+        ],
+        "fixedDate": null,
+        "recurrence": null
+      }{{#if haConfig.vmss.autoScaling.scheduleBasedProfiles}},
+      {{!-- Schedule-based Profiles --}}
+      {{#each haConfig.vmss.autoScaling.scheduleBasedProfiles}}
+      {
+        "name": "{{name}}",
+        "capacity": {
+          "minimum": "{{capacity.minimum}}",
+          "maximum": "{{capacity.maximum}}",
+          "default": "{{capacity.default}}"
+        },
+        "rules": [],
+        {{#if fixedDate}}
+        "fixedDate": {
+          "timeZone": "{{fixedDate.timeZone}}",
+          "start": "{{fixedDate.start}}",
+          "end": "{{fixedDate.end}}"
+        },
+        {{/if}}
+        {{#if recurrence}}
+        "recurrence": {
+          "frequency": "{{recurrence.frequency}}",
+          "schedule": {
+            {{#if recurrence.schedule.timeZone}}
+            "timeZone": "{{recurrence.schedule.timeZone}}",
+            {{/if}}
+            {{#if recurrence.schedule.days}}
+            "days": [{{#each recurrence.schedule.days}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}],
+            {{/if}}
+            {{#if recurrence.schedule.hours}}
+            "hours": [{{#each recurrence.schedule.hours}}{{this}}{{#unless @last}},{{/unless}}{{/each}}],
+            {{/if}}
+            {{#if recurrence.schedule.minutes}}
+            "minutes": [{{#each recurrence.schedule.minutes}}{{this}}{{#unless @last}},{{/unless}}{{/each}}]
+            {{/if}}
+          }
+        }
+        {{/if}}
+      }{{#unless @last}},{{/unless}}
+      {{/each}}{{/if}}
+    ],
+    "notifications": [
+      {{#if haConfig.vmss.autoScaling.notifications}}
+      {{#each haConfig.vmss.autoScaling.notifications}}
+      {
+        "operation": "{{operation}}",
+        "email": {
+          "sendToSubscriptionAdministrator": {{default sendToSubscriptionAdministrator false}},
+          "sendToSubscriptionCoAdministrators": {{default sendToSubscriptionCoAdministrators false}},
+          "customEmails": [{{#each customEmails}}"{{this}}"{{#unless @last}},{{/unless}}{{/each}}]
+        },
+        "webhooks": [
+          {{#each webhooks}}
+          {
+            "serviceUri": "{{serviceUri}}",
+            "properties": {
+              {{#each properties}}
+              "{{@key}}": "{{this}}"{{#unless @last}},{{/unless}}
+              {{/each}}
+            }
+          }{{#unless @last}},{{/unless}}
+          {{/each}}
+        ]
+      }{{#unless @last}},{{/unless}}
+      {{/each}}
+      {{/if}}
+    ]
+  },
+  "metadata": {
+    "description": "Auto-scaling configuration for HA VMSS with CPU, memory, and custom metric rules"
+  },
+  "tags": {
+    "purpose": "HighAvailability",
+    "component": "AutoScaling",
+    "cluster": "[variables('haVmssName')]",
+    "version": "1.11.0"
+  }
+}

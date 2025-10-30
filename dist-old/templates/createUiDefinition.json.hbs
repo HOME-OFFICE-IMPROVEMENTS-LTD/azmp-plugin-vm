@@ -1179,14 +1179,14 @@
       {{#if (includesParam "alertSeverity")}}"alertSeverity": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.alertSeverity, 'Warning')]",{{/if}}
       {{#if (includesParam "shutdownTimezone")}}"shutdownTimezone": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTimezone, 'UTC')]",{{/if}}
       {{#if (includesParam "virtualNetworkName")}}"virtualNetworkName": "[steps('networkingConfig').virtualNetwork.name]",{{/if}}
-      "virtualNetworkNewOrExisting": "[steps('networkingConfig').virtualNetwork.newOrExisting]",
-      "virtualNetworkResourceGroup": "[steps('networkingConfig').virtualNetwork.resourceGroup]",
+      {{#if (includesParam "virtualNetworkNewOrExisting")}}"virtualNetworkNewOrExisting": "[steps('networkingConfig').virtualNetwork.newOrExisting]",{{/if}}
+      {{#if (includesParam "virtualNetworkResourceGroup")}}"virtualNetworkResourceGroup": "[steps('networkingConfig').virtualNetwork.resourceGroup]",{{/if}}
       {{#if (includesParam "virtualNetworkAddressPrefix")}}"virtualNetworkAddressPrefix": "[steps('networkingConfig').virtualNetwork.addressPrefix]",{{/if}}
       {{#if (includesParam "subnetName")}}"subnetName": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.name]",{{/if}}
       {{#if (includesParam "subnetAddressPrefix")}}"subnetAddressPrefix": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.addressPrefix]",{{/if}}
       {{#if (includesParam "publicIPAddressName")}}"publicIPAddressName": "[steps('networkingConfig').publicIPAddress.name]",{{/if}}
-      "publicIPAddressNewOrExisting": "[steps('networkingConfig').publicIPAddress.newOrExistingOrNone]",
-      "publicIPAddressResourceGroup": "[steps('networkingConfig').publicIPAddress.resourceGroup]",
+      {{#if (includesParam "publicIPAddressNewOrExisting")}}"publicIPAddressNewOrExisting": "[steps('networkingConfig').publicIPAddress.newOrExistingOrNone]",{{/if}}
+      {{#if (includesParam "publicIPAddressResourceGroup")}}"publicIPAddressResourceGroup": "[steps('networkingConfig').publicIPAddress.resourceGroup]",{{/if}}
       {{#if (includesParam "domainNameLabel")}}"domainNameLabel": "[steps('networkingConfig').publicIPAddress.domainNameLabel]",{{/if}}
       {{#if (includesParam "allowSshRdp")}}"allowSshRdp": "[steps('networkingConfig').allowSshRdp]",{{/if}}
       {{#if (includesParam "sshRdpSourceAddressPrefix")}}"sshRdpSourceAddressPrefix": "[if(steps('networkingConfig').allowSshRdp, steps('networkingConfig').sshRdpSourceAddressPrefix, '*')]",{{/if}}
