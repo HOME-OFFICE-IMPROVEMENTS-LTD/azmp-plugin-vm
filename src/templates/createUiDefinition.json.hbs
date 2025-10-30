@@ -40,7 +40,6 @@
         "name": "adminUsername",
         "type": "Microsoft.Compute.UserNameTextBox",
         "label": "Admin Username",
-        "defaultValue": "azureuser",
         "toolTip": "Administrator username for the virtual machine",
         "osPlatform": "Linux",
         "constraints": {
@@ -1165,68 +1164,55 @@
       }{{/if}}
     ],
     "outputs": {
-      "location": "[location()]",
-      "vmName": "[basics('vmName')]",
-      "authenticationType": "[basics('authenticationType')]",
-      "adminUsername": "[basics('adminUsername')]",
-      "adminPasswordOrKey": "[if(equals(basics('authenticationType'), 'password'), basics('adminPassword'), basics('adminSshKey'))]",
-      "vmSize": "[basics('vmSize')]",
-      "dataDiskCount": "[steps('storageConfig').dataDiskSection.dataDiskCount]",
-      "dataDiskSizeGB": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), int(steps('storageConfig').dataDiskSection.dataDiskSizeGB), '')]",
-      "dataDiskType": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), steps('storageConfig').dataDiskSection.dataDiskType, '')]",
-      "dataDiskCaching": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), steps('storageConfig').dataDiskSection.dataDiskCaching, '')]",
-      "virtualNetworkName": "[steps('networkingConfig').virtualNetwork.name]",
-      "virtualNetworkNewOrExisting": "[steps('networkingConfig').virtualNetwork.newOrExisting]",
-      "virtualNetworkResourceGroup": "[steps('networkingConfig').virtualNetwork.resourceGroup]",
-      "virtualNetworkAddressPrefix": "[steps('networkingConfig').virtualNetwork.addressPrefix]",
-      "subnetName": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.name]",
-      "subnetAddressPrefix": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.addressPrefix]",
-      "publicIPAddressName": "[steps('networkingConfig').publicIPAddress.name]",
-      "publicIPAddressNewOrExisting": "[steps('networkingConfig').publicIPAddress.newOrExistingOrNone]",
-      "publicIPAddressResourceGroup": "[steps('networkingConfig').publicIPAddress.resourceGroup]",
-      "domainNameLabel": "[steps('networkingConfig').publicIPAddress.domainNameLabel]",
-      "allowSshRdp": "[steps('networkingConfig').allowSshRdp]",
-      "sshRdpSourceAddressPrefix": "[if(steps('networkingConfig').allowSshRdp, steps('networkingConfig').sshRdpSourceAddressPrefix, '*')]",
-      "installMonitoring": "[steps('extensionsConfig').extensionsSection.installMonitoring]",
-      "workspaceId": "[steps('extensionsConfig').extensionsSection.workspaceId]",
-      "installSecurity": "[steps('extensionsConfig').extensionsSection.installSecurity]",
-      "enableVulnerabilityAssessment": "[if(steps('extensionsConfig').extensionsSection.installSecurity, steps('extensionsConfig').extensionsSection.enableVulnerabilityAssessment, bool('false'))]",
-      "runCustomScript": "[steps('extensionsConfig').extensionsSection.runCustomScript]",
-      "customScriptUri": "[if(steps('extensionsConfig').extensionsSection.runCustomScript, steps('extensionsConfig').extensionsSection.customScriptUri, '')]",
-      "customScriptArgs": "[if(steps('extensionsConfig').extensionsSection.runCustomScript, steps('extensionsConfig').extensionsSection.customScriptArgs, '')]",
-      "createVmss": "[steps('scalingConfig').vmssSection.createVmss]",
-      "vmssName": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssName, '')]",
-      "vmssInstanceCount": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssInstanceCount, 0)]",
-      "enableAutoScale": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale, bool('false'))]",
-      "autoScaleMinInstances": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.autoScaleMinInstances, 0)]",
-      "autoScaleMaxInstances": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.autoScaleMaxInstances, 0)]",
-      "cpuThresholdScaleOut": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.cpuThresholdScaleOut, 0)]",
-      "cpuThresholdScaleIn": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.cpuThresholdScaleIn, 0)]",
-      "createLoadBalancer": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.createLoadBalancer, bool('false'))]",
-      "loadBalancerSku": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.createLoadBalancer), steps('scalingConfig').vmssSection.loadBalancerSku, 'Standard')]",
-      "enableMultiRegion": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableMultiRegion, bool('false'))]",
-      "secondaryRegion": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableMultiRegion), steps('scalingConfig').vmssSection.secondaryRegion, '')]",
-      "availabilityOption": "[steps('hadrConfig').availabilitySection.availabilityOption]",
-      "availabilitySetName": "[if(equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilitySet'), steps('hadrConfig').availabilitySection.availabilitySetName, '')]",
-      "availabilityZone": "[if(equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilityZone'), steps('hadrConfig').availabilitySection.availabilityZone, '')]",
-      "enableBackup": "[steps('hadrConfig').backupSection.enableBackup]",
-      "backupPolicyType": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupPolicyType, 'standard')]",
-      "backupVaultName": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupVaultName, '')]",
-      "enableSnapshots": "[steps('hadrConfig').snapshotSection.enableSnapshots]",
-      "snapshotFrequency": "[if(steps('hadrConfig').snapshotSection.enableSnapshots, steps('hadrConfig').snapshotSection.snapshotFrequency, 'daily')]",
-      "snapshotRetention": "[if(steps('hadrConfig').snapshotSection.enableSnapshots, steps('hadrConfig').snapshotSection.snapshotRetention, 30)]",
-      "enableMonitoring": "[steps('monitoringConfig').alertSection.enableMonitoring]",
-      "monitoringEmail": "[if(steps('monitoringConfig').alertSection.enableMonitoring, steps('monitoringConfig').alertSection.monitoringEmail, '')]",
-      "monitoringPreset": "[if(steps('monitoringConfig').alertSection.enableMonitoring, steps('monitoringConfig').alertSection.monitoringPreset, 'Production')]",
-      "enableCpuAlert": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.enableCpuAlert, bool('false'))]",
-      "enableMemoryAlert": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.enableMemoryAlert, bool('false'))]",
-      "enableDiskAlert": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.enableDiskAlert, bool('false'))]",
-      "enableNetworkAlert": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.enableNetworkAlert, bool('false'))]",
-      "alertSeverity": "[if(and(steps('monitoringConfig').alertSection.enableMonitoring, equals(steps('monitoringConfig').alertSection.monitoringPreset, 'Custom')), steps('monitoringConfig').alertSection.alertSeverity, 'Warning')]",
-      "enableAutoShutdown": "[steps('monitoringConfig').autoShutdownSection.enableAutoShutdown]",
-      "shutdownTime": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTime, '')]",
-      "shutdownTimezone": "[if(steps('monitoringConfig').autoShutdownSection.enableAutoShutdown, steps('monitoringConfig').autoShutdownSection.shutdownTimezone, 'UTC')]"{{#if licenseType}},
-      "licenseType": "[if(equals(basics('osType'), 'Windows'), if(steps('hybridBenefitConfig').sqlServerSection.enableSqlServer, 'AHUB', steps('hybridBenefitConfig').licenseSection.licenseType), 'None')]"{{/if}}
+      {{#if (includesParam "location")}}"location": "[location()]",{{/if}}
+      {{#if (includesParam "vmName")}}"vmName": "[basics('vmName')]",{{/if}}
+      {{#if (includesParam "authenticationType")}}"authenticationType": "[basics('authenticationType')]",{{/if}}
+      {{#if (includesParam "adminUsername")}}"adminUsername": "[basics('adminUsername')]",{{/if}}
+      {{#if (includesParam "adminPasswordOrKey")}}"adminPasswordOrKey": "[if(equals(basics('authenticationType'), 'password'), basics('adminPassword'), basics('adminSshKey'))]",{{/if}}
+      {{#if (includesParam "vmSize")}}"vmSize": "[basics('vmSize')]",{{/if}}
+      {{#if (includesParam "dataDiskCount")}}"dataDiskCount": "[steps('storageConfig').dataDiskSection.dataDiskCount]",{{/if}}
+      {{#if (includesParam "dataDiskSizeGB")}}"dataDiskSizeGB": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), int(steps('storageConfig').dataDiskSection.dataDiskSizeGB), '')]",{{/if}}
+      {{#if (includesParam "dataDiskType")}}"dataDiskType": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), steps('storageConfig').dataDiskSection.dataDiskType, '')]",{{/if}}
+      {{#if (includesParam "dataDiskCaching")}}"dataDiskCaching": "[if(greater(steps('storageConfig').dataDiskSection.dataDiskCount, 0), steps('storageConfig').dataDiskSection.dataDiskCaching, '')]",{{/if}}
+      {{#if (includesParam "virtualNetworkName")}}"virtualNetworkName": "[steps('networkingConfig').virtualNetwork.name]",{{/if}}
+      {{#if (includesParam "virtualNetworkNewOrExisting")}}"virtualNetworkNewOrExisting": "[steps('networkingConfig').virtualNetwork.newOrExisting]",{{/if}}
+      {{#if (includesParam "virtualNetworkResourceGroup")}}"virtualNetworkResourceGroup": "[steps('networkingConfig').virtualNetwork.resourceGroup]",{{/if}}
+      {{#if (includesParam "virtualNetworkAddressPrefix")}}"virtualNetworkAddressPrefix": "[steps('networkingConfig').virtualNetwork.addressPrefix]",{{/if}}
+      {{#if (includesParam "subnetName")}}"subnetName": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.name]",{{/if}}
+      {{#if (includesParam "subnetAddressPrefix")}}"subnetAddressPrefix": "[steps('networkingConfig').virtualNetwork.subnets.subnet1.addressPrefix]",{{/if}}
+      {{#if (includesParam "publicIPAddressName")}}"publicIPAddressName": "[steps('networkingConfig').publicIPAddress.name]",{{/if}}
+      {{#if (includesParam "publicIPAddressNewOrExisting")}}"publicIPAddressNewOrExisting": "[steps('networkingConfig').publicIPAddress.newOrExistingOrNone]",{{/if}}
+      {{#if (includesParam "publicIPAddressResourceGroup")}}"publicIPAddressResourceGroup": "[steps('networkingConfig').publicIPAddress.resourceGroup]",{{/if}}
+      {{#if (includesParam "domainNameLabel")}}"domainNameLabel": "[steps('networkingConfig').publicIPAddress.domainNameLabel]",{{/if}}
+      {{#if (includesParam "allowSshRdp")}}"allowSshRdp": "[steps('networkingConfig').allowSshRdp]",{{/if}}
+      {{#if (includesParam "sshRdpSourceAddressPrefix")}}"sshRdpSourceAddressPrefix": "[if(steps('networkingConfig').allowSshRdp, steps('networkingConfig').sshRdpSourceAddressPrefix, '*')]",{{/if}}
+      {{#if (includesParam "installMonitoringExtension")}}"installMonitoringExtension": "[steps('extensionsConfig').extensionsSection.installMonitoring]",{{/if}}
+      {{#if (includesParam "workspaceId")}}"workspaceId": "[steps('extensionsConfig').extensionsSection.workspaceId]",{{/if}}
+      {{#if (includesParam "installSecurityExtension")}}"installSecurityExtension": "[steps('extensionsConfig').extensionsSection.installSecurity]",{{/if}}
+      {{#if (includesParam "installCustomScriptExtension")}}"installCustomScriptExtension": "[steps('extensionsConfig').extensionsSection.runCustomScript]",{{/if}}
+      {{#if (includesParam "installExtensions")}}"installExtensions": "[or(steps('extensionsConfig').extensionsSection.installMonitoring, steps('extensionsConfig').extensionsSection.installSecurity, steps('extensionsConfig').extensionsSection.runCustomScript)]",{{/if}}
+      {{#if (includesParam "installAntimalwareExtension")}}"installAntimalwareExtension": "[bool('true')]",{{/if}}
+      {{#if (includesParam "customScriptUrl")}}"customScriptUrl": "[if(steps('extensionsConfig').extensionsSection.runCustomScript, steps('extensionsConfig').extensionsSection.customScriptUri, '')]",{{/if}}
+      {{#if (includesParam "customScriptCommand")}}"customScriptCommand": "[if(steps('extensionsConfig').extensionsSection.runCustomScript, steps('extensionsConfig').extensionsSection.customScriptArgs, '')]",{{/if}}
+      {{#if createVmss}}{{#if (includesParam "createVmss")}}"createVmss": "[steps('scalingConfig').vmssSection.createVmss]",{{/if}}
+      {{#if (includesParam "vmssName")}}"vmssName": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssName, '')]",{{/if}}
+      {{#if (includesParam "vmssInstanceCount")}}"vmssInstanceCount": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.vmssInstanceCount, 0)]",{{/if}}
+      {{#if (includesParam "enableAutoScaling")}}"enableAutoScaling": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale, bool('false'))]",{{/if}}
+      {{#if (includesParam "autoScaleMin")}}"autoScaleMin": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.autoScaleMinInstances, 0)]",{{/if}}
+      {{#if (includesParam "autoScaleMax")}}"autoScaleMax": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.autoScaleMaxInstances, 0)]",{{/if}}
+      {{#if (includesParam "cpuScaleOutThreshold")}}"cpuScaleOutThreshold": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.cpuThresholdScaleOut, 0)]",{{/if}}
+      {{#if (includesParam "cpuScaleInThreshold")}}"cpuScaleInThreshold": "[if(and(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableAutoScale), steps('scalingConfig').vmssSection.cpuThresholdScaleIn, 0)]",{{/if}}
+      {{#if (includesParam "createLoadBalancer")}}"createLoadBalancer": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.createLoadBalancer, bool('false'))]",{{/if}}
+      {{#if (includesParam "enableMultiRegion")}}"enableMultiRegion": "[if(steps('scalingConfig').vmssSection.createVmss, steps('scalingConfig').vmssSection.enableMultiRegion, bool('false'))]",{{/if}}{{/if}}
+      {{#if (includesParam "createAvailabilitySet")}}"createAvailabilitySet": "[equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilitySet')]",{{/if}}
+      {{#if (includesParam "useAvailabilityZones")}}"useAvailabilityZones": "[equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilityZone')]",{{/if}}
+      {{#if (includesParam "availabilitySetName")}}"availabilitySetName": "[if(equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilitySet'), steps('hadrConfig').availabilitySection.availabilitySetName, '')]",{{/if}}
+      {{#if (includesParam "availabilityZone")}}"availabilityZone": "[if(equals(steps('hadrConfig').availabilitySection.availabilityOption, 'availabilityZone'), steps('hadrConfig').availabilitySection.availabilityZone, '')]",{{/if}}
+      {{#if (includesParam "enableBackup")}}"enableBackup": "[steps('hadrConfig').backupSection.enableBackup]",{{/if}}
+      {{#if (includesParam "backupVaultName")}}"backupVaultName": "[if(steps('hadrConfig').backupSection.enableBackup, steps('hadrConfig').backupSection.backupVaultName, '')]",{{/if}}
+      {{#if (includesParam "enableSnapshot")}}"enableSnapshot": "[steps('hadrConfig').snapshotSection.enableSnapshots]",{{/if}}
+      {{#if licenseType}}{{#if (includesParam "licenseType")}}"licenseType": "[if(equals(basics('osType'), 'Windows'), if(steps('hybridBenefitConfig').sqlServerSection.enableSqlServer, 'AHUB', steps('hybridBenefitConfig').licenseSection.licenseType), 'None')]",{{/if}}{{/if}}
+      "placeholder": "remove-trailing-comma"
     }
   }
 }
