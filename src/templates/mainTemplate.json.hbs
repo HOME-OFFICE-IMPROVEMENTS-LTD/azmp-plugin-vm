@@ -6,8 +6,8 @@
       "name": "azmp-plugin-vm",
       "version": "2.0.0"
     },
-    "description": "{{description}}",
-    "author": "{{author}}"{{#if haConfig}},
+    "description": {{#if description}}"{{description}}"{{else}}"Azure Marketplace VM deployment template"{{/if}},
+    "author": {{#if author}}"{{author}}"{{else}}"HOME OFFICE IMPROVEMENTS LTD"{{/if}}{{#if haConfig}},
     "highAvailability": {
       "enabled": true,
       "components": [
@@ -1691,10 +1691,10 @@
       "name": "[variables('publicIPAddressName')]",
       "location": "[parameters('location')]",
       "properties": {
-        "publicIPAllocationMethod": "{{publicIPAllocationMethod}}"{{#if publicIPSku}},
+        "publicIPAllocationMethod": "[parameters('publicIPAllocationMethod')]",
         "sku": {
-          "name": "{{publicIPSku}}"
-        }{{/if}}{{#if dnsLabelPrefix}},
+          "name": "[parameters('publicIPSku')]"
+        }{{#if dnsLabelPrefix}},
         "dnsSettings": {
           "domainNameLabel": "{{dnsLabelPrefix}}"
         }{{/if}}
@@ -2108,7 +2108,7 @@
     {{/unless}}{{#if enableMonitoring}},
     {
       "type": "Microsoft.Insights/actionGroups",
-      "apiVersion": "2023-01-01",
+      "apiVersion": "2024-01-01",
       "name": "[parameters('monitoringActionGroupName')]",
       "location": "global",
       "properties": {
