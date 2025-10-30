@@ -724,15 +724,15 @@ jobs:
 
 ### Timeline & Effort Estimates
 
-| Phase | Duration | Dependencies | Risk Level |
-|-------|----------|--------------|------------|
-| **Phase 1: Diagnostic** | 1-2 days | None | Low |
-| **Phase 2: Parameter Sync** | 2-3 days | Phase 1 | Medium |
-| **Phase 3: API Versions** | 1-2 days | Phase 1 | Low |
-| **Phase 4: Optimization** | 1 day | Phase 2 | Low |
-| **Phase 5: Compliance** | 1-2 days | Phase 1, 2 | Medium |
-| **Phase 6: Integration Testing** | 1 day | Phase 2-5 | Medium |
-| **Total** | **7-11 days** | - | **Medium** |
+| Phase | Duration | Owner | Start Date | Dependencies | Risk Level |
+|-------|----------|-------|------------|--------------|------------|
+| **Phase 1: Diagnostic** | 1-2 days | Azure Team | 2025-10-30 | None | Low |
+| **Phase 2: Parameter Sync** | 2-3 days | Azure Team | 2025-11-01 | Phase 1 | Medium |
+| **Phase 3: API Versions** | 1-2 days | Azure Team | 2025-11-01 | Phase 1 | Low |
+| **Phase 4: Optimization** | 1 day | Azure Team | 2025-11-04 | Phase 2 | Low |
+| **Phase 5: Compliance** | 1-2 days | Azure Team | 2025-11-01 | Phase 1, 2 | Medium |
+| **Phase 6: Integration Testing** | 1 day | Azure Team | 2025-11-05 | Phase 2-5 | Medium |
+| **Total** | **7-11 days** | **Azure Team** | **Oct 30 - Nov 8** | - | **Medium** |
 
 ### Prioritization Strategy
 
