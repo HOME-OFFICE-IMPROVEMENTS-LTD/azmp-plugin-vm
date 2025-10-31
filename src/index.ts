@@ -62,7 +62,7 @@ export class VmPlugin implements IPlugin {
     name: "Virtual Machine Plugin",
     description:
       "Generates Azure Virtual Machine marketplace offers with comprehensive HA/DR and Enterprise Scaling",
-    version: "1.10.0",
+    version: "2.1.0",
     author: "HOME OFFICE IMPROVEMENTS LTD",
   };
 
@@ -124,7 +124,7 @@ export class VmPlugin implements IPlugin {
         name: "Virtual Machine",
         description:
           "Azure Virtual Machine with comprehensive networking, extensions, HA/DR, and Enterprise Scaling",
-        version: "1.10.0",
+        version: "2.1.0",
         templatePath: templatesDir,
         files: {
           mainTemplate: "mainTemplate.json.hbs",
@@ -389,6 +389,68 @@ export class VmPlugin implements IPlugin {
       // Import and register cleanup commands
       const { registerCleanupCommands } = require("./cli/cleanup-commands");
       registerCleanupCommands(vmCommand, { context: this.context });
+
+      // Import and register HA commands
+      const { registerHACommands } = require("./cli/ha-commands");
+      registerHACommands(vmCommand);
+
+      // Register validate-vhd command (P0-1: VHD Validation)
+      const validateVhdCommand = require("./cli/commands/validate-vhd").default;
+      vmCommand.addCommand(validateVhdCommand);
+
+      // Register configure-diagnostics command (P0-2: Diagnostics Auto-Enable)
+      const configureDiagnosticsCommand = require("./cli/commands/configure-diagnostics").default;
+      vmCommand.addCommand(configureDiagnosticsCommand);
+
+      // Register configure-disk-types command (P1-1: Disk Type Selection)
+      const configureDiskTypesCommand = require("./cli/commands/configure-disk-types").default;
+      vmCommand.addCommand(configureDiskTypesCommand);
+
+      // Register configure-backup command (P1-2: Backup Auto-Enable)
+      const configureBackupCommand = require("./cli/commands/configure-backup").default;
+      vmCommand.addCommand(configureBackupCommand);
+
+      // Register configure-data-disks command (P1-3: Data Disk Support)
+      const configureDataDisksCommand = require("./cli/commands/configure-data-disks").default;
+      vmCommand.addCommand(configureDataDisksCommand);
+
+      // Register configure-monitoring command (P1-4: Monitoring & Alerts Support)
+      const configureMonitoringCommand = require("./cli/commands/configure-monitoring").default;
+      vmCommand.addCommand(configureMonitoringCommand);
+
+      // Register configure-hybrid-benefit command (P1-5: Azure Hybrid Benefit Support)
+      const configureHybridBenefitCommand = require("./cli/commands/configure-hybrid-benefit").default;
+      vmCommand.addCommand(configureHybridBenefitCommand);
+
+      // Register run-certification command (P1-6: Marketplace Certification Tooling)
+      const { runCertificationCommand } = require("./cli/commands/run-certification");
+      const runCertificationCmd = vmCommand
+        .command("run-certification")
+        .description("Run Azure VM certification tests on VHD files")
+        .option("--vhd-path, -v <path>", "Path to VHD file or directory (required)")
+        .option("--vm-size <size>", "Azure VM size (e.g., Standard_D2s_v3)")
+        .option("--region, -r <region>", "Azure region (e.g., eastus, westus2)")
+        .option("--output-dir, -o <dir>", "Output directory for reports", "./certification-results")
+        .option("--formats, -f <formats>", "Report formats: html,json,xml,markdown", "html,json")
+        .option("--company <name>", "Company name for report header")
+        .option("--project <name>", "Project name for report header")
+        .option("--skip-security", "Skip security scan")
+        .option("--skip-performance", "Skip performance tests")
+        .option("--quick, -q", "Quick validation mode (VHD format only)")
+        .option("--batch, -b", "Batch mode (process all VHDs in directory)")
+        .option("--verbose", "Verbose output")
+        .option("--open", "Open HTML report after generation")
+        .action(async (options) => {
+          try {
+            const { runCertification } = require("./cli/commands/run-certification");
+            await runCertification(options);
+          } catch (error) {
+            if (this.context) {
+              this.context.logger.error(`Certification test failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
+            process.exit(1);
+          }
+        });
     }
 
     vmCommand

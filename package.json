@@ -1,7 +1,7 @@
 {
   "name": "@hoiltd/azmp-plugin-vm",
-  "version": "1.10.0",
-  "description": "Virtual Machine plugin for Azure Marketplace Generator with Azure SDK Integration, Workbooks, Cost Optimization, High Availability, Disaster Recovery, Extensions, Security, Identity, Enterprise Scaling, and Azure Monitor Observability features",
+  "version": "2.1.0",
+  "description": "Virtual Machine plugin for Azure Marketplace Generator with High Availability Clusters, Azure SDK Integration, Workbooks, Cost Optimization, Disaster Recovery, Extensions, Security, Identity, Enterprise Scaling, and Azure Monitor Observability features",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -42,8 +42,9 @@
   },
   "dependencies": {
     "@azure/arm-compute": "^21.0.0",
+    "@azure/arm-monitor": "^7.0.0",
     "@azure/identity": "^4.0.0",
-    "@azure/arm-monitor": "^7.0.0"
+    "vhd": "^0.5.0"
   },
   "devDependencies": {
     "@types/commander": "^2.12.0",

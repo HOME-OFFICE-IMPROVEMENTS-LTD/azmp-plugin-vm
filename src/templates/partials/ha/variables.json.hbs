@@ -1,0 +1,17 @@
+{{!-- Load Balancer ARM Template Variables --}}
+{{!-- Provides computed values for load balancer resources --}}
+
+{{#if haConfig.loadBalancer.enabled}}
+  "loadBalancerName": "[concat(parameters('vmName'), '-lb')]",
+  {{#equal haConfig.loadBalancer.type "public"}}
+  "publicIPName": "[concat(parameters('vmName'), '-pip')]",
+  {{/equal}}
+  "subnetRef": "[resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]",
+{{/if}}
+{{#if haConfig.vmss.enabled}}
+  "vmssName": "[concat(parameters('vmName'), '-vmss')]",
+  {{#if haConfig.vmss.autoscale.enabled}}
+  "autoscaleSettingsName": "[concat(parameters('vmName'), '-autoscale')]",
+  {{/if}}
+  "diagnosticsStorageAccountName": "[concat('diag', uniqueString(resourceGroup().id))]",
+{{/if}}

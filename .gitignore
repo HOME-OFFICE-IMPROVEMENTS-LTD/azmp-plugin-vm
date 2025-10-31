@@ -28,6 +28,8 @@ build/
 coverage/
 .nyc_output/
 *.lcov
+test-output/
+node_modules/.cache/
 
 # OS
 .DS_Store
@@ -52,6 +54,12 @@ arm-ttk-results*.txt
 test-deployment-*backup*/
 test-deployment-regenerated/
 test-deployment-old*/
+arm-ttk-analysis/
+test-*-output/
+
+# Azurite local storage emulator
+__azurite_db_*.json
+__blobstorage__/
 
 # Logs
 logs/

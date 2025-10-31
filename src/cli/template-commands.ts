@@ -11,6 +11,7 @@ import * as fsSync from "fs";
 import * as path from "path";
 import * as Handlebars from "handlebars";
 import { PluginContext } from "../types";
+import { pruneTemplate } from "../utils/prune-template";
 
 /**
  * Helper functions for filesystem operations
@@ -111,7 +112,14 @@ export function registerTemplateCommands(
           );
         }
 
-        // Generate mainTemplate.json
+        // Register helper to check if parameter is active
+        Handlebars.registerHelper('includesParam', function(paramName: string, options: any) {
+          const activeParams = options.data.root.activeParameters || [];
+          return activeParams.includes(paramName);
+        });
+
+        // Generate mainTemplate.json first and capture active parameters
+        let activeParameters: string[] = [];
         if (templates.main) {
           const mainTemplatePath = path.join(
             templatesDir,
@@ -120,10 +128,27 @@ export function registerTemplateCommands(
           if (await pathExists(mainTemplatePath)) {
             const source = await fs.readFile(mainTemplatePath, "utf-8");
             const template = Handlebars.compile(source);
-            const output = template(config);
+            const rawOutput = template(config);
+            
+            // Preserve UI selector parameters that have corresponding outputs in createUiDefinition
+            // These parameters are not directly referenced in resources but are required by ARM-TTK
+            const uiSelectorParameters = [
+              'virtualNetworkNewOrExisting',
+              'virtualNetworkResourceGroup',
+              'publicIPAddressNewOrExisting',
+              'publicIPAddressResourceGroup'
+            ];
+            
+            const prunedResult = pruneTemplate(rawOutput, {
+              logger: context.logger,
+              preserveParameters: uiSelectorParameters
+            });
+            
+            // Store active parameters for createUiDefinition
+            activeParameters = prunedResult.activeParameters;
 
             const outputPath = path.join(outputDir, "mainTemplate.json");
-            await fs.writeFile(outputPath, output, "utf-8");
+            await fs.writeFile(outputPath, prunedResult.json, "utf-8");
             context.logger.info(`✓ Generated: mainTemplate.json`);
             generatedCount++;
           } else {
@@ -131,7 +156,7 @@ export function registerTemplateCommands(
           }
         }
 
-        // Generate createUiDefinition.json
+        // Generate createUiDefinition.json with activeParameters
         if (templates.ui) {
           const uiTemplatePath = path.join(
             templatesDir,
@@ -140,7 +165,13 @@ export function registerTemplateCommands(
           if (await pathExists(uiTemplatePath)) {
             const source = await fs.readFile(uiTemplatePath, "utf-8");
             const template = Handlebars.compile(source);
-            const output = template(config);
+            // Pass activeParameters in the context
+            const uiContext = { ...config, activeParameters };
+            let output = template(uiContext);
+            
+            // Clean up trailing commas in outputs section (remove placeholder)
+            output = output.replace(/"placeholder":\s*"remove-trailing-comma"\s*}/g, '}');
+            output = output.replace(/,(\s*\n\s*})/g, '$1'); // Remove trailing commas before closing braces
 
             const outputPath = path.join(outputDir, "createUiDefinition.json");
             await fs.writeFile(outputPath, output, "utf-8");
@@ -150,7 +181,6 @@ export function registerTemplateCommands(
             context.logger.warn("createUiDefinition.json.hbs not found");
           }
         }
-
         // Generate viewDefinition.json
         if (templates.view) {
           const viewTemplatePath = path.join(
