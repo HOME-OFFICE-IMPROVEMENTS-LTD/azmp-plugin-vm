@@ -10,7 +10,61 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { VHD } from 'vhd';
+const VHDLib = require('vhd');
+
+// ============================================================================
+// VHD Library Adapter (CommonJS to Promise-based)
+// ============================================================================
+
+/**
+ * Promise-based wrapper for vhd library's callback API
+ * The vhd package uses CommonJS with callback-based APIs:
+ * - new VHDLib.Image({ path, flags })
+ * - image.open(callback)
+ * - image.close(callback)
+ */
+
+interface VHDImage {
+  footer?: any;
+  header?: any;
+  open(callback: (err: Error | null) => void): void;
+  close(callback: (err: Error | null) => void): void;
+}
+
+/**
+ * Open a VHD image file and return a promise
+ */
+const openImage = (file: string): Promise<VHDImage> => {
+  return new Promise<VHDImage>((resolve, reject) => {
+    try {
+      const image = new VHDLib.Image({ path: file, flags: 'r' }) as VHDImage;
+      image.open((err: Error | null) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(image);
+        }
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+/**
+ * Close a VHD image file and return a promise
+ */
+const closeImage = (img: VHDImage): Promise<void> => {
+  return new Promise<void>((resolve, reject) => {
+    img.close((err: Error | null) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
 
 // ============================================================================
 // Types and Interfaces
@@ -227,12 +281,13 @@ export class VHDValidator {
    * AC-2: Parse VHD header and footer using vhd library
    */
   private async parseVHDStructure(): Promise<void> {
+    let image: VHDImage | null = null;
     try {
-      const vhd = new VHD(this.options.vhdPath);
-      await vhd.open();
+      // Open VHD image using our promise-based adapter
+      image = await openImage(this.options.vhdPath);
 
       // Read footer (last 512 bytes of VHD)
-      const footer = vhd.footer;
+      const footer = image.footer;
       if (!footer) {
         throw new Error('VHD footer not found or invalid');
       }
@@ -264,8 +319,8 @@ export class VHDValidator {
       this.metadata.diskType = this.getDiskType(footer.diskType || 2);
 
       // Read header for dynamic disks
-      if (this.metadata.diskType === 'dynamic' && vhd.header) {
-        const header = vhd.header;
+      if (this.metadata.diskType === 'dynamic' && image.header) {
+        const header = image.header;
         this.metadata.header = {
           cookie: header.cookie?.toString() || '',
           dataOffset: BigInt(header.dataOffset || 0),
@@ -282,7 +337,9 @@ export class VHDValidator {
         this.metadata.blockSize = header.blockSize;
       }
 
-      await vhd.close();
+      // Close the image properly using our adapter
+      await closeImage(image);
+      image = null;
 
       this.addCheck({
         name: 'vhd-structure',
@@ -292,6 +349,15 @@ export class VHDValidator {
         details: `Disk type: ${this.metadata.diskType}, Virtual size: ${this.metadata.virtualSizeGB?.toFixed(2)} GB`,
       });
     } catch (error) {
+      // Ensure image is closed even on error
+      if (image) {
+        try {
+          await closeImage(image);
+        } catch (closeError) {
+          // Ignore close errors in error path
+        }
+      }
+
       this.addCheck({
         name: 'vhd-structure',
         category: 'format',

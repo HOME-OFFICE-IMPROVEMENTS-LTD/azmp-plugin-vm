@@ -515,8 +515,11 @@ export class DiagnosticsManager {
       errors.push('Location is required');
     }
 
+    // Validate retention days: must be between 1 and 365 if specified
+    // Note: 0 is invalid, undefined/null means not set (use default)
     if (
-      this.config.retentionDays &&
+      this.config.retentionDays !== undefined &&
+      this.config.retentionDays !== null &&
       (this.config.retentionDays < 1 || this.config.retentionDays > 365)
     ) {
       errors.push('Retention days must be between 1 and 365');
