@@ -10,6 +10,8 @@
     "watch": "tsc --watch",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:slow": "jest --testMatch='**/*.slow.test.ts'",
+    "test:all": "jest --testMatch='**/*.test.ts'",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepublishOnly": "npm run build && npm test"
