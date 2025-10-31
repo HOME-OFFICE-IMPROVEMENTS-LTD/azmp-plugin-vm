@@ -4,7 +4,13 @@
  * Comprehensive test suite for VHD validation module
  * 
  * Reference: docs/P0_BLOCKERS_BREAKDOWN.md (P0-1, AC-7)
+ * 
+ * NOTE: These tests use a mock VHD library to avoid requiring actual 30GB+ VHD files.
+ * The mock simulates VHD structure and validation scenarios without disk I/O.
  */
+
+// Mock the vhd library before importing the module under test
+jest.mock('vhd');
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -110,43 +116,23 @@ function createMockVHDFooter(options: {
 }
 
 /**
- * Create a test VHD file
+ * Create a test VHD file (mock version - just creates empty file)
+ * The mock VHD library will parse the filename to determine characteristics
  */
 async function createTestVHD(filePath: string, options: {
   diskType?: number;
   sizeGB?: number;
   aligned?: boolean;
 }): Promise<void> {
-  const sizeGB = options.sizeGB || 30;
-  let totalSize = sizeGB * 1024 * 1024 * 1024;
-
-  // Align or misalign based on option
-  if (options.aligned !== false) {
-    totalSize = Math.floor(totalSize / VHD_CONSTRAINTS.ALIGNMENT_BOUNDARY) * VHD_CONSTRAINTS.ALIGNMENT_BOUNDARY;
-  } else {
-    totalSize += 512; // Add misalignment
-  }
-
-  const footer = createMockVHDFooter({
-    diskType: options.diskType || 2,
-    currentSize: BigInt(totalSize),
-  });
-
-  // For fixed VHD: data + footer
-  // For dynamic VHD: header + BAT + data + footer (simplified: just header + footer for testing)
-  const diskType = options.diskType || 2;
-
-  if (diskType === 2) {
-    // Fixed VHD: write sparse file + footer
-    const fd = await fs.promises.open(filePath, 'w');
-    await fd.truncate(totalSize);
-    await fd.write(footer, 0, 512, totalSize);
-    await fd.close();
-  } else {
-    // Dynamic VHD: simplified structure for testing
-    // Just write footer at end, real dynamic VHDs are more complex
-    await fs.promises.writeFile(filePath, footer);
-  }
+  // Just create an empty file - the mock library parses the filename
+  // Filename patterns:
+  // - "invalid-cookie.vhd" -> invalid cookie
+  // - "unsupported-version.vhd" -> unsupported version
+  // - "differencing.vhd" -> differencing disk
+  // - "size-30gb.vhd" -> 30 GB disk
+  // - "size-2040gb.vhd" -> 2040 GB disk
+  // - "misaligned.vhd" -> misaligned disk
+  await fs.promises.writeFile(filePath, '');
 }
 
 /**
@@ -176,7 +162,7 @@ async function cleanupFixtures(): Promise<void> {
 // structured VHD files and cannot parse minimal mock footers.
 // These tests are skipped in CI but the validation logic is tested through
 // integration tests with real VHD files in staging environments.
-describe.skip('VHD Validation Module', () => {
+describe('VHD Validation Module', () => {
   beforeAll(async () => {
     await setupFixtures();
   });
