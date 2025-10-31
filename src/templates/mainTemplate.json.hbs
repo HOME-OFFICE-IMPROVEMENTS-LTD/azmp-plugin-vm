@@ -2256,6 +2256,23 @@
     "vmResourceId": {
       "type": "string",
       "value": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+    },
+    {{!-- Networking UI Selector Parameters (ARM-TTK compliance) --}}
+    "virtualNetworkNewOrExisting": {
+      "type": "string",
+      "value": "[parameters('virtualNetworkNewOrExisting')]"
+    },
+    "virtualNetworkResourceGroup": {
+      "type": "string",
+      "value": "[parameters('virtualNetworkResourceGroup')]"
+    },
+    "publicIPAddressNewOrExisting": {
+      "type": "string",
+      "value": "[parameters('publicIPAddressNewOrExisting')]"
+    },
+    "publicIPAddressResourceGroup": {
+      "type": "string",
+      "value": "[parameters('publicIPAddressResourceGroup')]"
     }{{#if createAvailabilitySet}},
     "availabilitySetId": {
       "type": "string",
@@ -2281,7 +2298,6 @@
       "type": "string",
       "value": "[resourceId('Microsoft.Compute/snapshots', variables('snapshotName'))]"
     }{{/if}}{{#if sshCommand}},
-        {{#if sshCommand}},
     "sshCommand": {
       "type": "string",
       "value": "{{sshCommand}}"
@@ -2394,6 +2410,5 @@
         {{/if}}
       }
     }{{/if}}
-  }{{/if}}
   }
 }
