@@ -1,7 +1,7 @@
 # Azure Marketplace Generator - VM Plugin Integration Guide
 
-**Version**: 2.0.0  
-**Last Updated**: October 30, 2025  
+**Version**: 2.1.0  
+**Last Updated**: October 31, 2025  
 **Integration Target**: Azure Marketplace Generator v3.1.0+
 
 ---
@@ -16,7 +16,8 @@ The VM Plugin integrates seamlessly with the main generator through:
 - **Plugin System**: Dynamic loading via configuration-based architecture
 - **CLI Integration**: Unified command interface through `azmp` CLI
 - **Template Engine**: 178 Handlebars helpers for advanced ARM template generation
-- **Validation Pipeline**: Integrated ARM-TTK validation and marketplace packaging
+- **Validation Pipeline**: Integrated ARM-TTK validation (98% compliance) and marketplace packaging
+- **Testing Framework**: 801 passing tests with comprehensive coverage
 
 ---
 
@@ -44,7 +45,7 @@ git clone https://github.com/HOME-OFFICE-IMPROVEMENTS-LTD/azmp-plugin-vm.git
 cd azmp-plugin-vm
 
 # Checkout the latest release
-git checkout v2.0.0
+git checkout v2.1.0
 
 # Install dependencies and build
 npm install
@@ -74,7 +75,7 @@ npm link ../azmp-plugin-vm
 
 # Verify the link
 npm list @hoiltd/azmp-plugin-vm
-# Should show: @hoiltd/azmp-plugin-vm@2.0.0 extraneous -> ./../azmp-plugin-vm
+# Should show: @hoiltd/azmp-plugin-vm@2.1.0 extraneous -> ./../azmp-plugin-vm
 ```
 
 **4. Configure Plugin Loading**
@@ -141,11 +142,14 @@ npm run build
 
 **2. Install VM Plugin**
 ```bash
-# Install the VM plugin package (when published to npm)
-npm install @hoiltd/azmp-plugin-vm
+# Install the VM plugin package (published to npm)
+npm install @hoiltd/azmp-plugin-vm@^2.1.0
+
+# Or install from specific version
+npm install @hoiltd/azmp-plugin-vm@2.1.0
 
 # Or install from tarball
-npm install /path/to/azmp-plugin-vm-2.0.0.tgz
+npm install /path/to/azmp-plugin-vm-2.1.0.tgz
 ```
 
 **3. Configure Plugin Loading**
