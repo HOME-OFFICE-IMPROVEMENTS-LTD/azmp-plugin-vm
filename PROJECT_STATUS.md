@@ -1,9 +1,9 @@
 # Azure Marketplace VM Plugin – Project Status Report
 
-**Date:** 2025-10-27  
-**Current Version:** v1.10.0  
-**Active Branch:** `main` (aligned with `develop`)  
-**Overall Status:** ✅ Production release complete · 📝 Planning next milestone (v1.11.0 High Availability Cluster)
+**Date:** 2025-10-31  
+**Current Version:** v2.1.0  
+**Active Branch:** `develop` (ready for release tag)  
+**Overall Status:** ✅ ARM-TTK compliance release prepped · 🚀 Ready for production tagging
 
 ---
 
@@ -14,21 +14,21 @@
 | Tests | 538 total (494 run, 44 skipped) | Jest + template validation suites all green |
 | CLI Commands | 40+ | Coverage across provisioning, networking, security, cost |
 | Helpers | 250+ | Includes cost optimization, HA, networking, security |
-| Templates | `mainTemplate.json.hbs` (+partials) | Published with v1.7.0+ stream |
-| npm | `@hoiltd/azmp-plugin-vm@1.10.0` | Released 2025-10-27 |
-| GitHub | Tag `v1.10.0` | Merge commit `6388c09` |
+| Templates | `mainTemplate.json.hbs` (+partials) | ARM-TTK compliant (46/47 tests) |
+| npm | `@hoiltd/azmp-plugin-vm@2.1.0` | Pending publish |
+| GitHub | Tag `v2.1.0` | Pending tag |
 
 ---
 
-## ✅ Recent Work (v1.9.0 – v1.10.0)
+## ✅ Recent Work (v2.0.0 – v2.1.0)
 
-- **Performance & Security (v1.9.0):** Accelerated networking, trusted launch defaults, boot diagnostics.
-- **Cost Optimization (v1.10.0):** Ephemeral OS disks, auto-shutdown schedules, cost-focused examples and documentation.
-- **Documentation:** README + CHANGELOG updated; new examples committed; release published to npm and GitHub.
+- **Marketplace Integration (v2.0.0):** Completed P1 feature set and integrated with azure-marketplace-generator.
+- **ARM-TTK Compliance (v2.1.0):** Resolved 5 validation errors, enhanced generator pruning, added networking selector outputs, updated API versions.
+- **Quality Gates:** Templates validated across minimal and enterprise configs (46/47 tests); unit test baseline unchanged.
 
 ---
 
-## 🚧 In Planning – v1.11.0 High Availability Cluster
+## 🚧 In Planning – v2.2.0 High Availability Cluster
 
 - **Scope:** Proximity placement groups, zonal VM scale sets, load balancer health probes, health extensions, updated configuration UX.
 - **Artifact:** `V1.11.0_PLANNING.md` (drafted) outlines objectives, architecture, tasks, testing, and risks.

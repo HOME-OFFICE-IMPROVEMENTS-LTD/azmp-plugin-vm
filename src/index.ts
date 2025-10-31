@@ -62,7 +62,7 @@ export class VmPlugin implements IPlugin {
     name: "Virtual Machine Plugin",
     description:
       "Generates Azure Virtual Machine marketplace offers with comprehensive HA/DR and Enterprise Scaling",
-    version: "1.10.0",
+    version: "2.1.0",
     author: "HOME OFFICE IMPROVEMENTS LTD",
   };
 
@@ -124,7 +124,7 @@ export class VmPlugin implements IPlugin {
         name: "Virtual Machine",
         description:
           "Azure Virtual Machine with comprehensive networking, extensions, HA/DR, and Enterprise Scaling",
-        version: "1.10.0",
+        version: "2.1.0",
         templatePath: templatesDir,
         files: {
           mainTemplate: "mainTemplate.json.hbs",

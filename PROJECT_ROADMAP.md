@@ -1,9 +1,9 @@
 # Azure Marketplace Generator VM Plugin – Project Roadmap
 
 **Repository:** azmp-plugin-vm  
-**Current Version:** v1.10.0 (`main`)  
-**Status:** ✅ Cost optimization release shipped · 📝 Planning v1.11.0 High Availability Cluster  
-**Next Milestone:** v1.11.0 (High Availability Cluster)
+**Current Version:** v2.1.0 (`develop`)  
+**Status:** ✅ ARM-TTK compliance release staged · 📝 Planning v2.2.0 High Availability Cluster  
+**Next Milestone:** v2.2.0 (High Availability Cluster)
 
 ---
 
@@ -15,9 +15,11 @@
 | **v1.8.x** | Security & Governance | Trusted launch, encryption patterns, compliance docs | ✅ Complete |
 | **v1.9.0** (2025-10-27) | Performance & Security | Accelerated networking, trusted launch defaults, boot diagnostics | ✅ Released |
 | **v1.10.0** (2025-10-27) | Cost Optimization | Ephemeral OS disks, auto-shutdown schedules, cost examples | ✅ Released |
-| **v1.11.0** (TBD) | High Availability Cluster | PPGs, multi-zone VMSS, load balancer + health probes | 🟡 In design |
+| **v2.0.0** (2025-10-30) | Generator Integration | MVP completion, azure-marketplace-generator alignment | ✅ Released |
+| **v2.1.0** (2025-10-31) | ARM-TTK Compliance | 46/47 tests passing, generator pruning enhancements, API updates | ✅ Ready to tag |
+| **v2.2.0** (TBD) | High Availability Cluster | PPGs, multi-zone VMSS, load balancer + health probes | 🟡 In design |
 
-> **Quality snapshot:** 538 tests (494 executed, 44 skipped) all passing · 40+ CLI commands live · Templates validated with ARM-TTK suite.
+> **Quality snapshot:** 538 tests (494 executed, 44 skipped) baseline maintained · 40+ CLI commands live · ARM-TTK validation at 46/47 tests across minimal & enterprise configs.
 
 ---
 
@@ -29,15 +31,21 @@
 - Boot diagnostics configuration with managed storage fallback.
 - Documentation refresh covering upgrade guidance and compliance posture.
 
-### v1.10.0 – Cost Optimization
-- Ephemeral OS disks (cache vs. resource disk placement).
-- Auto-shutdown schedules via DevTest Labs integration with notifications.
-- Three new cost-focused example configs and README walkthrough.
-- Published to npm (`@hoiltd/azmp-plugin-vm@1.10.0`) and tagged on GitHub.
+### v2.0.0 – Marketplace Integration
+- Completed P1 feature set for Azure Marketplace certification.
+- Integrated plugin with azure-marketplace-generator workflows.
+- Added CLI coverage across provisioning, networking, security, and cost.
+- Documentation updates for onboarding and certification readiness.
+
+### v2.1.0 – ARM-TTK Compliance
+- Resolved 5 ARM-TTK validation failures (46/47 passing).
+- Added networking selector outputs and metadata defaults.
+- Enhanced generator pruning with parameter preservation whitelist.
+- Updated Microsoft.Insights and Microsoft.Network API versions.
 
 ---
 
-## 🎯 Upcoming Milestone: v1.11.0 High Availability Cluster
+## 🎯 Upcoming Milestone: v2.2.0 High Availability Cluster
 
 **Goal:** Ship end-to-end cluster capabilities that let marketplace offers deploy resilient, low-latency application tiers out-of-the-box.
 
@@ -74,4 +82,3 @@
 - Observability packs: Azure Monitor workbooks, alert rules, log analytics baselines.
 
 These initiatives remain candidates for v1.12.0+ after HA cluster delivery.
-

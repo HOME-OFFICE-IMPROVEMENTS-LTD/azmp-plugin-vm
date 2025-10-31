@@ -2,8 +2,8 @@
 **Azure Marketplace VM Plugin**
 
 **Document Version:** 1.0  
-**Date:** 2025-10-28  
-**Current Version:** v1.10.0  
+**Date:** 2025-10-31  
+**Current Version:** v2.1.0  
 **Target Version:** v1.13.0 (Marketplace Certified)  
 **Timeline:** 4 weeks (20 business days)  
 **Status:** 📋 Ready for Implementation
